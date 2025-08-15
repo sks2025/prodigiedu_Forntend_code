@@ -1,0 +1,303 @@
+.OrganiserHomepage{
+ 
+
+.progress-container {
+    width: 100%;
+    height:auto;
+    padding: 2rem;
+}
+.card-progress {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.card-progress p {
+  margin: 0;
+  padding: 0;
+}
+}
+.draft-card {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  background: #fff;
+}
+
+.card-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.card-image {
+  width: 20px;
+  height: 20px;
+  background: #e0e0e0;
+  margin-right: 10px;
+}
+
+.card-progress {
+  flex: 2;
+  display: flex;
+  align-items: center;
+}
+
+.progress-bar {
+  width: 150px;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #388E3B;
+  border-radius: 4px;
+}
+
+.progress-info {
+  margin-left: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+.prep-button {
+  padding: 5px 10px;
+  background: #388E3B;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.delete-button {
+  padding: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+
+.progress-wrapperO {
+  position: relative;
+  padding: 2rem;
+}
+
+.progress-containerO {
+  position: relative;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  z-index: 2;
+}
+
+.corner-img {
+  position: absolute;
+  z-index: 1;
+  width: 80px; /* or adjust */
+  height: auto;
+}
+
+.top-right {
+  top:30px;
+  right: 10px;
+}
+
+.bottom-left {
+  bottom: 0;
+  left: 10px;
+}
+
+
+.top-rightO {
+  top:10px;
+  right: 100px;
+}
+
+.bottom-leftO {
+  bottom: 0;
+  left: 100px;
+}
+
+
+
+.active-competitions {
+  font-family: Arial, sans-serif;
+}
+
+.active-competitions-title {
+  font-size: 1.5rem;
+}
+
+.active-competitions-box {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 40px;
+}
+
+.active-competitions-corner {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  z-index: 1;
+}
+
+.active-competitions-corner.top-right {
+  top: 6px;
+  right: 6px;
+}
+
+.active-competitions-corner.bottom-left {
+  bottom: 7px;
+  left: 7px;
+}
+
+.active-competitions-card {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 
+              0 1.5px 4px rgba(0, 0, 0, 0.10);
+}
+
+.active-competitions-row {
+  border-radius: 10px;
+  padding: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: white;
+  position: relative;
+  z-index: 2;
+  gap: 20px;
+}
+
+.active-competitions-info {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 200px;
+}
+
+.active-competitions-image {
+  width: 40px;
+  height: 40px;
+  background-color: #f3f4f6;
+  margin-right: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.active-competitions-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.active-competitions-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.active-competitions-stats {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex: 1;
+  justify-content: space-between;
+  margin: 0 20px;
+}
+
+.active-competitions-stats > div {
+  text-align: center;
+  min-width: 120px;
+}
+
+.active-competitions-stats > div:first-child {
+  text-align: left;
+  min-width: 150px;
+}
+
+.active-competitions-stats > div:first-child p {
+  margin: 0 0 4px 0;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.active-competitions-stats > div:first-child b {
+  color: #374151;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.active-competitions-highlight {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.active-competitions-stats span {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.active-competitions-manage {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 80px;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.active-competitions-manage:hover {
+  background-color: #45a049;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .active-competitions-row {
+      flex-direction: column;
+      align-items: flex-start;
+  }
+
+  .active-competitions-stats {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+  }
+
+  .active-competitions-corner {
+      width: 70px;
+      height: 70px;
+  }
+}
+.active-competitions-info-container{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}

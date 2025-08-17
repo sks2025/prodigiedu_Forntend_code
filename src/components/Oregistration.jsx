@@ -23,6 +23,20 @@ import { useParams, useNavigate } from "react-router-dom";
 const { Title } = Typography;
 const { TextArea } = Input;
 
+// Student Details options for dropdowns (for future use)
+const studentDetailOptions = [
+  "Student's Name",
+  "Parent's / Guardian's Name",
+  "Contact number",
+  "Email ID",
+  "City",
+  "Address",
+  "Roll number",
+  "Grade",
+  "Section",
+  "Birth Date"
+];
+
 export default function Oregistration({ fun, ID }) {
   const { id } = useParams();
   const [plans, setPlans] = useState([]);

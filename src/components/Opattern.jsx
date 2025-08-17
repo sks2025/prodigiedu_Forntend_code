@@ -280,6 +280,28 @@ const OPattern = ({ fun, ID }) => {
     label: stage.name,
   }));
 
+  // Format options for the dropdown
+  const formatOptions = [
+    "Single-choice MCQ",
+    "Multiple-choice MCQ",
+    "Fill in the Blanks",
+    "True or False",
+    "Knock-out",
+    "Round-robin",
+    "Subjective",
+    "Numeric",
+    "Buzzer",
+    "Face-off",
+    "Match the column",
+    "Group discussion",
+    "Comprehension",
+    "Verbal",
+    "Written",
+    "Assignment",
+    "Interview",
+    "Presentation"
+  ];
+
   return (
     <div style={{ padding: '0', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
       {/* Tabs Section */}
@@ -376,9 +398,9 @@ const OPattern = ({ fun, ID }) => {
                           style={{ width: '100%' }}
                           suffixIcon={<div style={{ color: '#999' }}>▼</div>}
                         >
-                          <Option value="MCQ">MCQ</Option>
-                          <Option value="Subjective">Subjective</Option>
-                          <Option value="True/False">True/False</Option>
+                          {formatOptions.map(option => (
+                            <Option key={option} value={option}>{option}</Option>
+                          ))}
                         </Select>
                       </Col>
                       <Col span={3}>

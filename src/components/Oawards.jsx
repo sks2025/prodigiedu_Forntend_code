@@ -111,14 +111,13 @@ const Oawards = ({ fun, ID }) => {
 
   // Available award type options
   const awardTypeOptions = [
-    { value: "academic", label: "Academic Excellence" },
-    { value: "sports", label: "Sports Achievement" },
-    { value: "leadership", label: "Leadership Award" },
-    { value: "attendance", label: "Perfect Attendance" },
-    { value: "behavior", label: "Good Behavior" },
-    { value: "participation", label: "Active Participation" },
-    { value: "improvement", label: "Most Improved" },
-    { value: "creativity", label: "Creativity Award" },
+    { value: "certificate", label: "Certificate" },
+    { value: "trophy", label: "Trophy" },
+    { value: "medal", label: "Medal" },
+    { value: "cash", label: "Cash" },
+    { value: "voucher", label: "Voucher" },
+    { value: "scholarship", label: "Scholarship" },
+    { value: "momento", label: "Momento" }
   ];
 
   const handleAwardTypeSelect = (value) => {

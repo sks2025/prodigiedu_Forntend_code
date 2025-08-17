@@ -36,19 +36,36 @@ const OEligibility = ({ fun, ID }) => {
   const competitionId = ID || id;
 
   const criteriaOptions = [
-    { value: 'age_limit', label: 'Age Limit' },
-    { value: 'education', label: 'Education' },
-    { value: 'previous_performance', label: 'Previous Performance' },
-    { value: 'attendance', label: 'Attendance' },
-    { value: 'documents', label: 'Documents' }
+    { value: 'current_grade', label: 'Current Grade' },
+    { value: 'marks_last_year', label: 'Marks in last academic year' },
+    { value: 'age', label: 'Age' },
+    { value: 'rank_previous_round', label: 'Rank in previous round' },
+    { value: 'team_size', label: 'Team Size' },
+    { value: 'participation_same_school', label: 'Participation from same school' }
   ];
 
   const studentDetailOptions = [
-    'Name', 'Mobile', 'Email ID', 'City', 'Address', 'Date of Birth', 'Gender', 'Grade', 'Age', 'Photo'
+    "Student's Name",
+    "Parent's / Guardian's Name",
+    "Contact number",
+    "Email ID",
+    "City",
+    "Address",
+    "Roll number",
+    "Grade",
+    "Section",
+    "Birth Date"
   ];
 
   const schoolDetailOptions = [
-    'School Name', 'School Code', 'School Address', 'Principal Name', 'School Type'
+    "School Name",
+    "Address",
+    "Contact Number",
+    "City",
+    "Type of School",
+    "POC Name",
+    "Email ID",
+    "Student Strength"
   ];
 
   // Fetch competition data and stages when component mounts
@@ -85,8 +102,8 @@ const OEligibility = ({ fun, ID }) => {
             initialDataByTab[stage.id.toString()] = {
               selectedCriteria: [],
               criteriaData: {},
-              studentDetails: ['Name', 'Mobile', 'Email ID', 'City'],
-              schoolDetails: ['School Name']
+              studentDetails: ["Student's Name", "Parent's / Guardian's Name", "Contact number", "Email ID"],
+              schoolDetails: ["School Name", "Address", "Contact Number", "City"]
             };
           });
           
@@ -330,8 +347,8 @@ const OEligibility = ({ fun, ID }) => {
     const currentTabData = dataByTab[activeTab] || {
       selectedCriteria: [],
       criteriaData: {},
-      studentDetails: ['Name', 'Mobile', 'Email ID', 'City'],
-      schoolDetails: ['School Name']
+      studentDetails: ["Student's Name", "Parent's / Guardian's Name", "Contact number", "Email ID"],
+      schoolDetails: ["School Name", "Address", "Contact Number", "City"]
     };
 
     return (

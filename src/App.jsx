@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// import { ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 import Home from "./components/Home";
 import Registration from "./components/Registration";
@@ -58,6 +58,7 @@ import CompitionsPlansSummery from "./components/CompitionsPlansSummery";
 import CompetitionsPlanSummary from "./components/CompitionsPlansSummery";
 import TermsCondition from "./components/TermsCondition";
 import PrivacyPolicy from "./components/PrivacyPolicy";
+import RefyndCancel from "./components/RefyndCancel";
 // import Competitiondetail from "./components/Competitiondetail";
 // import Ocompetitionsdetail from './components/Ocompetitionsdetail';
 
@@ -66,7 +67,7 @@ function App() {
   return (
     <Provider store={store}>
       <Router>
-        <ToastContainer
+        {/* <ToastContainer
           position="top-right"
           autoClose={3000}
           hideProgressBar={false}
@@ -77,7 +78,7 @@ function App() {
           draggable
           pauseOnHover
           theme="light"
-        />
+        /> */}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/student/register/mobile" element={<Registration />} />
@@ -191,6 +192,7 @@ function App() {
           <Route path="/Competitionpaymentsummary" element={<CompetitionsPlanSummary />} />
           <Route path="/termcondition" element={<TermsCondition />} />
           <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+          <Route path="/RefyndCancel" element={<RefyndCancel />} />
 
         </Routes>
       </Router>

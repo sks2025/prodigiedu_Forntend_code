@@ -65,7 +65,7 @@ const Organiservefiemail = () => {
         otp: otpValue,
       }).unwrap();
 
-      toast.success(response.message || 'OTP verified successfully');
+              // toast.success(response.message || 'OTP verified successfully');
       navigate('/organiser/register-details', { state: { mobileNumber, role, name, password, email } });
     } catch (err) {
       setOtpError(err?.data?.message || 'OTP is incorrect. Please try again.');
@@ -82,7 +82,7 @@ const Organiservefiemail = () => {
         }
       }).unwrap();
 
-      toast.success(res.message || 'OTP resent successfully');
+              // toast.success(res.message || 'OTP resent successfully');
 
       // Reset OTP input and timer
       setTimeLeft(90);
@@ -90,7 +90,7 @@ const Organiservefiemail = () => {
       inputRefs[0].current.focus();
       setOtpError('');
     } catch (error) {
-      toast.error(error?.data?.message || 'Failed to resend OTP');
+              // toast.error(error?.data?.message || 'Failed to resend OTP');
     }
   };
 

@@ -8,7 +8,7 @@ import Button from "./common/Button"; // Ensure this is the correct Button compo
 import Input from "./common/Input";
 import Card from "./common/Card";
 import { useOrganisationRegisterMutation } from "../store/api/apiSlice";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import { City } from 'country-state-city';
 const Organiserdetails = () => {
   const cities = City.getCitiesOfState('IN', 'RJ'); // IN = India, RJ = Rajasthan
@@ -166,21 +166,21 @@ const Organiserdetails = () => {
                     const response = await organisationRegister(formData).unwrap();
                     console.log(response, "response");
                     if (response.status || response.data?.status) {
-                      toast.success("Registration successful!");
+                      // toast.success("Registration successful!");
                       navigate("/organiser/login");
                     } else {
-                      toast.error(
-                        response.message || "Registration failed. Please try again."
-                      );
+                      // toast.error(
+                      //   response.message || "Registration failed. Please try again."
+                      // );
                     }
                   } catch (error) {
                     console.error("Registration error:", error);
-                    toast.error(
-                      error?.data?.message || "An error occurred. Please try again."
-                    );
+                    // toast.error(
+                    //   error?.data?.message || "An error occurred. Please try again."
+                    // );
                   }
                 } else {
-                  toast.error("Please fix the form errors before submitting.");
+                  // toast.error("Please fix the form errors before submitting.");
                 }
               }}
             >

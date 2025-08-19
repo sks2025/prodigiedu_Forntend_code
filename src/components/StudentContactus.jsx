@@ -76,7 +76,7 @@ const StudentContactus = () => {
   const isMobile = window.innerWidth < 800;
 
   return (
-      <>
+    <>
       <Studentheaderhome />
       <div className="gen-contact-container">
         {/* Contact Info */}
@@ -88,15 +88,21 @@ const StudentContactus = () => {
           </div>
           <div className="gen-contact-info-row">
             <FiMail color="#fff" size={22} style={{ minWidth: 22 }} />
-            <span>support@connectus.com</span>
+            <span>service@prodigiedu.com</span>
           </div>
           <div className="gen-contact-info-row">
             <FiMapPin color="#fff" size={22} style={{ minWidth: 22 }} />
-            <span>B-202, Sapphire Heights, Borivali (West), Mumbai - 400092</span>
+            <span>A-401, Oberoi Park View,
+              Thakur Village, Kandivali (East),
+              Mumbai - 400101</span>
           </div>
           <div className="gen-contact-icons">
-            <FaTwitter  size={24} className="gen-contact-icon" />
-            <FaInstagram  size={24} className="gen-contact-icon" />
+            <a href="https://x.com/ProdigiEdu" target="_blank" rel="noopener noreferrer">
+            <FaTwitter size={24} className="gen-contact-icon" />
+            </a>
+            <a href="https://www.instagram.com/prodigi_edu/" target="_blank" rel="noopener noreferrer">
+              <FaInstagram size={24} className="gen-contact-icon" />
+            </a>
           </div>
         </div>
         {/* Form */}

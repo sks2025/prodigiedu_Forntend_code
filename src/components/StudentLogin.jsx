@@ -105,16 +105,16 @@ const StudentLogin = () => {
       const data = await response.json();
       setIsLoading(false);
       if (!response.ok) {
-        toast.error(data.message || 'Login failed. Please try again.');
+        // toast.error(data.message || 'Login failed. Please try again.');
         return;
       }
-      localStorage.setItem('token', data.data.token);
-      localStorage.setItem('user', JSON.stringify(data.data.user));
-      toast.success('Login successful!');
+      localStorage.setItem('student_token', data.data.token);
+      localStorage.setItem('student_user', JSON.stringify(data.data.user));
+              // toast.success('Login successful!');
       navigate('/student/dashboard');
     } catch (err) {
       setIsLoading(false);
-      toast.error('Login failed. Please try again.');
+              // toast.error('Login failed. Please try again.');
     }
   };
 
@@ -156,14 +156,14 @@ const StudentLogin = () => {
       }
 
       // Store token and user data
-      localStorage.setItem('token', data.data.token);
-      localStorage.setItem('user', JSON.stringify(data.data.user));
+      localStorage.setItem('student_token', data.data.token);
+      localStorage.setItem('student_user', JSON.stringify(data.data.user));
       
       // Check if this was an account linking scenario
       if (data.accountLinked) {
-        toast.success('Account linked successfully! You can now login with both Google and email/password.');
+        // toast.success('Account linked successfully! You can now login with both Google and email/password.');
       } else {
-        toast.success('Google login successful!');
+                  // toast.success('Google login successful!');
       }
       
       navigate('/student/dashboard');
@@ -172,13 +172,13 @@ const StudentLogin = () => {
       console.error('Google sign-in error:', error);
       
       if (error.code === 'auth/popup-closed-by-user') {
-        toast.info('Sign-in cancelled');
+        // toast.info('Sign-in cancelled');
       } else if (error.code === 'auth/popup-blocked') {
-        toast.error('Popup blocked. Please allow popups for this site.');
+                  // toast.error('Popup blocked. Please allow popups for this site.');
       } else if (error.message && error.message.includes('not configured')) {
-        toast.error('Google login is temporarily unavailable. Please use email/mobile login.');
+                  // toast.error('Google login is temporarily unavailable. Please use email/mobile login.');
       } else {
-        toast.error(error.message || 'Google sign-in failed. Please try again.');
+                  // toast.error(error.message || 'Google sign-in failed. Please try again.');
       }
     } finally {
       setIsGoogleLoading(false);

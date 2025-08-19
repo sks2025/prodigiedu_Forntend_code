@@ -185,37 +185,69 @@ const UserLoginpage = ({ title }) => {
             )
           )}
           
-        
-          <Slider title="Top Competitions" cards={cards} onCardClick={handleCardClick}>
-            {cards.map((card) => (
-              <UserCard 
-                key={card.id} 
-                card={card} 
-                onClick={() => handleCardClick(card.id)}
-                onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
-              />
-            ))}
-          </Slider>
-          <Slider title="Recommended For You" cards={cards} onCardClick={handleCardClick}>
-            {cards.map((card) => (
-              <UserCard 
-                key={card.id} 
-                card={card} 
-                onClick={() => handleCardClick(card.id)}
-                onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
-              />
-            ))}
-          </Slider>
-          <Slider title="Latest Competitions" cards={cards} onCardClick={handleCardClick}>
-            {cards.map((card) => (
-              <UserCard 
-                key={card.id} 
-                card={card} 
-                onClick={() => handleCardClick(card.id)}
-                onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
-              />
-            ))}
-          </Slider>
+          {/* Only show sliders if there are competitions */}
+          {cards && cards.length > 0 ? (
+            <>
+              <Slider title="Top Competitions" cards={cards} onCardClick={handleCardClick}>
+                {cards.map((card) => (
+                  <UserCard 
+                    key={card.id} 
+                    card={card} 
+                    onClick={() => handleCardClick(card.id)}
+                    onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
+                  />
+                ))}
+              </Slider>
+              <Slider title="Recommended For You" cards={cards} onCardClick={handleCardClick}>
+                {cards.map((card) => (
+                  <UserCard 
+                    key={card.id} 
+                    card={card} 
+                    onClick={() => handleCardClick(card.id)}
+                    onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
+                  />
+                ))}
+              </Slider>
+              <Slider title="Latest Competitions" cards={cards} onCardClick={handleCardClick}>
+                {cards.map((card) => (
+                  <UserCard 
+                    key={card.id} 
+                    card={card} 
+                    onClick={() => handleCardClick(card.id)}
+                    onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
+                  />
+                ))}
+              </Slider>
+            </>
+          ) : (
+            /* Show a nice message when no competitions are available */
+            <div style={{ 
+              textAlign: 'center', 
+              margin: '3rem 2rem',
+              padding: '3rem 2rem',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '12px',
+              border: '2px dashed #dee2e6'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '1rem', color: '#6c757d' }}>🏆</div>
+              <h2 style={{ color: '#495057', marginBottom: '1rem', fontSize: '24px' }}>
+                No Competitions Available Right Now
+              </h2>
+              <p style={{ color: '#6c757d', fontSize: '16px', lineHeight: '1.6' }}>
+                Check back later for exciting new competitions and opportunities!
+              </p>
+              <div style={{ 
+                marginTop: '2rem', 
+                padding: '1rem', 
+                backgroundColor: '#e9ecef', 
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: '#495057'
+              }}>
+                💡 <strong>Tip:</strong> New competitions are added regularly. Stay tuned!
+              </div>
+            </div>
+          )}
         </>
       )}
 

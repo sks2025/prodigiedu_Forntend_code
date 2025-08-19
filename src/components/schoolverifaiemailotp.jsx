@@ -48,7 +48,7 @@ const schoolverifaiemailotp = () => {
     const otpValue = otp.join('');
     
     if (otpValue.length !== 4) {
-      toast.error('Please enter a valid 4-digit OTP');
+              // toast.error('Please enter a valid 4-digit OTP');
       return;
     }
 
@@ -58,10 +58,10 @@ const schoolverifaiemailotp = () => {
         otp: otpValue 
       }).unwrap();
       
-      toast.success(response.message || 'OTP verified successfully');
+              // toast.success(response.message || 'OTP verified successfully');
       navigate('/student/register/email-registration', { state: { mobileNumber: location.state?.mobileNumber } });
     } catch (err) {
-      toast.error(err.data?.message || 'Invalid OTP. Please try again.');
+              // toast.error(err.data?.message || 'Invalid OTP. Please try again.');
     }
   };
 
@@ -69,7 +69,7 @@ const schoolverifaiemailotp = () => {
     setTimeLeft(90);
     setOtp(['', '', '', '', '', '']);
     inputRefs[0].current.focus();
-    toast.info('OTP resent successfully');
+            // toast.info('OTP resent successfully');
   };
 
   const formatTime = (seconds) => {

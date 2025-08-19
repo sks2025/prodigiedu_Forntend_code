@@ -470,51 +470,95 @@ const Competition = () => {
           const sortBtnRect = sortBtnRef.current?.getBoundingClientRect();
           const sortModalStyle = {
             position: "absolute",
-            left: sortBtnRect ? sortBtnRect.left + window.scrollX : 0,
+            right: sortBtnRect ? window.innerWidth - sortBtnRect.right + window.scrollX : 0,
             top: sortBtnRect ? sortBtnRect.bottom + window.scrollY + 8 : 0,
             zIndex: 1002,
-            minWidth: 220,
+            minWidth: 280,
+            maxWidth: 320,
             background: "#fff",
             borderRadius: 12,
             boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
             border: "1px solid #e0e0e0",
-            padding: "16px 0",
+            padding: "12px 0",
           };
           return (
             <div className="sort-modal" style={sortModalStyle} ref={sortModalRef} role="menu">
-              <div className="modal-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h4 className="sort-modal-title" style={{ margin: "0 16px 12px 16px" }}>Sort By</h4>
+              <div className="modal-header-row" style={{ 
+                display: "flex", 
+                justifyContent: "space-between", 
+                alignItems: "center",
+                padding: "0 20px 12px 20px",
+                borderBottom: "1px solid #f0f0f0"
+              }}>
+                <h4 className="sort-modal-title" style={{ 
+                  margin: 0, 
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  color: "#333"
+                }}>Sort By</h4>
                 <button
                   className="modal-close-btn"
                   onClick={closeSortModal}
                   aria-label="Close sort dropdown"
-                  style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", padding: "0 16px" }}
+                  style={{ 
+                    background: "none", 
+                    border: "none", 
+                    fontSize: "18px", 
+                    cursor: "pointer", 
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    color: "#666",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = "#f5f5f5";
+                    e.target.style.color = "#333";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = "none";
+                    e.target.style.color = "#666";
+                  }}
                 >
                   ×
                 </button>
               </div>
-              {SORT_OPTIONS.map((opt) => (
-                <div key={opt.value} className="sort-modal-option-wrapper" role="menuitem">
-                  <button
-                    className={`sort-modal-option${selectedSort === opt.value ? " selected" : ""}`}
-                    onClick={() => handleSortSelect(opt.value)}
-                    style={{
-                      background: selectedSort === opt.value ? "#e6f4ea" : "#f6f6f6",
-                      color: selectedSort === opt.value ? "#1a7f37" : "#222",
-                      border: "none",
-                      borderRadius: "8px",
-                      padding: "8px 16px",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontWeight: selectedSort === opt.value ? "bold" : "normal",
-                    }}
-                    aria-selected={selectedSort === opt.value}
-                  >
-                    {opt.label}
-                  </button>
-                </div>
-              ))}
+              <div style={{ padding: "8px 0" }}>
+                {SORT_OPTIONS.map((opt) => (
+                  <div key={opt.value} className="sort-modal-option-wrapper" role="menuitem" style={{ padding: "0 20px" }}>
+                    <button
+                      className={`sort-modal-option${selectedSort === opt.value ? " selected" : ""}`}
+                      onClick={() => handleSortSelect(opt.value)}
+                      style={{
+                        background: selectedSort === opt.value ? "#e6f4ea" : "transparent",
+                        color: selectedSort === opt.value ? "#1a7f37" : "#333",
+                        border: "none",
+                        borderRadius: "8px",
+                        padding: "12px 16px",
+                        width: "100%",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        fontWeight: selectedSort === opt.value ? "600" : "400",
+                        fontSize: "14px",
+                        transition: "all 0.2s ease",
+                        margin: "2px 0"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedSort !== opt.value) {
+                          e.target.style.background = "#f8f9fa";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedSort !== opt.value) {
+                          e.target.style.background = "transparent";
+                        }
+                      }}
+                      aria-selected={selectedSort === opt.value}
+                    >
+                      {opt.label}
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })()}

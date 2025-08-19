@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useVerifyOtpOrganiserPhoneMutation, useSendOtpOrganiserPhoneMutation } from '../store/api/apiSlice';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import Button from './common/Button';
 import Card from './common/Card';
 import './OtpVerification.css';
@@ -52,7 +52,7 @@ const Organiserotpveri = () => {
 
     if (otpValue.length !== 4 || !/^\d{4}$/.test(otpValue)) {
       setError('Please enter a valid 4-digit OTP');
-      toast.error('Please enter a valid 4-digit OTP');
+      // toast.error('Please enter a valid 4-digit OTP');
       return;
     }
 
@@ -62,12 +62,12 @@ const Organiserotpveri = () => {
         otp: otpValue,
       }).unwrap();
       setError('');
-      toast.success(response.message || 'OTP verified successfully');
+              // toast.success(response.message || 'OTP verified successfully');
       navigate('/organiser/register-email', { state: { mobileNumber, role, name } });
     } catch (err) {
       const errorMessage = err?.data?.message || 'OTP incorrect';
       setError(errorMessage);
-      toast.error(errorMessage);
+      // toast.error(errorMessage);
     }
   };
 
@@ -79,11 +79,11 @@ const Organiserotpveri = () => {
 
     try {
       const response = await sendOtpOrganiserPhone({ mobileNumber }).unwrap();
-      toast.success(response.message || 'OTP resent successfully');
+      // toast.success(response.message || 'OTP resent successfully');
     } catch (error) {
       const errorMessage = error?.data?.message || 'Failed to resend OTP';
       setError(errorMessage);
-      toast.error(errorMessage);
+      // toast.error(errorMessage);
     }
   };
 

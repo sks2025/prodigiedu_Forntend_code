@@ -140,6 +140,7 @@ const OrganiserHomepage = ({ title }) => {
       <Organisersheader />
 
       <div className=" container mb-5 active-competitions">
+        <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', marginTop: '20px' }}>Active Competitions</h1>
 
         <div className="active-competitions-box">
           {/* Corner shapes */}
@@ -213,7 +214,7 @@ const OrganiserHomepage = ({ title }) => {
       </div>
 
       <div className="container progress-container">
-        <h2>Your Drafts</h2>
+        <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', marginTop: '20px' }}>Your Drafts</h1>
         <div className="container progress-card-container">
           {draftCompitions?.length > 0 ? (
             draftCompitions.map((comp, index) => (

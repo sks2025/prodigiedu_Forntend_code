@@ -3,7 +3,7 @@ import './StudentLogin.css';
 import './Schoollogin.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSendOtpOrganiserEmailMutation } from '../store/api/apiSlice';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import Button from './common/Button';
 import Input from './common/Input';
 import Card from './common/Card';
@@ -97,7 +97,7 @@ const OrganiserEmailOtosend = () => {
       // alert(mobileNumber)
       // alert(formData.email)
       const response = await sendOtpOrganiserEmail({ data: { email: formData.email, mobileNumber: mobileNumber } }).unwrap();
-      toast.success(response.message || 'OTP sent successfully');
+              // toast.success(response.message || 'OTP sent successfully');
       navigate('/organiser/verify-email-otp', {
         state: {
           email: formData.email,
@@ -112,7 +112,7 @@ const OrganiserEmailOtosend = () => {
 
       const errorMsg = err?.data?.message || 'Failed to send OTP. Please try again.';
       setBackendError(errorMsg);
-      toast.error(errorMsg);
+              // toast.error(errorMsg);
     }
   };
 

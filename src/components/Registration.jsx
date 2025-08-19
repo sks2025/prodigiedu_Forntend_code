@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, NavLink } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Button from './common/Button';
 import Input from './common/Input';
@@ -8,7 +8,8 @@ import './Registration.css';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/apiConfig';
 
 const Registration = () => {
-  const [mobileError, setMobileError] = useState('');
+    const [mobileError, setMobileError] = useState('');
+  const [apiError, setApiError] = useState('');
 
   const [mobileNumber, setMobileNumber] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -19,23 +20,44 @@ const Registration = () => {
   // Form is invalid if mobile number is empty OR terms are not accepted
   const isFormInvalid = !mobileNumber.trim() || !acceptTerms;
   
+  const validateMobileNumber = (mobile) => {
+    // Check if it's exactly 10 digits
+    if (!/^\d{10}$/.test(mobile)) {
+      return 'Enter a valid 10-digit mobile number';
+    }
+    
+    // Check for invalid patterns like all same digits
+    if (/^(\d)\1{9}$/.test(mobile)) {
+      return 'Please enter a valid mobile number';
+    }
+    
+    // Check for common invalid patterns
+    if (/^0{10}$/.test(mobile) || /^1{10}$/.test(mobile)) {
+      return 'Please enter a valid mobile number';
+    }
+    
+    return '';
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMobileError('');
+    setApiError('');
 
     if (!mobileNumber.trim()) {
       setMobileError('Mobile number is required');
       return;
     }
 
-    // Check if mobile number is a valid 10-digit number
-    if (!/^\d{10}$/.test(mobileNumber.trim())) {
-      setMobileError('Enter a valid 10-digit mobile number');
+    // Validate mobile number format
+    const validationError = validateMobileNumber(mobileNumber.trim());
+    if (validationError) {
+      setMobileError(validationError);
       return;
     }
 
     if (!acceptTerms) {
-      toast.error('Please accept the terms and conditions');
+      setApiError('Please accept the terms and conditions');
       return;
     }
 
@@ -48,19 +70,21 @@ const Registration = () => {
       });
       const data = await response.json();
       setIsLoading(false);
+      
       if (!response.ok) {
         if (data.message && data.message.includes('Test mode is active')) {
-          toast.error('Test mode is active. Please use the test mobile number: +911234567890');
+          setApiError('Test mode is active. Please use the test mobile number: +911234567890');
         } else {
-          toast.error(data.message || 'Failed to send OTP. Please try again.');
+          setApiError(data.message || 'Failed to send OTP. Please try again.');
         }
         return;
       }
-      toast.success('OTP sent successfully!');
+      
+      // toast.success('OTP sent successfully!');
       navigate('/student/register/verify-mobile-otp', { state: { mobileNumber } });
     } catch (err) {
       setIsLoading(false);
-      toast.error('Failed to send OTP. Please try again.');
+      setApiError('Failed to send OTP. Please try again.');
     }
   };
 
@@ -71,30 +95,53 @@ const Registration = () => {
         <h1>Register Now to Begin Your Success Journey</h1>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <Input
-              label="Mobile Number"
-              name="mobileNumber"
-              value={mobileNumber}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, ''); // Only allow digits
-                if (value.length <= 10) {
-                  setMobileNumber(value);
-                  if (value.length === 10 || value.length === 0) {
-                    setMobileError('');
-                  } else {
-                    setMobileError('Enter a valid 10-digit mobile number');
-                  }
-                }
-              }}
-              placeholder="Enter your Mobile Number"
-              type="tel"
-              required
-              error={mobileError}
-            />
-          </div>
-          {mobileError && <p className="input-error">{mobileError}</p>}
-          
+          <label htmlFor="mobileNumber" style={{ fontSize: '16px', fontWeight: '' }}>Mobile Number <span style={{ color: 'red' }}> *</span></label>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' ,borderBottom:"2px solid grey"}}>
+             <div style={{ 
+               fontSize: '16px', 
+               fontWeight: 'bold', 
+               color: '#333',
+               minWidth: '40px'
+             }}>
+               +91
+             </div>
+             <div style={{ flex: 1 }}>
+               <Input
+                 id="mobileNumber"
+                 name="mobileNumber"
+                 value={mobileNumber}
+                 onChange={(e) => {
+                   const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+                   if (value.length <= 10) {
+                     setMobileNumber(value);
+                     if (value.length === 10 || value.length === 0) {
+                       setMobileError('');
+                     } else {
+                       setMobileError('Enter a valid 10-digit mobile number');
+                     }
+                   }
+                 }}
+                 placeholder="Enter your Mobile Number"
+                 type="tel"
+                 required
+                                   style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    borderRadius: '0',
+                    fontSize: '16px',
+                    outline: 'none',
+                    transition: 'border-bottom-color 0.3s ease',
+                    backgroundColor: 'transparent'
+                  }}
+                                    onFocus={(e) => e.target.style.borderBottomColor = '#4CAF4F'}
+                  onBlur={(e) => e.target.style.borderBottomColor = '#ccc'}
+                />
+             </div>
+           </div>
+                     {mobileError && <p className="input-error" style={{ color: 'red', fontSize: '14px', marginTop: '5px', marginBottom: '0' }}>{mobileError}</p>}
+           {apiError && <p className="api-error" style={{ color: 'red', fontSize: '14px', marginTop: '5px', marginBottom: '15px', textAlign: 'center' }}>{apiError}</p>}
+
           {/* Test mode notice
           <div style={{ 
             background: '#fff3cd', 
@@ -116,23 +163,38 @@ const Registration = () => {
                 checked={acceptTerms}
                 onChange={(e) => setAcceptTerms(e.target.checked)}
               />
-              <label htmlFor="terms" style={{color: 'blue'}}>I accept the terms & Condition</label>
+              <label htmlFor="terms">
+                I accept the{" "}
+                <NavLink to="/termcondition">Terms & Condition</NavLink>{" "}
+                and{" "}
+                <NavLink to="/privacypolicy">Privacy Policy</NavLink>
+              </label>
             </div>
 
+
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
             <button
               type="submit"
               variant="primary"
               size="large"
               disabled={isFormInvalid}
-              className="submit-btn"
+
               style={{
-                background: isFormInvalid ? "#D3D3D3" : "#4CAF4F"
+                background: isFormInvalid ? "#D3D3D3" : "#4CAF4F",
+                width: '200px',
+                padding: '10px',
+                borderRadius: '5px',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
               }}
             >
               {isLoading ? 'Sending OTP...' : 'Send OTP'}
             </button>
           </div>
-
+          <br />
           <div className="login-link">
             Own an Account? <Link to="/student/login">Log In</Link>
           </div>

@@ -69,21 +69,21 @@ const OtpVerification = () => {
       setIsLoading(false);
       if (!response.ok) {
         setOtpError(data.message || 'Invalid OTP. Please try again.');
-        toast.error(data.message || 'Invalid OTP. Please try again.');
+        // toast.error(data.message || 'Invalid OTP. Please try again.');
         return;
       }
-      toast.success(data.message || 'OTP verified successfully');
+              // toast.success(data.message || 'OTP verified successfully');
       navigate('/student/register/email-registration', { state: { mobileNumber: location.state?.mobileNumber } });
     } catch (err) {
       setIsLoading(false);
       setOtpError('Invalid OTP. Please try again.');
-      toast.error('Invalid OTP. Please try again.');
+              // toast.error('Invalid OTP. Please try again.');
     }
   };
 
   const handleResendOtp = async () => {
     if (!location.state?.mobileNumber) {
-      toast.error('Mobile number not found. Please go back and try again.');
+              // toast.error('Mobile number not found. Please go back and try again.');
       return;
     }
     try {
@@ -94,15 +94,15 @@ const OtpVerification = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data.message || 'Failed to resend OTP. Please try again.');
+        // toast.error(data.message || 'Failed to resend OTP. Please try again.');
         return;
       }
       setTimeLeft(120);
       setOtp(['', '', '', '']);
       inputRefs[0].current.focus();
-      toast.success('OTP resent successfully');
+              // toast.success('OTP resent successfully');
     } catch (err) {
-      toast.error('Failed to resend OTP. Please try again.');
+              // toast.error('Failed to resend OTP. Please try again.');
     }
   };
 

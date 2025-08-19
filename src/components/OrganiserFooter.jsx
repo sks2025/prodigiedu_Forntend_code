@@ -10,16 +10,30 @@ import {
   sendIcon,
 } from "../assets/images";
 import { Link } from "react-router-dom";
-
 import { FaFacebook, FaLinkedin } from "react-icons/fa";
+import headerlogos from "../images/prodigilogowhite.svg"
+import namelogo from "../images/prodigiwhitelogo.svg"
 
 const OrganiserFooter = () => {
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <div>
+        <div>
       <footer>
-        <div class="footer-content">
-          <div class="footer-logo">
-            <p class="logo-text">Prodigi</p>
+        <div className="footer-content">
+          <div className="footer-logo">
+          <Link to="/" style={{textDecoration:"none"}} >
+                             <div className='pt-1' style={{display: 'flex', alignItems: 'center', gap:'5px'}}>
+                 <img src={headerlogos} alt="" style={{height: '30px'}} />
+                 <img src={namelogo} alt="" style={{width: '170px', objectFit: 'cover', display: 'block'}} />
+               </div>
+            </Link>
             <p>
               Thakur Village, Kandivali (East),
               <br />
@@ -40,20 +54,21 @@ const OrganiserFooter = () => {
               </a>
             </div>
           </div>
-          <div class="footer-links">
-            <div class="link-column">
+          <div className="footer-links">
+            <div className="link-column">
               <h4>Company</h4>
-              <Link to="/AboutUs">About us</Link>
-              <Link to="/contact">Contact us</Link>
+              <Link to="/AboutUs" onClick={scrollToTop}>About us</Link>
+              <Link to="/StudentContactus" onClick={scrollToTop}>Contact us</Link>
             </div>
-            <div class="link-column">
+            <div className="link-column">
               <h4>Legal</h4>
-              <Link to="/terms">Terms of service</Link>
-              <Link to="/privacy">Privacy policy</Link>
+              <Link to="/termcondition" onClick={scrollToTop}>Terms of service</Link>
+              <Link to="/privacypolicy" onClick={scrollToTop}>Privacy policy</Link>
+              <Link to="/RefyndCancel" onClick={scrollToTop}>Refund & Cancellation Policy</Link>
             </div>
-            <div class="newsletter">
+            <div className="newsletter">
               <h4>Stay up to date</h4>
-              <div class="subscribe">
+              <div className="subscribe">
                 <input type="email" placeholder="Your email address" />
                 <button type="submit">
                   <img src={sendIcon} alt="Send" />
@@ -63,6 +78,7 @@ const OrganiserFooter = () => {
           </div>
         </div>
       </footer>
+    </div>
     </div>
   )
 }

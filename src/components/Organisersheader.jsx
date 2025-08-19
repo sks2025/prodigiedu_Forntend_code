@@ -6,7 +6,7 @@ import Slider from "react-slick";
 import "./schoolHome.css";
 import { FaHome, FaBars, FaTimes, FaUser, FaCog, FaHistory, FaChartBar, FaSignOutAlt } from "react-icons/fa";
 import { Modal, Button } from "antd";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 
 import headerlogos from "../images/logos2.svg";
 import namelogo from "../images/prodiginew.svg";
@@ -85,7 +85,7 @@ const Organisersheader = () => {
         hideLogoutModal();
 
         // Show success toast
-        toast.success("Logout successful! You have been signed out.");
+        // toast.success("Logout successful! You have been signed out.");
 
         // Redirect to home page
         navigate("/organiser");
@@ -93,7 +93,7 @@ const Organisersheader = () => {
         console.log("Logout successful");
       } else {
         console.error("Logout failed");
-        toast.error("Logout failed. Please try again.");
+        // toast.error("Logout failed. Please try again.");
       }
     } catch (error) {
       console.error("Error during logout:", error);
@@ -103,7 +103,7 @@ const Organisersheader = () => {
       setIsLoggedIn(false);
       setUserData(null);
       hideLogoutModal();
-      toast.success("Logged out successfully!");
+              // toast.success("Logged out successfully!");
       navigate("/");
     } finally {
       setLogoutLoading(false);
@@ -114,7 +114,7 @@ const Organisersheader = () => {
   const handleOrganiserClick = (e) => {
     if (!isLoggedIn) {
       e.preventDefault(); // Prevent navigation
-      toast.error("Please log in or register to access the Organiser Dashboard.");
+              // toast.error("Please log in or register to access the Organiser Dashboard.");
       navigate("/organiser/login"); // Redirect to login page
     } else {
       closeMobileMenu(); // Close mobile menu if open

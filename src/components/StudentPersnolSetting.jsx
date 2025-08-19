@@ -4,7 +4,7 @@ import { FaEdit } from 'react-icons/fa';
 import StudentFooter from './StudentFooter';
 import Studentheaderhome from './Studentheaderhome';
 import { useGetUserProfileQuery, useUpdateUserProfileMutation } from '../store/api/apiSlice';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 
 const initialPersonal = {
   name: 'Saumyata Khandelwal',
@@ -36,6 +36,8 @@ const StudentPersnolSetting = () => {
   const [school, setSchool] = useState(initialSchool);
   const [edit, setEdit] = useState({});
   const [changed, setChanged] = useState(false);
+  const [apiError, setApiError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const { data, isLoading, isError, refetch } = useGetUserProfileQuery();
   const [updateUserProfile, { isLoading: isUpdating }] = useUpdateUserProfileMutation();
 
@@ -59,6 +61,8 @@ const StudentPersnolSetting = () => {
   // Handlers for editing
   const handleEdit = (section, field) => {
     setEdit({ section, field });
+    setApiError(''); // Clear any previous errors when starting to edit
+    setSuccessMessage(''); // Clear any previous success messages
   };
   const handleChange = (e) => {
     setChanged(true);
@@ -71,6 +75,9 @@ const StudentPersnolSetting = () => {
   const handleSave = async () => {
     setEdit({});
     setChanged(false);
+    setApiError(''); // Clear previous errors
+    setSuccessMessage(''); // Clear previous success messages
+    
     // Call API to save changes
     try {
       const [firstName, ...lastArr] = personal.name.split(' ');
@@ -84,14 +91,20 @@ const StudentPersnolSetting = () => {
         address: personal.address,
         guardian: personal.guardian,
       }).unwrap();
+      
       // Update local state so UI reflects changes instantly
       setPersonal({ ...personal, name: `${firstName} ${lastName}`.trim() });
       setEdit({});
       setChanged(false);
+      setSuccessMessage('Profile updated successfully!');
       refetch();
-      toast.success('Profile updated successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
     } catch (e) {
-      toast.error('Failed to update profile');
+      setApiError('Failed to update profile. Please try again.');
+      console.error('Profile update error:', e);
     }
   };
   const handleCancelEdit = () => {
@@ -120,13 +133,44 @@ const StudentPersnolSetting = () => {
           </div>
           <button className="stu-set-delete-btn">Delete Account</button>
         </div>
-        {/* Main Content */}
-        <div className="stu-set-main">
-          {isLoading ? (
-            <div>Loading...</div>
-          ) : isError ? (
-            <div>Error loading profile.</div>
-          ) : active === 'personal' && (
+                 {/* Main Content */}
+         <div className="stu-set-main">
+           {/* Error and Success Messages */}
+           {apiError && (
+             <div style={{ 
+               background: '#ffebee', 
+               border: '1px solid #f44336', 
+               borderRadius: '6px', 
+               padding: '12px 16px', 
+               marginBottom: '20px',
+               color: '#d32f2f',
+               fontSize: '14px',
+               textAlign: 'center'
+             }}>
+               {apiError}
+             </div>
+           )}
+           
+           {successMessage && (
+             <div style={{ 
+               background: '#e8f5e8', 
+               border: '1px solid #4caf50', 
+               borderRadius: '6px', 
+               padding: '12px 16px', 
+               marginBottom: '20px',
+               color: '#2e7d32',
+               fontSize: '14px',
+               textAlign: 'center'
+             }}>
+               {successMessage}
+             </div>
+           )}
+           
+           {isLoading ? (
+             <div>Loading...</div>
+           ) : isError ? (
+             <div>Error loading profile.</div>
+           ) : active === 'personal' && (
             <>
               <div className="stu-set-title">Personal Details</div>
               <div className="stu-set-row">

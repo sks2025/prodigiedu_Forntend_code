@@ -5,7 +5,7 @@ import Button from "./common/Button";
 import Card from "./common/Card";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { useOrganisationresetpasswordMutation } from "../store/api/apiSlice";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 
 const Organisernewpassword = () => {
   const navigate = useNavigate();
@@ -65,13 +65,13 @@ const Organisernewpassword = () => {
 
     if (passwordError || reenterPasswordError) {
       setErrors({ password: passwordError, reenterPassword: reenterPasswordError });
-      toast.error("Please fix the errors before submitting.");
+      // toast.error("Please fix the errors before submitting.");
       return;
     }
 
     // Check if mobileNumber exists
     if (!mobileNumber) {
-      toast.error("Invalid session. Please try again from the start.");
+      // toast.error("Invalid session. Please try again from the start.");
       navigate("/organiser/login");
       return;
     }
@@ -83,12 +83,12 @@ const Organisernewpassword = () => {
       };
       const response = await resetpassword(credentials).unwrap();
       if (response.status) {
-        toast.success("Password updated successfully!");
+        // toast.success("Password updated successfully!");
         navigate("/organiser/login");
       }
     } catch (error) {
       console.error("Password reset error:", error);
-      toast.error(error.data?.message || "Something went wrong. Try again.");
+              // toast.error(error.data?.message || "Something went wrong. Try again.");
     }
   };
 

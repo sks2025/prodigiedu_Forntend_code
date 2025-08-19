@@ -30,7 +30,7 @@ const Schoollogin = () => {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      toast.error('Please fill in all required fields');
+              // toast.error('Please fill in all required fields');
       return;
     }
 
@@ -47,10 +47,10 @@ const Schoollogin = () => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
-      toast.success('Login successful!');
+              // toast.success('Login successful!');
       navigate('/dashboard'); // Redirect to dashboard or home page
     } catch (err) {
-      toast.error(err.data?.message || 'Login failed. Please try again.');
+              // toast.error(err.data?.message || 'Login failed. Please try again.');
     }
   };
 

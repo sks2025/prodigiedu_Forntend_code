@@ -4,8 +4,8 @@ import "./ForgotPassword.css";
 import "./Schoolforgatpassword.css";
 import Card from "./common/Card";
 import { useOrganisationforgetpassotpMutation } from "../store/api/apiSlice";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// import { toast, ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
 import Input from "../components/common/Input";
 
 const Organiserforgetpassword = () => {
@@ -32,9 +32,9 @@ const Organiserforgetpassword = () => {
 
     const mobileRegex = /^[6-9]\d{9}$/;
     if (!mobileRegex.test(formData.mobileNumber)) {
-      toast.error(
-        "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9"
-      );
+      // toast.error(
+      //   "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9"
+      // );
       return;
     }
 
@@ -56,7 +56,7 @@ const Organiserforgetpassword = () => {
         } else if (method === "email") {
           successMessage = "OTP sent successfully via email!";
         }
-        toast.success(successMessage);
+        // toast.success(successMessage);
 
         // ✅ Delay navigation so toast is visible for 1.5 seconds
         setTimeout(() => {
@@ -69,25 +69,25 @@ const Organiserforgetpassword = () => {
           });
         }, 1500);
       } else {
-        toast.error(response.message || "Something went wrong. Try again.");
+        // toast.error(response.message || "Something went wrong. Try again.");
       }
     } catch (error) {
       console.error("Error sending OTP:", error);
 
       if (error?.status === 404) {
-        toast.error(
-          "No account found with this mobile number. Please check and try again."
-        );
+        // toast.error(
+        //   "No account found with this mobile number. Please check and try again."
+        // );
       } else if (error?.status === 400) {
-        toast.error(
-          error?.data?.message ||
-            "Invalid request. Please check your mobile number."
-        );
+        // toast.error(
+        //   error?.data?.message ||
+        //     "Invalid request. Please check your mobile number."
+        // );
       } else {
-        toast.error(
-          error?.data?.message ||
-            "Something went wrong. Please try again later."
-        );
+        // toast.error(
+        //   error?.data?.message ||
+        //     "Something went wrong. Please try again later."
+        // );
       }
     }
   };
@@ -201,7 +201,7 @@ const Organiserforgetpassword = () => {
         </div>
       </div>
 
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+              {/* <ToastContainer position="top-right" autoClose={3000} hideProgressBar /> */}
     </div>
   );
 };

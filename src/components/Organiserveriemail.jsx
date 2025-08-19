@@ -116,7 +116,7 @@ const Organiserveriemail = () => {
     console.log("API Response:", response);
 
     if (response.status) {
-      toast.success("OTP sent successfully!");
+      // toast.success("OTP sent successfully!");
       Navigate("/organiser/verify-opt", {
         state: {
           mobileNumber: formData.mobile_num,
@@ -133,7 +133,7 @@ const Organiserveriemail = () => {
     } else if (error.error) {
       errorMessage = error.error;
     }
-    toast.error(errorMessage);
+    // toast.error(errorMessage);
   }
 };
 

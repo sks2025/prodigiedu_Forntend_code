@@ -4,7 +4,7 @@ import "./OrganiserProfileEdit.css";
 import "./Compition.css";
 import JoditEditor from "jodit-react";
 import Organisersheader from "./Organisersheader";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import debounce from "lodash/debounce"; // Ensure lodash is installed: npm install lodash
 import OrganiserFooter from "./OrganiserFooter";
 
@@ -68,7 +68,7 @@ const OrganiserProfileUpdate = () => {
       }
     } catch (error) {
       setError(error.message);
-      toast.error(`Error fetching competitions: ${error.message}`);
+              // toast.error(`Error fetching competitions: ${error.message}`);
       setCards([]); // Set empty array on error
     } finally {
       setLoading(false);
@@ -110,7 +110,7 @@ const OrganiserProfileUpdate = () => {
       }
     } catch (error) {
       setError(error.message);
-      toast.error(`Error fetching profile: ${error.message}`);
+              // toast.error(`Error fetching profile: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -156,14 +156,14 @@ const OrganiserProfileUpdate = () => {
       const result = await response.json();
       if (response.ok) {
         setProfile({ ...profile, ...result.data });
-        toast.success("Profile updated successfully");
+        // toast.success("Profile updated successfully");
         navigate("/OrganiserProfile");
       } else {
         throw new Error(result.message || "Failed to update profile");
       }
     } catch (error) {
       setError(error.message);
-      toast.error(`Error updating profile: ${error.message}`);
+              // toast.error(`Error updating profile: ${error.message}`);
     } finally {
       setLoading(false);
       setShowModal(false);

@@ -4,7 +4,7 @@ import {
   useOrganisationforgetpassotpverifyMutation,
   useOrganisationforgetpassotpMutation,
 } from "../store/api/apiSlice";
-import { toast, ToastContainer } from "react-toastify";
+// import { toast, ToastContainer } from "react-toastify";
 import Button from "./common/Button";
 import Card from "./common/Card";
 import "./OtpVerification.css";
@@ -65,7 +65,7 @@ const Organiserforgetvefiemail = () => {
     const otpValue = otp.join("");
 
     if (otpValue.length !== 4) {
-      toast.error("Please enter a valid 4-digit OTP");
+      // toast.error("Please enter a valid 4-digit OTP");
       return;
     }
 
@@ -77,7 +77,7 @@ const Organiserforgetvefiemail = () => {
       const response = await verifyforgetpassOtp(credentials).unwrap();
       if (response.status) {
         // ✅ Delay toast to allow navigation without flicker
-        toast.success("OTP verified successfully");
+        // toast.success("OTP verified successfully");
 
         navigate("/organiser/create-new-password", {
           state: { mobileNumber, email },
@@ -86,7 +86,7 @@ const Organiserforgetvefiemail = () => {
     } catch (err) {
       console.log(err);
       setTimeout(() => {
-        toast.error(err.data?.message || "Invalid OTP. Please try again.");
+        // toast.error(err.data?.message || "Invalid OTP. Please try again.");
       }, 300);
     }
   };
@@ -105,18 +105,18 @@ const Organiserforgetvefiemail = () => {
         inputRefs[0].current.focus();
 
         // ✅ Delay toast for better UX
-        toast.success("OTP resent successfully");
+        // toast.success("OTP resent successfully");
       } else {
         setTimeout(() => {
-          toast.error(response.message || "Failed to resend OTP");
+                      // toast.error(response.message || "Failed to resend OTP");
         }, 300);
       }
     } catch (error) {
       console.error("Error resending OTP:", error);
       setTimeout(() => {
-        toast.error(
-          error?.data?.message || "Failed to resend OTP. Please try again."
-        );
+        // toast.error(
+        //   error?.data?.message || "Failed to resend OTP. Please try again."
+        // );
       }, 300);
     }
   };
@@ -190,7 +190,7 @@ const Organiserforgetvefiemail = () => {
           </Button>
         </div>
       </Card>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+      {/* <ToastContainer position="top-right" autoClose={3000} hideProgressBar /> */}
     </div>
   );
 };

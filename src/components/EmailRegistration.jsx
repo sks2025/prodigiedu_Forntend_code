@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import './EmailRegistration.css';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import Button from './common/Button';
 import Input from './common/Input';
 import Card from './common/Card';
@@ -26,6 +26,7 @@ const EmailRegistration = () => {
   });
 
   const [formErrors, setFormErrors] = useState({});
+  const [apiError, setApiError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [touched, setTouched] = useState({});
@@ -127,6 +128,7 @@ const EmailRegistration = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setHasSubmitted(true);
+    setApiError(''); // Clear previous API errors
     const errors = validate(formData);
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -137,7 +139,7 @@ const EmailRegistration = () => {
 
     // Defensive: If dateOfBirth is empty, don't submit
     if (!formData.dateOfBirth) {
-      toast.error('Date of Birth is required');
+      setApiError('Date of Birth is required');
       return;
     }
 
@@ -156,14 +158,14 @@ const EmailRegistration = () => {
       const data = await response.json();
       setIsLoading(false);
       if (!response.ok) {
-        toast.error(data.message || 'Registration failed. Please try again.');
+        setApiError(data.message || 'Registration failed. Please try again.');
         return;
       }
-      toast.success('Registration successful!');
+      // toast.success('Registration successful!');
       navigate('/registration-success');
     } catch (err) {
       setIsLoading(false);
-      toast.error('Registration failed. Please try again.');
+      setApiError('Registration failed. Please try again.');
     }
   };
 
@@ -195,7 +197,7 @@ const EmailRegistration = () => {
           {/* First Name + Middle Name */}
           <div className="form-row">
             <div className="form-group">
-              <Input label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} onBlur={handleBlur} placeholder="Saumyata" />
+              <Input label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} onBlur={handleBlur} placeholder="First Name" />
               {(touched.firstName || hasSubmitted) && formErrors.firstName && <p className="input-error">{formErrors.firstName}</p>}
             </div>
             <div className="form-group">
@@ -214,7 +216,7 @@ const EmailRegistration = () => {
                 value={formData.lastName}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="Khandelwal"
+                placeholder="Last Name"
               />
               {(touched.lastName || hasSubmitted) && formErrors.lastName && (
                 <p className="input-error">{formErrors.lastName}</p>
@@ -275,10 +277,45 @@ const EmailRegistration = () => {
             )}
           </div>
 
-          {/* Submit */}
-          <button type="submit" className="submit-btn" disabled={!isFormValid()} style={{ background: isFormValid() ? '#4CAF4F' : '#D3D3D3', cursor: isFormValid() ? 'pointer' : 'not-allowed' }}>
-            {isLoading ? 'Creating Account...' : 'Create Account'}
-          </button>
+                     {/* API Error Display */}
+           {apiError && (
+             <div style={{ 
+               background: '#ffebee', 
+               border: '1px solid #f44336', 
+               borderRadius: '6px', 
+               padding: '12px 16px', 
+               marginBottom: '20px',
+               color: '#d32f2f',
+               fontSize: '14px',
+               textAlign: 'center'
+             }}>
+               {apiError}
+             </div>
+           )}
+
+           {/* Submit */}
+           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', marginBottom: '20px' }}>
+             <button 
+               type="submit" 
+               className="submit-btn1" 
+               disabled={!isFormValid()} 
+               style={{ 
+                 background: isFormValid() ? '#4CAF4F' : '#D3D3D3', 
+                 cursor: isFormValid() ? 'pointer' : 'not-allowed',
+                 width: '200px',
+                 padding: '12px 24px',
+                 borderRadius: '6px',
+                 color: 'white',
+                 border: 'none',
+                 fontSize: '16px',
+                 fontWeight: '500',
+                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                 transition: 'all 0.3s ease'
+               }}
+             >
+               {isLoading ? 'Creating Account...' : 'Create Account'}
+             </button>
+           </div>
         </form>
       </Card>
     </div>

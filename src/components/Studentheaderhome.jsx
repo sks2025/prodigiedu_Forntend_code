@@ -17,7 +17,7 @@ import namelogo from "../images/prodiginew.svg"
 
 const Studentheaderhome = () => {
   // Example: Assume token in localStorage means user is logged in
-  const isLoggedIn = !!localStorage.getItem('token');
+  const isLoggedIn = !!localStorage.getItem('student_token');
 
   // State for MUI Menu
   const [anchorEl, setAnchorEl] = useState(null);
@@ -34,7 +34,7 @@ const Studentheaderhome = () => {
   // Logout handler
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('student_token');
       await fetch('https://api.prodigiedu.com/api/users/logout', {
         method: 'POST',
         headers: {
@@ -45,9 +45,9 @@ const Studentheaderhome = () => {
     } catch (err) {
       // Optionally handle error
     }
-    localStorage.removeItem('token');
+    localStorage.removeItem('student_token');
     handleClose();
-    toast.success('Logout successful!');
+            // toast.success('Logout successful!');
     navigate('/');
   };
 
@@ -58,8 +58,8 @@ const Studentheaderhome = () => {
           <div className="logo">
            
             <Link style={{textDecoration:"none"}} to="/">
-              <div className='pt-2' style={{display: 'flex', alignItems: 'center', minHeight: '70px'}}>
-                <img src={headerlogos} alt="" style={{height: '50px'}} />
+              <div className='pt-2' style={{display: 'flex', alignItems: 'center', minHeight: '70px', gap:'0'}}>
+                <img src={headerlogos} alt="" style={{height: '40px'}} />
                 <img src={namelogo} alt="" style={{width: '270px', objectFit: 'cover', display: 'block'}} />
               </div>
             </Link>
@@ -68,7 +68,7 @@ const Studentheaderhome = () => {
             <Link to="/" className="active">Home</Link>
             <Link to="/schoolHome">Schools</Link>
             <Link to="/organiser">Organiser</Link>
-            <Link to="#">Testimonial</Link>
+            {/* <Link to="#">Testimonial</Link> */}
             <Link to="/compition">Competitions</Link>
           
             {isLoggedIn ? (

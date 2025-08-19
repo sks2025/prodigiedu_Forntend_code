@@ -5,7 +5,7 @@ import Button from "./common/Button";
 import Input from "./common/Input";
 import Card from "./common/Card";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/apiConfig";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 const ForgotPasswordVerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,13 +52,13 @@ const ForgotPasswordVerifyOTP = () => {
     
     if (otpString.length !== 4) {
       setError("Please enter complete 4-digit OTP");
-      toast.error("Please enter complete 4-digit OTP");
+      // toast.error("Please enter complete 4-digit OTP");
       return;
     }
 
     if (!mobileNumber) {
       setError("Mobile number not found. Please start over.");
-      toast.error("Mobile number not found. Please start over.");
+              // toast.error("Mobile number not found. Please start over.");
       return;
     }
 
@@ -81,7 +81,7 @@ const ForgotPasswordVerifyOTP = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        toast.success(result.message);
+        // toast.success(result.message);
         setSuccessMessage("");
         // Navigate to password reset page with mobile number
         setTimeout(() => {
@@ -94,12 +94,12 @@ const ForgotPasswordVerifyOTP = () => {
         }, 1500);
       } else {
         setError(result.message || 'Invalid OTP. Please try again.');
-        toast.error(result.message || 'Invalid OTP. Please try again.');
+        // toast.error(result.message || 'Invalid OTP. Please try again.');
       }
     } catch (error) {
       console.error('Error verifying OTP:', error);
       setError('Network error. Please check your connection and try again.');
-      toast.error('Network error. Please check your connection and try again.');
+              // toast.error('Network error. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -126,19 +126,19 @@ const ForgotPasswordVerifyOTP = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        toast.success("OTP resent successfully!");
+        // toast.success("OTP resent successfully!");
         setSuccessMessage("");
         setTimer(120);
         setCanResend(false);
         setOtp(["", "", "", ""]);
       } else {
         setError(result.message || 'Failed to resend OTP');
-        toast.error(result.message || 'Failed to resend OTP');
+        // toast.error(result.message || 'Failed to resend OTP');
       }
     } catch (error) {
       console.error('Error resending OTP:', error);
       setError('Network error. Please try again.');
-      toast.error('Network error. Please try again.');
+              // toast.error('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }

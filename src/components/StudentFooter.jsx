@@ -7,14 +7,30 @@ import {
 import { FaFacebook, FaLinkedin } from 'react-icons/fa'
 import "./home.css"
 import { Link } from 'react-router-dom'
+import headerlogos from "../images/prodigilogowhite.svg"
+import namelogo from "../images/prodigiwhitelogo.svg"
+
+
 const StudentFooter = () => {
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <div>
         <div>
       <footer>
         <div className="footer-content">
           <div className="footer-logo">
-            <p className="logo-text">Prodigi</p>
+          <Link to="/" style={{textDecoration:"none"}} >
+                <div className='pt-1' style={{display: 'flex', alignItems: 'center', gap:'5px'}}>
+                 <img src={headerlogos} alt="" style={{height: '30px'}} />
+                 <img src={namelogo} alt="" style={{width: '170px', objectFit: 'cover', display: 'block'}} />
+               </div>
+            </Link>
             <p>
               Thakur Village, Kandivali (East),
               <br />
@@ -38,13 +54,14 @@ const StudentFooter = () => {
           <div className="footer-links">
             <div className="link-column">
               <h4>Company</h4>
-              <Link to="/AboutUs">About us</Link>
-              <Link to="/StudentContactus">Contact us</Link>
+              <Link to="/AboutUs" onClick={scrollToTop}>About us</Link>
+              <Link to="/StudentContactus" onClick={scrollToTop}>Contact us</Link>
             </div>
             <div className="link-column">
               <h4>Legal</h4>
-              <Link to="/terms">Terms of service</Link>
-              <Link to="/privacy">Privacy policy</Link>
+              <Link to="/termcondition" onClick={scrollToTop}>Terms of service</Link>
+              <Link to="/privacypolicy" onClick={scrollToTop}>Privacy policy</Link>
+              <Link to="/RefyndCancel" onClick={scrollToTop}>Refund & Cancellation Policy</Link>
             </div>
             <div className="newsletter">
               <h4>Stay up to date</h4>

@@ -3,7 +3,7 @@ import './StudentLogin.css';
 import './Schoollogin.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useOrganisationloginMutation } from '../store/api/apiSlice';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import Button from './common/Button';
 import Input from './common/Input';
 import Card from './common/Card';
@@ -93,7 +93,7 @@ const Organiserlogin = () => {
       localStorage.setItem('user_Data', JSON.stringify(response.data));
       navigate('/organiser/dashboard');
     } catch (err) {
-      toast.error(err.data?.message || 'Login failed. Please try again.');
+              // toast.error(err.data?.message || 'Login failed. Please try again.');
     }
   };
 

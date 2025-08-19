@@ -169,16 +169,16 @@ const OrganiserHomepage = ({ title }) => {
                       </div>
                     </div>
                     <div className="mt-2" style={{ lineHeight: ".5", }}>
-                      <p style={{ fontSize: "14px" }}>Total Schools Reached: <b>{comp.schoolsReached || comp.totalSchools || "30,769"}</b></p>
+                      <p style={{ fontSize: "14px" }}>Total Schools Reached: <b>{comp.schoolsReached || comp.totalSchools || "0"}</b></p>
                       <p style={{ fontSize: "14px" }}>Total Wishlists: <b>{comp.wishlists || comp.totalWishlists || 0}</b></p>
                     </div>
 
                     <div>
-                      <p className="active-competitions-highlight" style={{ fontSize: "14px" }}>₹{comp.revenue || comp.totalRevenue || "5.9Cr "}</p>
+                      <p className="active-competitions-highlight" style={{ fontSize: "14px" }}>₹{comp.revenue || comp.totalRevenue || "0 "}</p>
                       <span style={{ fontSize: "14px" }}>Total Revenue</span>
                     </div>
                     <div>
-                      <p className="active-competitions-highlight" style={{ fontSize: "14px" }}>{comp.enrollments || comp.totalEnrollments || "1,00,000"}</p>
+                      <p className="active-competitions-highlight" style={{ fontSize: "14px" }}>{comp.enrollments || comp.totalEnrollments || "0"}</p>
                       <span style={{ fontSize: "14px" }}>Total Enrollments</span>
                     </div>
                     <div className="">

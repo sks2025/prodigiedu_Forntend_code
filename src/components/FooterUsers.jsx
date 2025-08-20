@@ -15,6 +15,8 @@ const FooterUsers = () => {
           <div class="footer-logo">
             <p class="logo-text">Prodigi</p>
             <p>
+              ProdigiEdu Services Private Limited
+              <br />
               Thakur Village, Kandivali (East),
               <br />
               Mumbai - 400101

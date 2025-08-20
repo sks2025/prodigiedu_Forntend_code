@@ -35,6 +35,8 @@ const OrganiserFooter = () => {
                </div>
             </Link>
             <p>
+              ProdigiEdu Services Private Limited
+              <br />
               Thakur Village, Kandivali (East),
               <br />
               Mumbai - 400101

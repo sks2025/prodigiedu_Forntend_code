@@ -92,8 +92,12 @@ const StudentContactus = () => {
           </div>
           <div className="gen-contact-info-row">
             <FiMapPin color="#fff" size={22} style={{ minWidth: 22 }} />
-            <span>A-401, Oberoi Park View,
+            <span>ProdigiEdu Services Private Limited
+              <br />
+              A-401, Oberoi Park View,
+              <br />
               Thakur Village, Kandivali (East),
+              <br />
               Mumbai - 400101</span>
           </div>
           <div className="gen-contact-icons">

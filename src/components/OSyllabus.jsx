@@ -49,6 +49,7 @@ const OSyllabus = ({ fun, ID }) => {
   const [selectedCategory, setSelectedCategory] = useState("Academic"); // New state for selected category
   const [showSubjectSelector, setShowSubjectSelector] = useState(false); // New state for subject selector visibility
   const [autoSaveInProgress, setAutoSaveInProgress] = useState(false); // New state for auto-save progress
+  const [showTopicsField, setShowTopicsField] = useState(false); // New state to control topics field visibility
   
   // Use ID from props if available, otherwise use id from params
   const competitionId = ID || id;
@@ -92,7 +93,7 @@ const OSyllabus = ({ fun, ID }) => {
       "Critical Thinking"
     ]
   };
-  
+
   const allTopics = [
     "Maths",
     "English", 
@@ -184,11 +185,7 @@ const OSyllabus = ({ fun, ID }) => {
     ]
   };
 
-  const handleSubjectSelect = (subjectName) => {
-    if (!subjects.includes(subjectName)) {
-      setSubjects([...subjects, subjectName]);
-    }
-  };
+
 
   const handleSubjectRemove = (subjectName) => {
     const newSubjects = subjects.filter(subject => subject !== subjectName);
@@ -459,12 +456,25 @@ const OSyllabus = ({ fun, ID }) => {
     });
   };
 
-  const availableTopics = allTopics.filter(
-    (topic) =>
-      !(topicsByTab[activeTab] || []).some(
-        (selectedTopic) => selectedTopic.name === topic
-      )
-  );
+  // Only show topics for Academic subjects, not for Extra-curricular or Others
+  const availableTopics = allTopics.filter((topic) => {
+    // First, check if topic is not already selected in current tab
+    const isAlreadySelected = (topicsByTab[activeTab] || []).some(
+      (selectedTopic) => selectedTopic.name === topic
+    );
+    
+    if (isAlreadySelected) return false;
+    
+    // Only show topics if user has selected Academic subjects
+    const hasAcademicSubjects = subjects.some(subjectName => 
+      subjectCategories["Academic"].includes(subjectName)
+    );
+    
+    if (!hasAcademicSubjects) return false;
+    
+    // Only show Academic topics
+    return subjectCategories["Academic"].includes(topic);
+  });
 
   // Create tab items dynamically based on stages
   const tabItems = stages.map((stage) => ({
@@ -505,13 +515,7 @@ const OSyllabus = ({ fun, ID }) => {
     return { syllabus: { topics } };
   };
 
-  // Check if weightage total is 100%
-  const isWeightageValid = () => {
-    // Remove strict validation - allow any weightage total
-    return true;
-  };
-
-  // Get weightage total for display
+  // Get weightage total for display (if needed)
   const getWeightageTotal = () => {
     const currentTopics = topicsByTab[activeTab] || [];
     return currentTopics.reduce((sum, topic) => sum + (topic.weight || 0), 0);
@@ -519,41 +523,64 @@ const OSyllabus = ({ fun, ID }) => {
 
   // Modified saveSyllabus function to handle create or update
   const saveSyllabus = async () => {
-    // Validate that at least one topic exists (which will have subjectstype)
-    const allTopics = Object.values(topicsByTab).flat();
-    if (allTopics.length === 0) {
-      message.warning("Please select at least one topic in any stage before saving.");
-      return;
-    }
+    // Check if user has Academic subjects
+    const hasAcademicSubjects = subjects.some(subjectName => 
+      subjectCategories["Academic"].includes(subjectName)
+    );
 
-    // Remove weightage validation - allow any weightage values
-    // if (showWeightage && !isWeightageValid()) {
-    //   message.error(`Weightage total must be 100%. Current total: ${getWeightageTotal()}%`);
-    //   return;
-    // }
+    let data;
+    
+    if (hasAcademicSubjects) {
+      // For Academic subjects, validate topics
+      const allTopics = Object.values(topicsByTab).flat();
+      if (allTopics.length === 0) {
+        message.warning("Please select at least one topic in any stage before saving.");
+        return;
+      }
 
-    const data = transformDataForAPI();
-    const topics = data.syllabus.topics;
+      data = transformDataForAPI();
+      const topics = data.syllabus.topics;
 
-    if (!Array.isArray(topics) || topics.length === 0) {
-      message.warning(
-        "Please select at least one topic in any stage before saving."
-      );
-      return;
-    }
+      if (!Array.isArray(topics) || topics.length === 0) {
+        message.warning("Please select at least one topic in any stage before saving.");
+        return;
+      }
 
-    // Check if all stages have at least one topic
-    const stagesWithoutTopics = stages.filter(stage => {
-      const stageTopics = topicsByTab[stage.id.toString()] || [];
-      return stageTopics.length === 0;
-    });
+      // Check if all stages have at least one topic
+      const stagesWithoutTopics = stages.filter(stage => {
+        const stageTopics = topicsByTab[stage.id.toString()] || [];
+        return stageTopics.length === 0;
+      });
 
-    if (stagesWithoutTopics.length > 0) {
-      const stageNames = stagesWithoutTopics.map(stage => stage.name).join(', ');
-      message.warning(
-        `Please add at least one topic to the following stage(s): ${stageNames}`
-      );
-      return;
+      if (stagesWithoutTopics.length > 0) {
+        const stageNames = stagesWithoutTopics.map(stage => stage.name).join(', ');
+        message.warning(
+          `Please add at least one topic to the following stage(s): ${stageNames}`
+        );
+        return;
+      }
+    } else {
+      // For Extra-curricular or Others only, create topics from subjects
+      data = {
+        syllabus: {
+          topics: subjects.map(subjectName => {
+            let subjectType = "Others";
+            for (const [category, subjectList] of Object.entries(subjectCategories)) {
+              if (subjectList.includes(subjectName)) {
+                subjectType = category;
+                break;
+              }
+            }
+            return {
+              name: subjectName,
+              weight: 0,
+              subtopics: [],
+              stage: stages.length > 0 ? stages[0].name : "Default",
+              subjectstype: subjectType
+            };
+          })
+        }
+      };
     }
 
     setLoading(true);
@@ -718,13 +745,37 @@ const OSyllabus = ({ fun, ID }) => {
   // Debug subjects state changes
   useEffect(() => {
     console.log("Subjects state changed:", subjects);
+    // Show topics field only when Academic subjects are selected
+    const hasAcademicSubjects = subjects.some(subjectName => 
+      subjectCategories["Academic"].includes(subjectName)
+    );
+    setShowTopicsField(hasAcademicSubjects);
   }, [subjects]);
 
-  // Check if all stages have topics for save button state
-  const allStagesHaveTopics = stages.length > 0 && stages.every(stage => {
-    const stageTopics = topicsByTab[stage.id.toString()] || [];
-    return stageTopics.length > 0;
-  });
+  // Check if save button should be active
+  const canSave = () => {
+    // Must have stages
+    if (stages.length === 0) return false;
+    
+    // Must have subjects selected
+    if (subjects.length === 0) return false;
+    
+    // If user has Academic subjects, they must add topics to all stages
+    const hasAcademicSubjects = subjects.some(subjectName => 
+      subjectCategories["Academic"].includes(subjectName)
+    );
+    
+    if (hasAcademicSubjects) {
+      // All stages must have topics
+      return stages.every(stage => {
+        const stageTopics = topicsByTab[stage.id.toString()] || [];
+        return stageTopics.length > 0;
+      });
+    } else {
+      // For Extra-curricular or Others only, just having subjects is enough
+      return true;
+    }
+  };
 
   return (
     <div>
@@ -961,35 +1012,37 @@ const OSyllabus = ({ fun, ID }) => {
               </Col>
             </Row>
 
-            {/* Topics Field */}
-            <Row gutter={24} align="middle" style={{ marginBottom: "32px" }}>
-              <Col span={24}>
-                <Form.Item
-                  label={
-                    <span style={{ fontSize: "16px", fontWeight: "500" }}>
-                      Topics<span style={{ color: "red" }}>*</span>
-                    </span>
-                  }
-                  style={{ marginBottom: 0 }}
-                >
-                  <Select
-                    placeholder="Select All Topics"
-                    style={{ width: "100%" }}
-                    suffixIcon={<DownOutlined />}
-                    size="large"
-                    value={selectedTopicFromDropdown}
-                    onChange={handleTopicSelect}
-                    onSelect={() => setSelectedTopicFromDropdown(null)}
+            {/* Topics Field - Only show when subjects are selected */}
+            {showTopicsField && (
+              <Row gutter={24} align="middle" style={{ marginBottom: "32px" }}>
+                <Col span={24}>
+                  <Form.Item
+                    label={
+                      <span style={{ fontSize: "16px", fontWeight: "500" }}>
+                        Topics<span style={{ color: "red" }}>*</span>
+                      </span>
+                    }
+                    style={{ marginBottom: 0 }}
                   >
-                    {availableTopics.map((topic, index) => (
-                      <Option key={index} value={topic}>
-                        {topic}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
+                    <Select
+                      placeholder="Select All Topics"
+                      style={{ width: "100%" }}
+                      suffixIcon={<DownOutlined />}
+                      size="large"
+                      value={selectedTopicFromDropdown}
+                      onChange={handleTopicSelect}
+                      onSelect={() => setSelectedTopicFromDropdown(null)}
+                    >
+                      {availableTopics.map((topic, index) => (
+                        <Option key={index} value={topic}>
+                          {topic}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+            )}
 
             {(topicsByTab[activeTab] || []).length > 0 && (
               <div style={{ marginBottom: "32px" }}>
@@ -1225,8 +1278,8 @@ const OSyllabus = ({ fun, ID }) => {
                 type="primary"
                 size="large"
                 style={{
-                  backgroundColor: allStagesHaveTopics ? "#4CAF50" : "#d9d9d9",
-                  color: allStagesHaveTopics ? "#fff" : "#666",
+                  backgroundColor: canSave() ? "#4CAF50" : "#d9d9d9",
+                  color: canSave() ? "#fff" : "#666",
                   fontWeight: "normal",
                   fontSize: "16px",
                   height: "48px",
@@ -1235,7 +1288,7 @@ const OSyllabus = ({ fun, ID }) => {
                 }}
                 onClick={saveSyllabus}
                 loading={loading}
-                disabled={!allStagesHaveTopics}
+                disabled={!canSave()}
               >
                 Save and Continue
               </Button>

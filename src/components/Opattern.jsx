@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Button, Input, Select, Tabs, Card, Row, Col, Typography, message } from 'antd';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { CiCirclePlus } from "react-icons/ci";
@@ -15,29 +15,22 @@ const OPattern = ({ fun, ID }) => {
   const [patternsByTab, setPatternsByTab] = useState({});
   const [stages, setStages] = useState([]); // New state for stages
   const [rules, setRules] = useState(""); // New state for rules
-  const editorRef = useRef(null);
+  const [isAcademic, setIsAcademic] = useState(false); // New state to check if subjects are academic
+  
+  const editor = useRef(null);
   
   // Use ID from props if available, otherwise use id from params
   const competitionId = ID || id;
 
-  // Optimized Jodit editor configuration
-  const editorConfig = useCallback(() => ({
-    readonly: false,
+  // JoditEditor configuration
+  const editorConfig = useMemo(() => ({
+    placeholder: "Type your competition rules here...",
     height: 300,
-    toolbar: true,
-    spellcheck: false,
-    language: "en",
-    showCharsCounter: false,
-    showWordsCounter: false,
-    showXPathInStatusbar: false,
-    askBeforePasteHTML: false,
-    askBeforePasteFromWord: false,
-    defaultActionOnPaste: "insert_clear_html",
+    toolbarAdaptive: false,
     buttons: [
       "bold",
       "italic",
       "underline",
-      "strikethrough",
       "|",
       "ul",
       "ol",
@@ -51,8 +44,8 @@ const OPattern = ({ fun, ID }) => {
       "paragraph",
       "|",
       "image",
-      "link",
       "table",
+      "link",
       "|",
       "align",
       "undo",
@@ -60,37 +53,64 @@ const OPattern = ({ fun, ID }) => {
       "|",
       "hr",
       "eraser",
-      "|",
-      "fullsize"
+      "copyformat",
     ],
-    removeButtons: [],
-    removePlugins: [],
-    events: {},
-    // Add these settings for better stability
-    autoHeight: false,
-    saveModeInStorage: false,
-    saveModeInCookie: false,
-    saveModeInLocalStorage: false,
-    saveModeInSessionStorage: false,
-    // Prevent auto-save issues
-    saveMode: false,
-    // Better focus handling
-    focus: false,
-    // Prevent unnecessary updates
-    updateMode: 'blur'
+    removeButtons: ["fullsize", "about"],
+    uploader: {
+      insertImageAsBase64URI: true,
+    },
+    style: {
+      fontSize: "14px",
+    },
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
+    defaultActionOnPaste: "insert_clear_html",
   }), []);
 
-  // Use useCallback to prevent unnecessary re-renders
-  const handleEditorChange = useCallback((newContent) => {
-    console.log('Editor content changed:', newContent);
+  // JoditEditor change handler
+  const handleRulesChange = useCallback((newContent) => {
+    console.log('Rules content changed:', newContent);
     setRules(newContent);
   }, []);
 
-  // Handle editor blur event
-  const handleEditorBlur = useCallback((newContent) => {
-    console.log('Editor blur event:', newContent);
-    setRules(newContent);
-  }, []);
+  // Check if subjects are academic
+  const getsyllabus = async () => {
+    if (!competitionId) return;
+
+    try {
+      const requestOptions = {
+        method: "GET",
+        redirect: "follow",
+      };
+
+      const response = await fetch(
+        `https://api.prodigiedu.com/api/competitions/getsyllabus/${competitionId}`,
+        requestOptions
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Fetched syllabus:", result);
+
+      // Check if subjects are academic
+      if (result.success && result.data && Array.isArray(result.data.topics)) {
+        const topics = result.data.topics;
+        const academicSubjects = ["Maths", "English", "Physics", "Chemistry", "Environmental Studies", "History", "General Knowledge", "Computer Science", "Biology", "Geography", "Economics", "Literature"];
+        
+        const hasAcademicSubjects = topics.some(topic => 
+          academicSubjects.includes(topic.name)
+        );
+        
+        setIsAcademic(hasAcademicSubjects);
+        console.log("Is Academic:", hasAcademicSubjects);
+      }
+    } catch (error) {
+      console.error("Error fetching syllabus:", error);
+    }
+  };
 
   // Fetch pattern data when component mounts
   useEffect(() => {
@@ -146,6 +166,12 @@ const OPattern = ({ fun, ID }) => {
               initialPatternsByTab[stagesData[0].id.toString()] = fetchedSections;
             }
           }
+
+          // Fetch existing rules data if available
+          if (response.ok && result.success && result.data && result.data.rules) {
+            setRules(result.data.rules);
+            console.log("Fetched existing rules:", result.data.rules);
+          }
           
           // Always add at least one default section if no existing data or if existing data is empty
           if (stagesData.length > 0) {
@@ -180,6 +206,7 @@ const OPattern = ({ fun, ID }) => {
 
     if (competitionId) {
       getPattern();
+      getsyllabus(); // Also check syllabus to determine if academic
     }
   }, [competitionId]); // Only depend on competitionId
 
@@ -271,24 +298,50 @@ const OPattern = ({ fun, ID }) => {
     // Combine sections from all stages with complete data
     const allSections = [];
     
+    console.log("Current rules value:", rules); // Debug log
+    console.log("Rules length:", rules.length); // Debug log
+    
+    // Strip HTML to plain text for API
+    const stripHtml = (html) => {
+      if (!html) return "";
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      return doc.body.textContent || "";
+    };
+    
+    const plainTextRules = stripHtml(rules).trim();
+    console.log("Plain text rules:", plainTextRules);
+    console.log("Plain text rules length:", plainTextRules.length);
+    
     stages.forEach((stage) => {
       const stagePatterns = patternsByTab[stage.id.toString()] || [];
       stagePatterns.forEach(section => {
         section.formats.forEach(format => {
-          allSections.push({
-            name: section.name,
-            format: format.format,
-            questions: parseInt(format.questions) || 0,
-            marksPerQuestion: format.marks.replace('+', '') || '0',
-            stage: stage.name // Add stage information
-          });
+          if (isAcademic) {
+            allSections.push({
+              name: section.name,
+              format: format.format,
+              questions: parseInt(format.questions) || 0,
+              marksPerQuestion: format.marks.replace('+', '') || '0',
+              stage: stage.name, // Add stage information
+              rules: plainTextRules // Include plain text rules inside each section
+            });
+          } else {
+            allSections.push({
+              name: section.name,
+              format: format.format,
+              stage: stage.name, // Add stage information
+              rules: plainTextRules // Include plain text rules inside each section
+            });
+          }
         });
       });
     });
 
+    console.log("Final API data:", allSections); // Debug log
+
     return {
-      sections: allSections,
-      rules: rules // Include rules in the API call
+      sections: allSections
+      // Removed separate rules field since it's now inside each section
     };
   };
 
@@ -298,9 +351,13 @@ const OPattern = ({ fun, ID }) => {
     return stagePatterns.length > 0 && stagePatterns.every(section => 
       section.name.trim() && 
       section.formats.length > 0 && 
-      section.formats.every(format => 
-        format.format && format.questions && format.marks
-      )
+      section.formats.every(format => {
+        if (isAcademic) {
+          return format.format && format.questions && format.marks;
+        } else {
+          return format.format; // Only format is required for non-academic
+        }
+      })
     );
   });
 
@@ -327,14 +384,21 @@ const OPattern = ({ fun, ID }) => {
         (patternsByTab[tab] || []).some(section =>
           !section.name.trim() ||
           section.formats.length === 0 ||
-          section.formats.some(format =>
-            !format.format || !format.questions || !format.marks
-          )
+          section.formats.some(format => {
+            if (isAcademic) {
+              return !format.format || !format.questions || !format.marks;
+            } else {
+              return !format.format; // Only format is required for non-academic
+            }
+          })
         )
       );
 
       if (hasEmptyFields) {
-        message.error('Please fill all required fields (Name, Format, Questions, Marks) in all pattern sections');
+        const requiredFields = isAcademic 
+          ? 'Name, Format, Questions, Marks' 
+          : 'Name, Format';
+        message.error(`Please fill all required fields (${requiredFields}) in all pattern sections`);
         return;
       }
 
@@ -423,15 +487,7 @@ const OPattern = ({ fun, ID }) => {
             {/* Pattern Section */}
             <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
               <Title level={4} style={{ marginBottom: '24px', fontWeight: '600' }}>Pattern</Title>
-              <div style={{ 
-                backgroundColor: '#f6ffed', 
-                border: '1px solid #b7eb8f', 
-                borderRadius: '6px', 
-                padding: '12px 16px', 
-                marginBottom: '20px' 
-              }}>
-               
-              </div>
+             
 
               {(patternsByTab[activeTab] || []).map((section, sectionIndex) => (
                 <div key={section.id} style={{
@@ -499,32 +555,36 @@ const OPattern = ({ fun, ID }) => {
                             ))}
                           </Select>
                         </Col>
-                        <Col span={3}>
-                          <Text strong>
-                            Questions<span style={{ color: 'red' }}>*</span>
-                          </Text>
-                        </Col>
-                        <Col span={3}>
-                          <Input
-                            placeholder="Enter"
-                            value={format.questions}
-                            onChange={(e) => updateFormat(section.id, format.id, 'questions', e.target.value)}
-                            style={{ width: '100%' }}
-                          />
-                        </Col>
-                        <Col span={3}>
-                          <Text strong>
-                            {formatIndex === 0 ? 'Marks' : 'Marks Per Question'}<span style={{ color: 'red' }}>*</span>
-                          </Text>
-                        </Col>
-                        <Col span={4}>
-                          <Input
-                            placeholder="Enter"
-                            value={format.marks}
-                            onChange={(e) => updateFormat(section.id, format.id, 'marks', e.target.value)}
-                            style={{ width: '100%' }}
-                          />
-                        </Col>
+                        {isAcademic && (
+                          <>
+                            <Col span={3}>
+                              <Text strong>
+                                Questions<span style={{ color: 'red' }}>*</span>
+                              </Text>
+                            </Col>
+                            <Col span={3}>
+                              <Input
+                                placeholder="Enter"
+                                value={format.questions}
+                                onChange={(e) => updateFormat(section.id, format.id, 'questions', e.target.value)}
+                                style={{ width: '100%' }}
+                              />
+                            </Col>
+                            <Col span={3}>
+                              <Text strong>
+                                {formatIndex === 0 ? 'Marks' : 'Marks Per Question'}<span style={{ color: 'red' }}>*</span>
+                              </Text>
+                            </Col>
+                            <Col span={4}>
+                              <Input
+                                placeholder="Enter"
+                                value={format.marks}
+                                onChange={(e) => updateFormat(section.id, format.id, 'marks', e.target.value)}
+                                style={{ width: '100%' }}
+                              />
+                            </Col>
+                          </>
+                        )}
                       </Row>
                     </div>
                   ))}
@@ -554,19 +614,34 @@ const OPattern = ({ fun, ID }) => {
               </Button>
             </div>
 
-            {/* Rules Section */}
+                        {/* Rules Section */}
             <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
               <Title level={4} style={{ marginBottom: '24px', fontWeight: '600' }}>Rules</Title>
-              
+             
              
               
-              <JoditEditor
-                ref={editorRef}
-                value={rules}
-                config={editorConfig()}
-                onChange={handleEditorChange}
-                onBlur={handleEditorBlur}
-              />
+              {/* Main Rules Input - JoditEditor */}
+              <div style={{ marginBottom: '16px' }}>
+                <Text strong>Rules:</Text>
+                                 <div style={{ marginTop: '8px' }}>
+                   <JoditEditor
+                     key={`rules-editor-${competitionId}`}
+                     ref={editor}
+                     value={rules}
+                     config={editorConfig}
+                     onChange={handleRulesChange}
+                     tabIndex={1}
+                   />
+                 </div>
+                <div style={{ 
+                  marginTop: '8px', 
+                  textAlign: 'right', 
+                  fontSize: '12px', 
+                  color: '#666' 
+                }}>
+                  {rules.replace(/<[^>]*>/g, '').length} characters
+                </div>
+              </div>
             </div>
           </>
         )}

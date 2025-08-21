@@ -19,6 +19,7 @@ import {
 import { CiCirclePlus } from "react-icons/ci";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
+import { Country, State, City } from "country-state-city";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -29,6 +30,7 @@ const Orightcontaint = ({ fun, ID }) => {
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState(0);
   const editor = useRef(null);
+  const saveTimeoutRef = useRef(null);
   const userData = JSON.parse(localStorage.getItem("user_Data"));
   const userId = userData?._id;
   
@@ -39,22 +41,76 @@ const Orightcontaint = ({ fun, ID }) => {
     name: "",
     image: "",
     description: "",
-           stages: [
-         {
-           id: Date.now(),
-           name: "",
-           date: "",
-           endDate: "",
-           mode: "Online",
-           participation: "Individual",
-           location: ["India"],
-           duration: "",
-         },
-       ],
+    stages: [
+      {
+        id: Date.now(),
+        name: "",
+        date: "",
+        endDate: "",
+        mode: "Online",
+        participation: "Individual",
+        location: ["IN"],
+        duration: "",
+      },
+    ],
   });
 
   const [isFormValid, setIsFormValid] = useState(false);
-  const locationOptions = ["India"];
+  
+  // Location selection states
+  const [selectedCountry, setSelectedCountry] = useState("IN"); // Default to India
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+
+  // Get location options
+  const countries = useMemo(() => Country.getAllCountries(), []);
+  const states = useMemo(() => State.getStatesOfCountry(selectedCountry), [selectedCountry]);
+  const cities = useMemo(() => City.getCitiesOfState(selectedCountry, selectedState), [selectedCountry, selectedState]);
+
+  // Handle country change
+  const handleCountryChange = useCallback((countryCode) => {
+    setSelectedCountry(countryCode);
+    setSelectedState("");
+    setSelectedCity("");
+    
+    // Update all stages with new country
+    setCompetitionData(prev => ({
+      ...prev,
+      stages: prev.stages.map(stage => ({
+        ...stage,
+        location: [countryCode]
+      }))
+    }));
+  }, []);
+
+  // Handle state change
+  const handleStateChange = useCallback((stateCode) => {
+    setSelectedState(stateCode);
+    setSelectedCity("");
+    
+    // Update all stages with country and state
+    setCompetitionData(prev => ({
+      ...prev,
+      stages: prev.stages.map(stage => ({
+        ...stage,
+        location: [selectedCountry, stateCode]
+      }))
+    }));
+  }, [selectedCountry]);
+
+  // Handle city change
+  const handleCityChange = useCallback((cityName) => {
+    setSelectedCity(cityName);
+    
+    // Update all stages with country, state and city
+    setCompetitionData(prev => ({
+      ...prev,
+      stages: prev.stages.map(stage => ({
+        ...stage,
+        location: [selectedCountry, selectedState, cityName]
+      }))
+    }));
+  }, [selectedCountry, selectedState]);
 
   // Strip HTML to plain text
   const stripHtml = (html) => {
@@ -104,33 +160,49 @@ const Orightcontaint = ({ fun, ID }) => {
     style: {
       fontSize: "14px",
     },
+    // Add these options to prevent editor refresh issues
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
+    defaultActionOnPaste: "insert_clear_html",
+    events: {
+      // Prevent unnecessary events that cause refresh
+      beforeInit: function(editor) {
+        // Custom initialization if needed
+      }
+    }
   }), []);
 
   // Update competition field - using useCallback to prevent re-creation
   const updateCompetitionField = useCallback((field, value) => {
-    setCompetitionData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setCompetitionData((prev) => {
+      // Only update if value actually changed
+      if (prev[field] === value) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
   }, []);
 
-     // Add a new stage
-   const addStage = useCallback(() => {
-     const newStage = {
-       id: Date.now(),
-       name: "",
-       date: "",
-       endDate: "",
-       mode: "Online",
-       participation: "Individual",
-       location: ["India"],
-       duration: "",
-     };
-     setCompetitionData((prev) => ({
-       ...prev,
-       stages: [...prev.stages, newStage],
-     }));
-   }, []);
+           // Add a new stage
+    const addStage = useCallback(() => {
+      const newStage = {
+        id: Date.now(),
+        name: "",
+        date: "",
+        endDate: "",
+        mode: "Online",
+        participation: "Individual",
+        location: selectedCountry ? [selectedCountry] : [["IN"]],
+        duration: "",
+      };
+      setCompetitionData((prev) => ({
+        ...prev,
+        stages: [...prev.stages, newStage],
+      }));
+    }, [selectedCountry]);
 
   // Remove a stage
   const removeStage = useCallback((stageId) => {
@@ -185,12 +257,42 @@ const Orightcontaint = ({ fun, ID }) => {
     }));
   }, []);
 
+  // Debounced save function to prevent excessive localStorage writes
+  const debouncedSave = useCallback((data) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      const localKey = `competition_overview_${competitionId}`;
+      localStorage.setItem(localKey, JSON.stringify(data));
+    }, 1000); // Save after 1 second of inactivity
+  }, [competitionId]);
+
   // Handle editor content change - using useCallback to prevent re-creation
   const handleEditorChange = useCallback((newContent) => {
-    setCompetitionData((prev) => ({
-      ...prev,
-      description: newContent,
-    }));
+    // Only update if content actually changed to prevent unnecessary re-renders
+    setCompetitionData((prev) => {
+      if (prev.description === newContent) {
+        return prev; // Return same reference if no change
+      }
+      const newData = {
+        ...prev,
+        description: newContent,
+      };
+      // Debounced save to localStorage
+      debouncedSave(newData);
+      return newData;
+    });
+  }, [debouncedSave]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      // Clear any pending timeouts when component unmounts
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Validate form
@@ -207,11 +309,31 @@ const Orightcontaint = ({ fun, ID }) => {
         stage.mode.trim() !== "" &&
         stage.participation.trim() !== "" &&
         stage.location.length > 0 &&
+        stage.location[0] && // At least country should be selected
         stage.duration.trim() !== ""
     );
 
     setIsFormValid(isOverviewValid && areStagesValid);
   }, [competitionData]);
+
+  // Save to localStorage when competitionData changes (debounced)
+  useEffect(() => {
+    if (competitionId && competitionData.name) {
+      debouncedSave(competitionData);
+    }
+  }, [competitionData, competitionId, debouncedSave]);
+
+  // Sync location selection with first stage
+  useEffect(() => {
+    if (competitionData.stages.length > 0 && competitionData.stages[0].location) {
+      const firstStageLocation = competitionData.stages[0].location;
+      if (firstStageLocation.length > 0) {
+        setSelectedCountry(firstStageLocation[0] || "IN");
+        setSelectedState(firstStageLocation[1] || "");
+        setSelectedCity(firstStageLocation[2] || "");
+      }
+    }
+  }, [competitionData.stages]);
 
   // Fetch overview data if ID exists
   const getOverview = async () => {
@@ -256,7 +378,7 @@ const Orightcontaint = ({ fun, ID }) => {
               participation: stage.participation || "Individual",
               location: Array.isArray(stage.location)
                 ? stage.location
-                : ["India"],
+                : ["IN"],
                              duration: stage.duration || "",
             }))
           : [
@@ -267,7 +389,7 @@ const Orightcontaint = ({ fun, ID }) => {
                 endDate: "",
                 mode: "Online",
                 participation: "Individual",
-                location: ["India"],
+                location: ["IN"],
                 duration: "",
               },
             ];
@@ -495,10 +617,12 @@ const Orightcontaint = ({ fun, ID }) => {
           }}
         >
           <JoditEditor
+            key={`editor-${competitionId}`}
             ref={editor}
-            value={competitionData.description}
+            value={competitionData.description || ""}
             config={editorConfig}
             onChange={handleEditorChange}
+            tabIndex={1}
           />
         </Card>
       </div>
@@ -765,27 +889,74 @@ const Orightcontaint = ({ fun, ID }) => {
                 >
                   <div style={{ minWidth: "80px" }}>
                     <Text strong style={{ color: "#000", fontSize: "14px" }}>
-                      Locations<span style={{ color: "#ef4444" }}>*</span>
+                      Location<span style={{ color: "#ef4444" }}>*</span>
                     </Text>
                   </div>
-                  <div style={{ flex: 1, maxWidth: "300px" }}>
-                    <Select
-                      mode="multiple"
-                      placeholder="Select locations"
-                      value={stage.location}
-                      onChange={(value) =>
-                        updateStage(stage.id, "location", value)
-                      }
-                      style={{ width: "100%" }}
-                      size="large"
-                      suffixIcon={<ChevronDown size={16} />}
-                    >
-                      {locationOptions.map((location) => (
-                        <Option key={location} value={location}>
-                          {location}
-                        </Option>
-                      ))}
-                    </Select>
+                  <div style={{ flex: 1, display: "flex", gap: "12px" }}>
+                                                               {/* Country Select */}
+                      <Select
+                        placeholder="Select Country"
+                        style={{ width: "160px", height: "40px" }}
+                        value={selectedCountry}
+                        onChange={handleCountryChange}
+                        suffixIcon={<ChevronDown size={16} />}
+                        dropdownStyle={{ zIndex: 1000 }}
+                        showSearch
+                        filterOption={(input, option) =>
+                          option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }
+                        optionFilterProp="children"
+                      >
+                        {countries.map(country => (
+                          <Option key={country.isoCode} value={country.isoCode}>
+                            {country.name}
+                          </Option>
+                        ))}
+                      </Select>
+
+                                                               {/* State Select */}
+                      <Select
+                        placeholder="Select State"
+                        style={{ width: "160px", height: "40px" }}
+                        value={selectedState}
+                        onChange={handleStateChange}
+                        suffixIcon={<ChevronDown size={16} />}
+                        dropdownStyle={{ zIndex: 1000 }}
+                        disabled={!selectedCountry}
+                        showSearch
+                        filterOption={(input, option) =>
+                          option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }
+                        optionFilterProp="children"
+                      >
+                        {states.map(state => (
+                          <Option key={state.isoCode} value={state.isoCode}>
+                            {state.name}
+                          </Option>
+                        ))}
+                      </Select>
+
+                                                               {/* City Select */}
+                      <Select
+                        placeholder="Select City"
+                        style={{ width: "160px", height: "40px" }}
+                        value={selectedCity}
+                        onChange={handleCityChange}
+                        suffixIcon={<ChevronDown size={16} />}
+                        dropdownStyle={{ zIndex: "1000" }}
+                        disabled={!selectedState}
+                        showSearch
+                        filterOption={(input, option) =>
+                          option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }
+                        optionFilterProp="children"
+                      >
+                        {cities.map(city => (
+                          <Option key={city.name} value={city.name}>
+                            {city.name}
+                          </Option>
+                        ))}
+                      </Select>
                   </div>
                 </div>
 

@@ -90,6 +90,7 @@ function Ocompetitionsdetail() {
       if (result.success && result.data) {
         updateSectionData(section, result.data);
         console.log(`✅ ${section} data loaded successfully`);
+        console.log(`📊 ${section} data structure:`, result.data);
       } else {
         throw new Error(result.message || `Failed to fetch ${section} data`);
       }
@@ -191,18 +192,35 @@ function Ocompetitionsdetail() {
   const getOverviewData = () => sectionData.overview || {};
   const getSyllabusData = () => sectionData.syllabus || {};
   const getPatternData = () => sectionData.pattern || {};
-  const getEligibilityData = () => sectionData.eligibility || [];
+  const getEligibilityData = () => {
+    // Handle the nested structure from API response
+    if (sectionData.eligibility && sectionData.eligibility.eligibility) {
+      return sectionData.eligibility.eligibility;
+    }
+    return sectionData.eligibility || [];
+  };
   const getRegistrationData = () => sectionData.registration || {};
   const getAwardsData = () => sectionData.awards || [];
   
   // Get student information from eligibility data or separate call
   const getStudentInformation = () => {
-    // First check if eligibility data has StudentInformation
-    if (sectionData.eligibility && sectionData.eligibility.StudentInformation) {
-      return sectionData.eligibility.StudentInformation;
+    // First check if eligibility data has studentInformation (lowercase as per API)
+    if (sectionData.eligibility && sectionData.eligibility.studentInformation) {
+      return sectionData.eligibility.studentInformation;
     }
     // Return empty object if not found
     return { StudentDetails: [], SchoolDetails: [] };
+  };
+
+  // Get additional details from eligibility data
+  const getAdditionalDetails = () => {
+    if (sectionData.eligibility && 
+        sectionData.eligibility.eligibility && 
+        sectionData.eligibility.eligibility[0] && 
+        sectionData.eligibility.eligibility[0].additionalDetails) {
+      return sectionData.eligibility.eligibility[0].additionalDetails;
+    }
+    return [];
   };
 
   return (
@@ -512,23 +530,104 @@ function Ocompetitionsdetail() {
                     )}
                   </ul>
 
-                  <h3>School Details Required</h3>
-                  <ul>
-                    {getStudentInformation().SchoolDetails?.length > 0 ? (
-                      getStudentInformation().SchoolDetails.map((item, index) => (
-                        <li key={`school-${index}`}>
-                          <span className="icon">✔</span>
-                          {item}
-                        </li>
-                      ))
-                    ) : (
-                      <li>No school details specified</li>
-                    )}
-                  </ul>
-                </>
-              )}
-            </div>
-          )}
+                                     <h3>School Details Required</h3>
+                   <ul>
+                     {getStudentInformation().SchoolDetails?.length > 0 ? (
+                       getStudentInformation().SchoolDetails.map((item, index) => (
+                         <li key={`school-${index}`}>
+                           <span className="icon">✔</span>
+                           {item}
+                         </li>
+                       ))
+                     ) : (
+                       <li>No school details specified</li>
+                     )}
+                   </ul>
+
+                   {/* Additional Details Section */}
+                   {getAdditionalDetails().length > 0 && (
+                     <div style={{ marginTop: '30px' }}>
+                       <h3>Additional Details Required</h3>
+                       <div style={{ display: 'grid', gap: '15px' }}>
+                         {getAdditionalDetails().map((detail, index) => (
+                           <div key={index} style={{ 
+                             border: '1px solid #ddd', 
+                             padding: '20px', 
+                             borderRadius: '8px',
+                             backgroundColor: '#f8f9fa',
+                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                           }}>
+                             <h4 style={{ color: '#2c3e50', marginBottom: '10px' }}>
+                               {detail.name || `Question ${index + 1}`}
+                             </h4>
+                             <p><strong>Type:</strong> {detail.type}</p>
+                             
+                             {detail.type === "Multiple Choice" && detail.options && (
+                               <div>
+                                 <p><strong>Options:</strong></p>
+                                 <ul style={{ marginLeft: '20px' }}>
+                                   {detail.options.map((option, optIndex) => (
+                                     <li key={optIndex}>{option}</li>
+                                   ))}
+                                 </ul>
+                               </div>
+                             )}
+
+                             {detail.type === "Checkbox" && detail.options && (
+                               <div>
+                                 <p><strong>Options:</strong></p>
+                                 <ul style={{ marginLeft: '20px' }}>
+                                   {detail.options.map((option, optIndex) => (
+                                     <li key={optIndex}>{option}</li>
+                                   ))}
+                                 </ul>
+                               </div>
+                             )}
+
+                             {detail.type === "Drop Down" && detail.options && (
+                               <div>
+                                 <p><strong>Options:</strong></p>
+                                 <ul style={{ marginLeft: '20px' }}>
+                                   {detail.options.map((option, optIndex) => (
+                                     <li key={optIndex}>{option}</li>
+                                   ))}
+                                 </ul>
+                               </div>
+                             )}
+
+                             {detail.type === "Short Answer" && (
+                               <p><strong>Word Limit:</strong> 50 words</p>
+                             )}
+
+                             {detail.type === "Date" && (
+                               <p><strong>Date Input Required</strong></p>
+                             )}
+
+                             {detail.type === "Photo Upload" && (
+                               <p><strong>Photo Upload Required</strong></p>
+                             )}
+
+                             {detail.settings && Object.keys(detail.settings).length > 0 && (
+                               <div style={{ marginTop: '10px' }}>
+                                 <p><strong>Settings:</strong></p>
+                                 <ul style={{ marginLeft: '20px', fontSize: '14px' }}>
+                                   {Object.entries(detail.settings).map(([key, value]) => (
+                                     <li key={key}>
+                                       <strong>{key}:</strong> {String(value)}
+                                     </li>
+                                   ))}
+                                 </ul>
+                               </div>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+                 </>
+               )}
+             </div>
+           )}
 
           {/* Registration Tab */}
           {activeTab === "registration" && (

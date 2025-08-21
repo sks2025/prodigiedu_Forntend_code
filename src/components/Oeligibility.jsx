@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Tabs,
   Select,
@@ -31,10 +31,10 @@ const OEligibility = ({ fun, ID }) => {
   const [activeKeys, setActiveKeys] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dataByTab, setDataByTab] = useState({});
-  const [stages, setStages] = useState([]); // New state for stages
-  const [additionalForms, setAdditionalForms] = useState([]); // New state for additional forms
-  
-  // Use ID from props if available, otherwise use id from params
+  const [stages, setStages] = useState([]);
+  const [additionalForms, setAdditionalForms] = useState([]);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
+
   const competitionId = ID || id;
 
   const criteriaOptions = [
@@ -70,6 +70,13 @@ const OEligibility = ({ fun, ID }) => {
     "Student Strength"
   ];
 
+  // Handle window resize for responsive design
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Fetch competition data and stages when component mounts
   useEffect(() => {
     const getCompetitionData = async () => {
@@ -93,12 +100,10 @@ const OEligibility = ({ fun, ID }) => {
         const result = await response.json();
         console.log("Fetched competition data:", result);
 
-        // Extract stages from overviewdata
         if (result.overviewdata && Array.isArray(result.overviewdata.stages)) {
           const stagesData = result.overviewdata.stages;
           setStages(stagesData);
-          
-          // Initialize dataByTab for each stage
+
           const initialDataByTab = {};
           stagesData.forEach((stage) => {
             initialDataByTab[stage.id.toString()] = {
@@ -108,30 +113,27 @@ const OEligibility = ({ fun, ID }) => {
               schoolDetails: ["School Name", "Address", "Contact Number", "City"]
             };
           });
-          
-          // Set the first stage as active tab if available
+
           if (stagesData.length > 0 && !activeTab) {
             setActiveTab(stagesData[0].id.toString());
           }
 
-                     // Process existing eligibility data if any
-           if (result.success && result.data && result.data.eligibility) {
-             // You can process existing eligibility data here if needed
-             // For now, we'll use the default values
-           }
-          
+          if (result.success && result.data && result.data.eligibility) {
+            // Process existing eligibility data if needed
+          }
+
           setDataByTab(initialDataByTab);
         } else {
           console.warn("No stages found in overviewdata");
           message.error("No stages found for this competition");
         }
-             } catch (error) {
-         console.error("Error fetching competition data:", error);
-         message.error("Failed to fetch competition data.");
-       }
-     };
+      } catch (error) {
+        console.error("Error fetching competition data:", error);
+        message.error("Failed to fetch competition data.");
+      }
+    };
 
-     getCompetitionData();
+    getCompetitionData();
   }, [competitionId]);
 
   // Update active tab when stages change
@@ -141,18 +143,30 @@ const OEligibility = ({ fun, ID }) => {
     }
   }, [stages, activeTab]);
 
-  // Check if all stages have required data for save button state
-  const allStagesHaveData = stages.length > 0 && stages.every(stage => {
-    const stageData = dataByTab[stage.id.toString()];
-    return stageData && stageData.selectedCriteria.length > 0 && stageData.studentDetails.length > 0;
-  });
-
-  // Check if additional forms have required data
-  const additionalFormsValid = additionalForms.every(form => 
-    form.name.trim() && form.type
+  const allStagesHaveData = useMemo(() =>
+    stages.length > 0 && stages.every(stage => {
+      const stageData = dataByTab[stage.id.toString()];
+      return stageData && stageData.selectedCriteria.length > 0 && stageData.studentDetails.length > 0;
+    }), [stages, dataByTab]
   );
 
-  // API call function
+  const additionalFormsValid = useMemo(() =>
+    additionalForms.every(form => {
+      if (!form.name.trim() || !form.type) return false;
+
+      if (form.type === "Date") {
+        const settings = form.settings || {};
+        if (settings.minDate && settings.maxDate && new Date(settings.minDate) > new Date(settings.maxDate)) {
+          return false;
+        }
+      }
+
+
+
+      return true;
+    }), [additionalForms]
+  );
+
   const saveEligibilityData = async () => {
     setLoading(true);
 
@@ -160,7 +174,6 @@ const OEligibility = ({ fun, ID }) => {
       const myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
 
-      // Check if all stages have required data
       const stagesWithoutData = stages.filter(stage => {
         const stageData = dataByTab[stage.id.toString()];
         return !stageData || stageData.selectedCriteria.length === 0 || stageData.studentDetails.length === 0;
@@ -174,16 +187,15 @@ const OEligibility = ({ fun, ID }) => {
         return;
       }
 
-      // Combine eligibility criteria from all stages into a single array
       const eligibility = [];
-      
+
       stages.forEach((stage) => {
         const stageData = dataByTab[stage.id.toString()];
         if (stageData && stageData.selectedCriteria.length > 0) {
           stageData.selectedCriteria.forEach(criteria => {
             const criteriaLabel = criteriaOptions.find(opt => opt.value === criteria)?.label;
             const data = stageData.criteriaData[criteria];
-            
+
             let requirement = "";
             if (data?.min && data?.max) {
               requirement = `Range: ${data.min} to ${data.max}`;
@@ -198,62 +210,147 @@ const OEligibility = ({ fun, ID }) => {
             eligibility.push({
               title: criteriaLabel,
               requirement: requirement,
-              stage: stage.name // Add stage information
+              stage: stage.name
             });
           });
         }
       });
 
-      // Combine StudentDetails and SchoolDetails from all stages, ensuring uniqueness
-      const studentDetails = [
-        ...new Set(
-          stages.flatMap(stage => {
-            const stageData = dataByTab[stage.id.toString()];
-            return stageData?.studentDetails || [];
-          })
-        )
-      ];
+      // Optimized data collection
+      const studentDetails = [];
+      const schoolDetails = [];
       
-      const schoolDetails = [
-        ...new Set(
-          stages.flatMap(stage => {
-            const stageData = dataByTab[stage.id.toString()];
-            return stageData?.schoolDetails || [];
-          })
-        )
-      ];
+      stages.forEach(stage => {
+        const stageData = dataByTab[stage.id.toString()];
+        if (stageData?.studentDetails) {
+          studentDetails.push(...stageData.studentDetails);
+        }
+        if (stageData?.schoolDetails) {
+          schoolDetails.push(...stageData.schoolDetails);
+        }
+      });
+      
+      // Remove duplicates efficiently
+      const uniqueStudentDetails = [...new Set(studentDetails)];
+      const uniqueSchoolDetails = [...new Set(schoolDetails)];
 
-      // Format data for API
+      // Quick validation
+      if (!Array.isArray(uniqueStudentDetails) || !Array.isArray(uniqueSchoolDetails)) {
+        console.error('Data type error:', { uniqueStudentDetails, uniqueSchoolDetails });
+        throw new Error('Invalid data types for studentDetails or schoolDetails');
+      }
+
+      // Ensure arrays are always valid with fallback
+      let finalStudentDetails = Array.isArray(uniqueStudentDetails) && uniqueStudentDetails.length > 0 ? [...uniqueStudentDetails] : [];
+      let finalSchoolDetails = Array.isArray(uniqueSchoolDetails) && uniqueSchoolDetails.length > 0 ? [...uniqueSchoolDetails] : [];
+      
+      // Force empty arrays if still invalid
+      if (!Array.isArray(finalStudentDetails)) {
+        console.warn('StudentDetails was not an array, forcing to empty array');
+        finalStudentDetails = [];
+      }
+      if (!Array.isArray(finalSchoolDetails)) {
+        console.warn('SchoolDetails was not an array, forcing to empty array');
+        finalSchoolDetails = [];
+      }
+      
+      // Final array validation
+      if (!Array.isArray(finalStudentDetails) || !Array.isArray(finalSchoolDetails)) {
+        console.error('Array validation failed after processing');
+        throw new Error('Failed to create valid arrays for StudentDetails and SchoolDetails');
+      }
+      
+      // Additional safety - ensure we have at least empty arrays
+      if (!finalStudentDetails || finalStudentDetails.length === 0) {
+        finalStudentDetails = [];
+      }
+      if (!finalSchoolDetails || finalSchoolDetails.length === 0) {
+        finalSchoolDetails = [];
+      }
+
+      // Create the correct data structure as per API requirements
       const formattedData = {
-        eligibility,
+        eligibility: [{
+          criteria: eligibility.map(criteria => ({
+            title: criteria.title,
+            requirement: criteria.requirement,
+            stage: criteria.stage
+          })),
+          additionalDetails: additionalForms.filter(form => form.name.trim() && form.type)
+        }],
         StudentInformation: {
-          StudentDetails: studentDetails.length > 0 ? studentDetails : [],
-          SchoolDetails: schoolDetails.length > 0 ? schoolDetails : []
-        },
-        additionalDetails: additionalForms.filter(form => form.name.trim() && form.type) // Only include valid forms
+          StudentDetails: finalStudentDetails,
+          SchoolDetails: finalSchoolDetails
+        }
       };
 
-      const raw = JSON.stringify(formattedData);
+      // Enhanced debugging and validation
+      console.log('Raw studentDetails:', uniqueStudentDetails);
+      console.log('Raw schoolDetails:', uniqueSchoolDetails);
+      console.log('Final formatted data structure:', formattedData);
+      
+      // Validate the data structure
+      const validateDataStructure = (data) => {
+        return data.eligibility && 
+               Array.isArray(data.eligibility) && 
+               data.StudentInformation &&
+               Array.isArray(data.StudentInformation.StudentDetails) && 
+               Array.isArray(data.StudentInformation.SchoolDetails);
+      };
 
+      if (!validateDataStructure(formattedData)) {
+        console.error('Data structure validation failed');
+        throw new Error('Invalid data structure format');
+      }
+      
+      // Log the exact data being sent
+      console.log('Final data being sent to API:', JSON.stringify(formattedData, null, 2));
+      
+      // Final safety check - ensure arrays are valid
+      if (!Array.isArray(formattedData.StudentInformation.StudentDetails)) {
+        formattedData.StudentInformation.StudentDetails = [];
+      }
+      if (!Array.isArray(formattedData.StudentInformation.SchoolDetails)) {
+        formattedData.StudentInformation.SchoolDetails = [];
+      }
+      
+      console.log('After safety check - StudentDetails:', formattedData.StudentInformation.StudentDetails);
+      console.log('After safety check - SchoolDetails:', formattedData.StudentInformation.SchoolDetails);
+      
+      // Final validation - ensure the data structure is exactly what we expect
+      if (!validateDataStructure(formattedData)) {
+        console.error('Final validation failed - forcing empty arrays');
+        formattedData.StudentInformation.StudentDetails = [];
+        formattedData.StudentInformation.SchoolDetails = [];
+      }
+
+      // Make API call with the correct data structure
       const requestOptions = {
         method: "POST",
         headers: myHeaders,
-        body: raw,
+        body: JSON.stringify(formattedData),
         redirect: "follow"
       };
 
       const response = await fetch(`https://api.prodigiedu.com/api/competitions/eligibility/${competitionId}`, requestOptions);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
       const result = await response.text();
-      console.log('API Response:', result);
       
+      // Parse and validate API response
+      let parsedResult;
+      try {
+        parsedResult = JSON.parse(result);
+        console.log('API Response:', parsedResult);
+        
+        if (!parsedResult.success) {
+          throw new Error(parsedResult.message || 'API request failed');
+        }
+      } catch (e) {
+        console.error('API Response Error:', e);
+        throw new Error(`API Error: ${e.message}`);
+      }
+
       message.success('Eligibility criteria saved successfully!');
       fun(4, competitionId);
-      
     } catch (error) {
       console.error('API Error:', error);
       message.error('Failed to save eligibility criteria. Please try again.');
@@ -266,7 +363,12 @@ const OEligibility = ({ fun, ID }) => {
     setDataByTab({
       ...dataByTab,
       [activeTab]: {
-        ...dataByTab[activeTab],
+        ...dataByTab[activeTab] || {
+          selectedCriteria: [],
+          criteriaData: {},
+          studentDetails: [],
+          schoolDetails: []
+        },
         selectedCriteria: values
       }
     });
@@ -277,11 +379,16 @@ const OEligibility = ({ fun, ID }) => {
     setDataByTab({
       ...dataByTab,
       [activeTab]: {
-        ...dataByTab[activeTab],
+        ...dataByTab[activeTab] || {
+          selectedCriteria: [],
+          criteriaData: {},
+          studentDetails: [],
+          schoolDetails: []
+        },
         criteriaData: {
-          ...dataByTab[activeTab].criteriaData,
+          ...dataByTab[activeTab]?.criteriaData || {},
           [criteriaKey]: {
-            ...dataByTab[activeTab].criteriaData[criteriaKey],
+            ...dataByTab[activeTab]?.criteriaData[criteriaKey] || {},
             [field]: value
           }
         }
@@ -310,7 +417,12 @@ const OEligibility = ({ fun, ID }) => {
     setDataByTab({
       ...dataByTab,
       [activeTab]: {
-        ...dataByTab[activeTab],
+        ...dataByTab[activeTab] || {
+          selectedCriteria: [],
+          criteriaData: {},
+          studentDetails: [],
+          schoolDetails: []
+        },
         studentDetails: values
       }
     });
@@ -320,14 +432,18 @@ const OEligibility = ({ fun, ID }) => {
     setDataByTab({
       ...dataByTab,
       [activeTab]: {
-        ...dataByTab[activeTab],
+        ...dataByTab[activeTab] || {
+          selectedCriteria: [],
+          criteriaData: {},
+          studentDetails: [],
+          schoolDetails: []
+        },
         schoolDetails: values
       }
     });
   };
 
-  // Function to add additional detail form
-  const addAdditionalForm = () => {
+  const addAdditionalForm = useCallback(() => {
     const newFormId = Date.now();
     const newForm = {
       id: newFormId,
@@ -335,115 +451,199 @@ const OEligibility = ({ fun, ID }) => {
       type: "Short Answer",
       options: [],
       selectedOptions: [],
-      stage: activeTab
+      stage: activeTab,
+      settings: {
+        wordLimit: 50
+      }
     };
-    setAdditionalForms([...additionalForms, newForm]);
-  };
+    setAdditionalForms(prevForms => [...prevForms, newForm]);
+  }, [activeTab]);
 
-  // Function to handle form type change and initialize options if needed
-  const handleFormTypeChange = (formId, newType) => {
-    const form = additionalForms.find(f => f.id === formId);
-    if (form) {
-      let newOptions = [...form.options];
-      
-      // Initialize with default options for types that need them
-      if ((newType === "Multiple Choice" || newType === "Checkbox" || newType === "Drop Down") && form.options.length === 0) {
-        newOptions = ["Option 1", "Option 2"];
+  const handleFormTypeChange = useCallback((formId, newType) => {
+    setAdditionalForms(prevForms => {
+      return prevForms.map(form => {
+        if (form.id !== formId) return form;
+
+        let newOptions = [...form.options];
+        let newSettings = { ...form.settings };
+
+        if (newType === "Multiple Choice" || newType === "Checkbox" || newType === "Drop Down") {
+          newOptions = [];
+        }
+
+        if (newType === "Short Answer" || newType === "Date" || newType === "Photo Upload") {
+          newOptions = [];
+        }
+
+        if (newType === "Short Answer") {
+          newSettings = { wordLimit: 50 };
+        } else if (newType === "Date") {
+          newSettings = {
+            minDate: new Date().toISOString().split('T')[0],
+            maxDate: new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString().split('T')[0],
+            allowFuture: true,
+            allowPast: true
+          };
+        } else if (newType === "Photo Upload") {
+          newSettings = {
+            enabled: true
+          };
+        } else if (newType === "Drop Down") {
+          newSettings = {
+            allowMultiple: false,
+            defaultOption: "",
+            searchable: true
+          };
+        } else if (newType === "Multiple Choice") {
+          newSettings = {
+            allowMultiple: false,
+            randomizeOptions: false,
+            showCorrectAnswer: false
+          };
+        } else if (newType === "Checkbox") {
+          newSettings = {
+            allowMultiple: true,
+            minSelection: 1,
+            maxSelection: 5,
+            requireAll: false
+          };
+        }
+
+        return {
+          ...form,
+          type: newType,
+          options: newOptions,
+          settings: newSettings
+        };
+      });
+    });
+  }, []);
+
+  const duplicateAdditionalForm = useCallback((formId) => {
+    setAdditionalForms(prevForms => {
+      const formToDuplicate = prevForms.find(form => form.id === formId);
+      if (formToDuplicate) {
+        const newFormId = Date.now();
+        const duplicatedForm = {
+          ...formToDuplicate,
+          id: newFormId,
+          name: `${formToDuplicate.name} (Copy)`,
+          options: [...formToDuplicate.options],
+          selectedOptions: [],
+          settings: { ...formToDuplicate.settings }
+        };
+        return [...prevForms, duplicatedForm];
       }
-      
-      // Clear options for types that don't need them
-      if (newType === "Short Answer" || newType === "Date" || newType === "Photo Upload") {
-        newOptions = [];
-      }
-      
-      updateAdditionalForm(formId, 'type', newType);
-      if (newOptions.length !== form.options.length) {
-        setAdditionalForms(additionalForms.map(f =>
-          f.id === formId ? { ...f, options: newOptions } : f
-        ));
-      }
-    }
-  };
+      return prevForms;
+    });
+  }, []);
 
-  // Function to duplicate additional detail form
-  const duplicateAdditionalForm = (formId) => {
-    const formToDuplicate = additionalForms.find(form => form.id === formId);
-    if (formToDuplicate) {
-      const newFormId = Date.now();
-      const duplicatedForm = {
-        ...formToDuplicate,
-        id: newFormId,
-        name: `${formToDuplicate.name} (Copy)`,
-        options: [...formToDuplicate.options],
-        selectedOptions: []
-      };
-      setAdditionalForms([...additionalForms, duplicatedForm]);
-    }
-  };
+  const removeAdditionalForm = useCallback((formId) => {
+    setAdditionalForms(prevForms => prevForms.filter(form => form.id !== formId));
+  }, []);
 
-  // Function to remove additional detail form
-  const removeAdditionalForm = (formId) => {
-    setAdditionalForms(additionalForms.filter(form => form.id !== formId));
-  };
-
-  // Function to update additional form data
   const updateAdditionalForm = (formId, field, value) => {
-    setAdditionalForms(additionalForms.map(form =>
-      form.id === formId ? { ...form, [field]: value } : form
-    ));
+    setAdditionalForms(prevForms =>
+      prevForms.map(form =>
+        form.id === formId ? { ...form, [field]: value } : form
+      )
+    );
   };
 
-  // Function to add option to dropdown form
-  const addOptionToForm = (formId) => {
-    const newOption = `Option ${additionalForms.find(f => f.id === formId)?.options.length + 1}`;
-    setAdditionalForms(additionalForms.map(form =>
-      form.id === formId 
-        ? { ...form, options: [...form.options, newOption] }
-        : form
-    ));
-  };
-
-  // Function to update option in dropdown form
-  const updateOptionInForm = (formId, optionIndex, value) => {
-    setAdditionalForms(additionalForms.map(form =>
-      form.id === formId
-        ? {
-            ...form,
-            options: form.options.map((option, index) =>
-              index === optionIndex ? value : option
-            )
+  const updateFormSettings = (formId, settingKey, value) => {
+    setAdditionalForms(prevForms =>
+      prevForms.map(form =>
+        form.id === formId ? {
+          ...form,
+          settings: {
+            ...form.settings,
+            [settingKey]: value
           }
-        : form
-    ));
+        } : form
+      )
+    );
   };
 
-  // Function to remove option from dropdown form
-  const removeOptionFromForm = (formId, optionIndex) => {
-    setAdditionalForms(additionalForms.map(form =>
-      form.id === formId
-        ? {
-            ...form,
-            options: form.options.filter((_, index) => index !== optionIndex)
-          }
-        : form
-    ));
-  };
+  const addOptionToForm = useCallback((formId) => {
+    setAdditionalForms(prevForms =>
+      prevForms.map(form =>
+        form.id === formId
+          ? { ...form, options: [...form.options, `Option ${form.options.length + 1}`] }
+          : form
+      )
+    );
+  }, []);
 
-  // Function to toggle checkbox selection (single selection only)
-  const toggleCheckboxOption = (formId, optionIndex) => {
-    setAdditionalForms(additionalForms.map(form =>
-      form.id === formId
-        ? {
-            ...form,
-            selectedOptions: form.selectedOptions?.includes(optionIndex) 
-              ? [] // If already selected, deselect it
-              : [optionIndex] // Otherwise, select only this option
-          }
-        : form
-    ));
-  };
+  const updateOptionInForm = useCallback((formId, optionIndex, value) => {
+    setAdditionalForms(prevForms =>
+      prevForms.map(form =>
+        form.id === formId
+          ? {
+              ...form,
+              options: form.options.map((option, index) =>
+                index === optionIndex ? value : option
+              )
+            }
+          : form
+      )
+    );
+  }, []);
 
-  const renderCriteriaContent = (criteriaKey) => (
+  const removeOptionInForm = useCallback((formId, optionIndex) => {
+    setAdditionalForms(prevForms =>
+      prevForms.map(form =>
+        form.id === formId
+          ? {
+              ...form,
+              options: form.options.filter((_, index) => index !== optionIndex)
+            }
+          : form
+      )
+    );
+  }, []);
+
+  const handleOptionSelection = useCallback((formId, optionIndex) => {
+    setAdditionalForms(prevForms =>
+      prevForms.map(form =>
+        form.id === formId
+          ? {
+              ...form,
+              selectedOptions: (() => {
+                if (form.type === "Checkbox") {
+                  const maxSelection = form.settings?.maxSelection || 5;
+                  if (form.selectedOptions?.includes(optionIndex)) {
+                    return form.selectedOptions.filter(opt => opt !== optionIndex);
+                  } else {
+                    const currentSelection = form.selectedOptions || [];
+                    if (currentSelection.length < maxSelection) {
+                      return [...currentSelection, optionIndex];
+                    } else {
+                      message.warning(`Maximum ${maxSelection} options can be selected`);
+                      return currentSelection;
+                    }
+                  }
+                } else if (form.type === "Multiple Choice") {
+                  return [optionIndex];
+                } else if (form.type === "Drop Down") {
+                  if (form.settings?.allowMultiple) {
+                    if (form.selectedOptions?.includes(optionIndex)) {
+                      return form.selectedOptions.filter(opt => opt !== optionIndex);
+                    } else {
+                      return [...(form.selectedOptions || []), optionIndex];
+                    }
+                  } else {
+                    return [optionIndex];
+                  }
+                }
+                return form.selectedOptions || [];
+              })()
+            }
+          : form
+      )
+    );
+  }, []);
+
+  const renderCriteriaContent = useCallback((criteriaKey) => (
     <Row gutter={16}>
       <Col xs={24} sm={12}>
         <div style={{ marginBottom: 8 }}>
@@ -466,9 +666,9 @@ const OEligibility = ({ fun, ID }) => {
         />
       </Col>
     </Row>
-  );
+  ), [activeTab, dataByTab, handleCriteriaDataChange]);
 
-  const renderTabContent = () => {
+  const renderTabContent = useCallback(() => {
     const currentTabData = dataByTab[activeTab] || {
       selectedCriteria: [],
       criteriaData: {},
@@ -476,429 +676,635 @@ const OEligibility = ({ fun, ID }) => {
       schoolDetails: ["School Name", "Address", "Contact Number", "City"]
     };
 
+    // Filter forms for current stage at the top level
+    const currentStageForms = additionalForms.filter(form => form.stage === activeTab);
+
     return (
-    <div style={{ 
-      height: 'calc(100vh - 120px)', 
-      overflowY: 'auto',
-      overflowX: 'hidden',
-      padding: '24px 40px 0px 40px',
-      scrollbarWidth: 'thin',
-      scrollbarColor: '#d4d4d4 #f1f1f1',
-      paddingBottom: '80px'
-    }}>
-      <style>
-        {`
-          .tab-content::-webkit-scrollbar {
-            width: 8px;
-          }
-          .tab-content::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            borderRadius: 4px;
-          }
-          .tab-content::-webkit-scrollbar-thumb {
-            background: #d4d4d4;
-            borderRadius: 4px;
-          }
-          .tab-content::-webkit-scrollbar-thumb:hover {
-            background: #bbb;
-          }
-        `}
-      </style>
-      
-      {/* Eligibility Section */}
-      <div style={{ marginBottom: '32px' }}>
-        <Title level={3} style={{ 
-          marginBottom: '16px', 
-          fontSize: '18px', 
-          fontWeight: '600',
-          '@media (max-width: 768px)': {
-            fontSize: '16px'
-          }
-        }}>
-          Eligibility
-        </Title>
-        
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ marginBottom: '8px' }}>
-            <span style={{ fontSize: '14px', color: '#333' }}>Criteria</span>
-          </div>
-          <Select
-            mode="multiple"
-            style={{ width: '100%' }}
-            placeholder="Select All Criteria"
-            value={currentTabData.selectedCriteria}
-            onChange={handleCriteriaChange}
-            suffixIcon={<DownOutlined />}
-            size="large"
-          >
-            {criteriaOptions.map(option => (
-              <Option key={option.value} value={option.value}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
-        </div>
+      <div className="tab-content" style={{
+        height: 'calc(100vh - 120px)',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: '24px 40px 0px 40px',
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#d4d4d4 #f1f1f1',
+        paddingBottom: '80px'
+      }}>
+        <style>
+          {`
+            .tab-content::-webkit-scrollbar {
+              width: 8px;
+            }
+            .tab-content::-webkit-scrollbar-track {
+              background: #f1f1f1;
+              borderRadius: 4px;
+            }
+            .tab-content::-webkit-scrollbar-thumb {
+              background: #d4d4d4;
+              borderRadius: 4px;
+            }
+            .tab-content::-webkit-scrollbar-thumb:hover {
+              background: #bbb;
+            }
+            .eligibility-title, .student-info-title, .additional-details-title {
+              font-size: 18px;
+              font-weight: 600;
+            }
+            @media (max-width: 768px) {
+              .eligibility-title, .student-info-title, .additional-details-title {
+                font-size: 16px;
+              }
+            }
+          `}
+        </style>
 
-        {/* Criteria Accordions */}
-                  {currentTabData.selectedCriteria.length > 0 && (
-          <Collapse
-            activeKey={activeKeys}
-            onChange={setActiveKeys}
-            expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-            style={{ background: '#fff' }}
-          >
-                         {currentTabData.selectedCriteria.map(criteria => {
-              const criteriaLabel = criteriaOptions.find(opt => opt.value === criteria)?.label;
-              return (
-                <Panel
-                  key={criteria}
-                  header={
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      width: '100%'
-                    }}>
-                      <span style={{ 
-                        fontSize: window.innerWidth <= 768 ? '14px' : '16px' 
+        {/* Eligibility Section */}
+        <div style={{ marginBottom: '32px' }}>
+          <Title level={3} className="eligibility-title">
+            Eligibility
+          </Title>
+
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '8px' }}>
+              <span style={{ fontSize: '14px', color: '#333' }}>Criteria</span>
+            </div>
+            <Select
+              mode="multiple"
+              style={{ width: '100%' }}
+              placeholder="Select All Criteria"
+              value={currentTabData.selectedCriteria}
+              onChange={handleCriteriaChange}
+              suffixIcon={<DownOutlined />}
+              size="large"
+            >
+              {criteriaOptions.map(option => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          {currentTabData.selectedCriteria.length > 0 && (
+            <Collapse
+              activeKey={activeKeys}
+              onChange={setActiveKeys}
+              expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
+              style={{ background: '#fff' }}
+            >
+              {currentTabData.selectedCriteria.map(criteria => {
+                const criteriaLabel = criteriaOptions.find(opt => opt.value === criteria)?.label;
+                return (
+                  <Panel
+                    key={criteria}
+                    header={
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        width: '100%'
                       }}>
-                        {criteriaLabel}
-                      </span>
-                      <CloseOutlined
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeCriteria(criteria);
-                        }}
-                        style={{ color: '#999', fontSize: '12px' }}
-                      />
-                    </div>
-                  }
-                >
-                  {renderCriteriaContent(criteria)}
-                </Panel>
-              );
-            })}
-          </Collapse>
-        )}
-      </div>
-
-      {/* Student Information Section */}
-      <div style={{ marginBottom: '32px' }}>
-        <Title level={3} style={{ 
-          marginBottom: '16px', 
-          fontSize: '18px', 
-          fontWeight: '600',
-          '@media (max-width: 768px)': {
-            fontSize: '16px'
-          }
-        }}>
-          Student Information
-        </Title>
-        
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ marginBottom: '8px' }}>
-            <span style={{ fontSize: '14px', color: '#333' }}>
-              Student Details<span style={{ color: '#ff4d4f' }}>*</span>
-            </span>
-          </div>
-          <Select
-            style={{ width: '100%' }}
-            placeholder="Select Information fields"
-            value={undefined}
-            onChange={(value) => {
-              if (value && !currentTabData.studentDetails.includes(value)) {
-                handleStudentDetailsChange([...currentTabData.studentDetails, value]);
-              }
-            }}
-            suffixIcon={<DownOutlined />}
-            size="large"
-          >
-            {studentDetailOptions.filter(option => !currentTabData.studentDetails.includes(option)).map(option => (
-              <Option key={option} value={option}>
-                {option}
-              </Option>
-            ))}
-          </Select>
-          <div style={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            gap: '8px',
-            maxWidth: '100%',
-            marginTop: '12px'
-          }}>
-            {currentTabData.studentDetails?.map(detail => (
-              <Tag
-                key={detail}
-                closable
-                onClose={() => {
-                  handleStudentDetailsChange(currentTabData.studentDetails.filter(d => d !== detail));
-                }}
-                style={{
-                  background: '#f0f9f0',
-                  border: '1px solid #95de64',
-                  color: '#52c41a',
-                  borderRadius: '16px',
-                  padding: '4px 12px',
-                  fontSize: window.innerWidth <= 768 ? '12px' : '14px',
-                  margin: '2px'
-                }}
-              >
-                {detail}
-              </Tag>
-            ))}
-          </div>
+                        <span style={{ fontSize: windowWidth <= 768 ? '14px' : '16px' }}>
+                          {criteriaLabel}
+                        </span>
+                        <CloseOutlined
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeCriteria(criteria);
+                          }}
+                          style={{ color: '#999', fontSize: '12px' }}
+                        />
+                      </div>
+                    }
+                  >
+                    {renderCriteriaContent(criteria)}
+                  </Panel>
+                );
+              })}
+            </Collapse>
+          )}
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ marginBottom: '8px' }}>
-            <span style={{ fontSize: '14px', color: '#333' }}>School Details</span>
-          </div>
-          <Select
-            style={{ width: '100%' }}
-            placeholder="Select Information fields"
-            value={undefined}
-            onChange={(value) => {
-              if (value && !currentTabData.schoolDetails.includes(value)) {
-                handleSchoolDetailsChange([...currentTabData.schoolDetails, value]);
-              }
-            }}
-            suffixIcon={<DownOutlined />}
-            size="large"
-          >
-            {schoolDetailOptions.filter(option => !currentTabData.schoolDetails.includes(option)).map(option => (
-              <Option key={option} value={option}>
-                {option}
-              </Option>
-            ))}
-          </Select>
-          <div style={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            gap: '8px',
-            maxWidth: '100%',
-            marginTop: '12px'
-          }}>
-            {currentTabData.schoolDetails.map(detail => (
-              <Tag
-                key={detail}
-                closable
-                onClose={() => {
-                  handleSchoolDetailsChange(currentTabData.schoolDetails.filter(d => d !== detail));
-                }}
-                style={{
-                  background: '#f0f9f0',
-                  border: '1px solid #95de64',
-                  color: '#52c41a',
-                  borderRadius: '16px',
-                  padding: '4px 12px',
-                  fontSize: window.innerWidth <= 768 ? '12px' : '14px',
-                  margin: '2px'
-                }}
-              >
-                {detail}
-              </Tag>
-            ))}
-          </div>
-        </div>
-      </div>
+        {/* Student Information Section */}
+        <div style={{ marginBottom: '32px' }}>
+          <Title level={3} className="student-info-title">
+            Student Information
+          </Title>
 
-      {/* Additional Details Section */}
-      <div style={{ marginBottom: '32px' }}>
-        <Title level={3} style={{ 
-          marginBottom: '16px', 
-          fontSize: '18px', 
-          fontWeight: '600',
-          '@media (max-width: 768px)': {
-            fontSize: '16px'
-          }
-        }}>
-          Additional Details
-        </Title>
-        
-        {/* Existing Additional Forms */}
-        {additionalForms.filter(form => form.stage === activeTab).map((form, index) => (
-          <div key={form.id} style={{
-            border: '1px solid #f0f0f0',
-            borderRadius: '8px',
-            padding: '20px',
-            marginBottom: '16px',
-            backgroundColor: '#fafafa'
-          }}>
-            {/* Form Header */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '8px' }}>
+              <span style={{ fontSize: '14px', color: '#333' }}>
+                Student Details<span style={{ color: '#ff4d4f' }}>*</span>
+              </span>
+            </div>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Select Information fields"
+              onChange={(value) => {
+                if (value && !currentTabData.studentDetails.includes(value)) {
+                  handleStudentDetailsChange([...currentTabData.studentDetails, value]);
+                }
+              }}
+              suffixIcon={<DownOutlined />}
+              size="large"
+            >
+              {studentDetailOptions.filter(option => !currentTabData.studentDetails.includes(option)).map(option => (
+                <Option key={option} value={option}>
+                  {option}
+                </Option>
+              ))}
+            </Select>
             <div style={{
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px'
+              flexWrap: 'wrap',
+              gap: '8px',
+              maxWidth: '100%',
+              marginTop: '12px'
             }}>
-              <Text strong style={{ fontSize: '16px' }}>Additional Detail {index + 1}</Text>
-            </div>
-
-            {/* Question, Type, and Action Icons in Same Row */}
-            <div style={{ marginBottom: '20px' }}>
-              <Row align="middle" gutter={[16, 0]}>
-                <Col span={12}>
-                  <Input
-                    placeholder="Enter Question"
-                    value={form.name}
-                    onChange={(e) => updateAdditionalForm(form.id, 'name', e.target.value)}
-                    style={{ width: '100%' }}
-                  />
-                </Col>
-                <Col span={8}>
-                  <Select
-                    placeholder="Select Type"
-                    value={form.type}
-                    onChange={(value) => handleFormTypeChange(form.id, value)}
-                    style={{ width: '100%' }}
-                  >
-                    <Option value="Short Answer">Short Answer</Option>
-                    <Option value="Multiple Choice">Multiple Choice</Option>
-                    <Option value="Checkbox">Checkbox</Option>
-                    <Option value="Drop Down">Drop Down</Option>
-                    <Option value="Date">Date</Option>
-                    <Option value="Photo Upload">Photo Upload</Option>
-                  </Select>
-                </Col>
-                <Col span={4}>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <Button
-                      type="text"
-                      icon={<PlusOutlined />}
-                      onClick={() => duplicateAdditionalForm(form.id)}
-                      size="small"
-                      style={{ color: '#1890ff' }}
-                      title="Duplicate"
-                    />
-                    <Button
-                      type="text"
-                      icon={<CloseOutlined />}
-                      onClick={() => removeAdditionalForm(form.id)}
-                      size="small"
-                      style={{ color: '#999' }}
-                      title="Delete"
-                    />
-                  </div>
-                </Col>
-              </Row>
-            </div>
-
-            {/* Options for Drop Down, Multiple Choice, and Checkbox Types */}
-            {(form.type === "Drop Down" || form.type === "Multiple Choice" || form.type === "Checkbox") && (
-              <div style={{ marginBottom: '20px' }}>
-                {form.options.map((option, optionIndex) => (
-                  <div key={optionIndex} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    marginBottom: '8px',
-                    gap: '8px'
-                  }}>
-                    {/* Checkbox for Checkbox type questions */}
-                    {form.type === "Checkbox" && (
-                      <div 
-                        onClick={() => toggleCheckboxOption(form.id, optionIndex)}
-                        style={{ 
-                          width: '16px', 
-                          height: '16px', 
-                          border: `2px solid ${form.selectedOptions?.includes(optionIndex) ? '#1890ff' : '#d9d9d9'}`, 
-                          borderRadius: '3px',
-                          backgroundColor: form.selectedOptions?.includes(optionIndex) ? '#1890ff' : '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        {form.selectedOptions?.includes(optionIndex) && (
-                          <div style={{ 
-                            width: '8px', 
-                            height: '5px', 
-                            border: '2px solid #fff',
-                            borderTop: 'none',
-                            borderRight: 'none',
-                            transform: 'rotate(-45deg)',
-                            marginTop: '-2px'
-                          }} />
-                        )}
-                      </div>
-                    )}
-                    
-                    <Input
-                      placeholder={`Option ${optionIndex + 1}`}
-                      value={option}
-                      onChange={(e) => updateOptionInForm(form.id, optionIndex, e.target.value)}
-                      style={{ width: '100%' }}
-                    />
-                    <Button
-                      type="text"
-                      icon={<CloseOutlined />}
-                      onClick={() => removeOptionInForm(form.id, optionIndex)}
-                      size="small"
-                      style={{ color: '#999' }}
-                    />
-                  </div>
-                ))}
-                <Button
-                  type="link"
-                  icon={<PlusOutlined />}
-                  onClick={() => addOptionToForm(form.id)}
-                  style={{ padding: '0', color: '#1890ff', fontSize: '14px', marginTop: '8px' }}
+              {currentTabData.studentDetails?.map(detail => (
+                <Tag
+                  key={detail}
+                  closable
+                  onClose={() => {
+                    handleStudentDetailsChange(currentTabData.studentDetails.filter(d => d !== detail));
+                  }}
+                  style={{
+                    background: '#f0f9f0',
+                    border: '1px solid #95de64',
+                    color: '#52c41a',
+                    borderRadius: '16px',
+                    padding: '4px 12px',
+                    fontSize: windowWidth <= 768 ? '12px' : '14px',
+                    margin: '2px'
+                  }}
                 >
-                  Add
-                </Button>
-              </div>
-            )}
+                  {detail}
+                </Tag>
+              ))}
+            </div>
+          </div>
 
-            {/* Photo Upload Instructions */}
-            {form.type === "Photo Upload" && (
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '8px' }}>
+              <span style={{ fontSize: '14px', color: '#333' }}>School Details</span>
+            </div>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Select Information fields"
+              onChange={(value) => {
+                if (value && !currentTabData.schoolDetails.includes(value)) {
+                  handleSchoolDetailsChange([...currentTabData.schoolDetails, value]);
+                }
+              }}
+              suffixIcon={<DownOutlined />}
+              size="large"
+            >
+              {schoolDetailOptions.filter(option => !currentTabData.schoolDetails.includes(option)).map(option => (
+                <Option key={option} value={option}>
+                  {option}
+                </Option>
+              ))}
+            </Select>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '8px',
+              maxWidth: '100%',
+              marginTop: '12px'
+            }}>
+              {currentTabData.schoolDetails.map(detail => (
+                <Tag
+                  key={detail}
+                  closable
+                  onClose={() => {
+                    handleSchoolDetailsChange(currentTabData.schoolDetails.filter(d => d !== detail));
+                  }}
+                  style={{
+                    background: '#f0f9f0',
+                    border: '1px solid #95de64',
+                    color: '#52c41a',
+                    borderRadius: '16px',
+                    padding: '4px 12px',
+                    fontSize: windowWidth <= 768 ? '12px' : '14px',
+                    margin: '2px'
+                  }}
+                >
+                  {detail}
+                </Tag>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Details Section */}
+        <div style={{ marginBottom: '32px' }}>
+          <Title level={3} className="additional-details-title">
+            Additional Details
+          </Title>
+
+          {currentStageForms.map((form, index) => (
+            <div key={form.id} style={{
+              border: '1px solid #f0f0f0',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '16px',
+              backgroundColor: '#fafafa'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px'
+              }}>
+                <Text strong style={{ fontSize: '16px' }}>Additional Detail {index + 1}</Text>
+              </div>
+
               <div style={{ marginBottom: '20px' }}>
                 <Row align="middle" gutter={[16, 0]}>
-                  <Col span={6}>
-                    <Text strong>Upload Settings</Text>
+                  <Col span={12}>
+                    <Input
+                      placeholder="Enter Question"
+                      value={form.name}
+                      onChange={(e) => updateAdditionalForm(form.id, 'name', e.target.value)}
+                      style={{ width: '100%' }}
+                    />
                   </Col>
-                  <Col span={18}>
-                    <div style={{ 
-                      padding: '12px', 
-                      backgroundColor: '#f6ffed', 
-                      border: '1px solid #b7eb8f', 
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      color: '#52c41a'
-                    }}>
-                      <Text>Students will be able to upload photos for this question. Supported formats: JPG, PNG, GIF (Max size: 5MB)</Text>
+                  <Col span={8}>
+                    <Select
+                      placeholder="Select Type"
+                      value={form.type}
+                      onChange={(value) => handleFormTypeChange(form.id, value)}
+                      style={{ width: '100%' }}
+                      showSearch={false}
+                      filterOption={false}
+                      notFoundContent={null}
+                      loading={false}
+                    >
+                      <Option value="Short Answer">Short Answer</Option>
+                      <Option value="Multiple Choice">Multiple Choice</Option>
+                      <Option value="Checkbox">Checkbox</Option>
+                      <Option value="Drop Down">Drop Down</Option>
+                      <Option value="Date">Date</Option>
+                      <Option value="Photo Upload">Photo Upload</Option>
+                    </Select>
+                  </Col>
+                  <Col span={4}>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <Button
+                        type="text"
+                        icon={<PlusOutlined />}
+                        onClick={() => duplicateAdditionalForm(form.id)}
+                        size="small"
+                        style={{ color: '#1890ff' }}
+                        title="Duplicate"
+                      />
+                      <Button
+                        type="text"
+                        icon={<CloseOutlined />}
+                        onClick={() => removeAdditionalForm(form.id)}
+                        size="small"
+                        style={{ color: '#999' }}
+                        title="Delete"
+                      />
                     </div>
                   </Col>
                 </Row>
               </div>
-            )}
-          </div>
-        ))}
 
-        {/* Add Additional Detail Button */}
-        <Button
-          type="link"
-          icon={<PlusOutlined />}
-          onClick={addAdditionalForm}
-          style={{ padding: '0', color: '#1890ff', fontSize: '14px', marginTop: '8px' }}
-        >
-          Add Additional Detail
-        </Button>
+              {form.type === "Short Answer" && (
+                <div style={{ marginBottom: '20px' }}>
+                </div>
+              )}
+
+              {form.type === "Date" && (
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{
+                    marginBottom: '12px',
+                    padding: '8px 12px',
+                    backgroundColor: '#f0f8ff',
+                    border: '1px solid #91d5ff',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#1890ff'
+                  }}>
+                    Date Settings
+                  </div>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Min Date</span>
+                      </div>
+                      <Input
+                        type="date"
+                        value={form.settings?.minDate || new Date().toISOString().split('T')[0]}
+                        onChange={(e) => updateFormSettings(form.id, 'minDate', e.target.value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Max Date</span>
+                      </div>
+                      <Input
+                        type="date"
+                        value={form.settings?.maxDate || new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString().split('T')[0]}
+                        onChange={(e) => updateFormSettings(form.id, 'maxDate', e.target.value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Col>
+                  </Row>
+                  <Row gutter={16} style={{ marginTop: '12px' }}>
+                    <Col span={12}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Allow Future Dates</span>
+                      </div>
+                      <Select
+                        value={form.settings?.allowFuture || true}
+                        onChange={(value) => updateFormSettings(form.id, 'allowFuture', value)}
+                        style={{ width: '100%' }}
+                      >
+                        <Option value={true}>Yes</Option>
+                        <Option value={false}>No</Option>
+                      </Select>
+                    </Col>
+                    <Col span={12}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Allow Past Dates</span>
+                      </div>
+                      <Select
+                        value={form.settings?.allowPast || true}
+                        onChange={(value) => updateFormSettings(form.id, 'allowPast', value)}
+                        style={{ width: '100%' }}
+                      >
+                        <Option value={true}>Yes</Option>
+                        <Option value={false}>No</Option>
+                      </Select>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+
+              {form.type === "Photo Upload" && (
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{
+                    padding: '12px',
+                    backgroundColor: '#f6ffed',
+                    border: '1px solid #b7eb8f',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    color: '#52c41a'
+                  }}>
+                    📷 Students will be able to upload photos for this question
+                  </div>
+                </div>
+              )}
+
+              {form.type === "Drop Down" && (
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{
+                    marginBottom: '12px',
+                    padding: '8px 12px',
+                    backgroundColor: '#f0f8ff',
+                    border: '1px solid #91d5ff',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#1890ff'
+                  }}>
+                    Dropdown Settings
+                  </div>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Allow Multiple Selection</span>
+                      </div>
+                      <Select
+                        value={form.settings?.allowMultiple || false}
+                        onChange={(value) => updateFormSettings(form.id, 'allowMultiple', value)}
+                        style={{ width: '100%' }}
+                      >
+                        <Option value={true}>Yes</Option>
+                        <Option value={false}>No</Option>
+                      </Select>
+                    </Col>
+                    <Col span={12}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Searchable</span>
+                      </div>
+                      <Select
+                        value={form.settings?.searchable || true}
+                        onChange={(value) => updateFormSettings(form.id, 'searchable', value)}
+                        style={{ width: '100%' }}
+                      >
+                        <Option value={true}>Yes</Option>
+                        <Option value={false}>No</Option>
+                      </Select>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+
+              {(form.type === "Drop Down" || form.type === "Multiple Choice" || form.type === "Checkbox") && (
+                <div style={{ marginBottom: '20px' }}>
+                  {form.options.map((option, optionIndex) => (
+                    <div key={optionIndex} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginBottom: '8px',
+                      gap: '8px'
+                    }}>
+                      {(form.type === "Drop Down" || form.type === "Multiple Choice" || form.type === "Checkbox") && (
+                        <div
+                          onClick={() => handleOptionSelection(form.id, optionIndex)}
+                          style={{
+                            width: '16px',
+                            height: '16px',
+                            border: `2px solid ${form.selectedOptions?.includes(optionIndex) ? '#1890ff' : '#d9d9d9'}`,
+                            borderRadius: form.type === "Multiple Choice" ? '50%' : '3px',
+                            backgroundColor: form.selectedOptions?.includes(optionIndex) ? '#1890ff' : '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {form.selectedOptions?.includes(optionIndex) && (
+                            form.type === "Multiple Choice" ? (
+                              <div style={{
+                                width: '6px',
+                                height: '6px',
+                                backgroundColor: '#fff',
+                                borderRadius: '50%'
+                              }} />
+                            ) : (
+                              <div style={{
+                                width: '8px',
+                                height: '5px',
+                                border: '2px solid #fff',
+                                borderTop: 'none',
+                                borderRight: 'none',
+                                transform: 'rotate(-45deg)',
+                                marginTop: '-2px'
+                              }} />
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      <Input
+                        placeholder={`Option ${optionIndex + 1}`}
+                        value={option}
+                        onChange={(e) => updateOptionInForm(form.id, optionIndex, e.target.value)}
+                        style={{
+                          width: '100%',
+                          border: form.selectedOptions?.includes(optionIndex) ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                          backgroundColor: form.selectedOptions?.includes(optionIndex) ? '#f0f8ff' : '#fff'
+                        }}
+                      />
+                      <Button
+                        type="text"
+                        icon={<CloseOutlined />}
+                        onClick={() => removeOptionInForm(form.id, optionIndex)}
+                        size="small"
+                        style={{ color: '#999' }}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    type="link"
+                    icon={<PlusOutlined />}
+                    onClick={() => addOptionToForm(form.id)}
+                    style={{ padding: '0', color: '#1890ff', fontSize: '14px', marginTop: '8px' }}
+                  >
+                    Add
+                  </Button>
+                </div>
+              )}
+
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  backgroundColor: '#fafafa'
+                }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <span style={{ fontWeight: '500', color: '#333' }}>
+                      {form.name || "Sample Question"}
+                    </span>
+                    {form.type === "Short Answer" && (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                        Word limit: 50 words
+                      </div>
+                    )}
+                    {form.type === "Date" && (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                        Date range: {form.settings?.minDate || 'Today'} to {form.settings?.maxDate || 'Future'}
+                      </div>
+                    )}
+                    {form.type === "Photo Upload" && (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                        Photo upload enabled
+                      </div>
+                    )}
+                  </div>
+
+                  {form.type === "Short Answer" && (
+                    <Input.TextArea
+                      placeholder="Type your answer here..."
+                      rows={3}
+                      disabled
+                      style={{ backgroundColor: '#fff' }}
+                    />
+                  )}
+
+                  {form.type === "Date" && (
+                    <Input
+                      type="date"
+                      disabled
+                      style={{ backgroundColor: '#fff' }}
+                    />
+                  )}
+
+                  {form.type === "Photo Upload" && (
+                    <div style={{
+                      border: '2px dashed #d9d9d9',
+                      borderRadius: '6px',
+                      padding: '20px',
+                      textAlign: 'center',
+                      backgroundColor: '#fafafa'
+                    }}>
+                      <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+                        📷 Photo Upload
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>
+                        Students can upload photos here
+                      </div>
+                    </div>
+                  )}
+
+                  {(form.type === "Drop Down" || form.type === "Multiple Choice" || form.type === "Checkbox") && (
+                    <div>
+                      {form.options.map((option, optionIndex) => (
+                        <div key={optionIndex} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          marginBottom: '8px',
+                          gap: '8px'
+                        }}>
+                          <div style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid #d9d9d9',
+                            borderRadius: form.type === "Multiple Choice" ? '50%' : '3px',
+                            backgroundColor: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer'
+                          }}>
+                            {form.type === "Multiple Choice" && (
+                              <div style={{
+                                width: '6px',
+                                height: '6px',
+                                backgroundColor: '#d9d9d9',
+                                borderRadius: '50%'
+                              }} />
+                            )}
+                          </div>
+                          <span style={{ color: '#666' }}>{option}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+
+            </div>
+          ))}
+
+          <Button
+            type="link"
+            icon={<PlusOutlined />}
+            onClick={addAdditionalForm}
+            style={{ padding: '0', color: '#1890ff', fontSize: '14px', marginTop: '8px' }}
+          >
+            Add Additional Detail
+          </Button>
+        </div>
       </div>
-    </div>
     );
-  };
+  }, [activeTab, dataByTab, additionalForms, activeKeys, stages, windowWidth, handleCriteriaChange, renderCriteriaContent, handleStudentDetailsChange, handleSchoolDetailsChange, addAdditionalForm, handleFormTypeChange, duplicateAdditionalForm, removeAdditionalForm, updateAdditionalForm, updateFormSettings, addOptionToForm, updateOptionInForm, removeOptionInForm, handleOptionSelection]);
 
-  // Create tab items dynamically based on stages
-  const tabItems = stages.map((stage) => ({
+  const tabItems = useMemo(() => stages.map((stage) => ({
     key: stage.id.toString(),
     label: stage.name,
     children: renderTabContent(),
-  }));
+  })), [stages, renderTabContent]);
 
   return (
-    <div style={{ 
-      background: '#f5f5f5', 
+    <div style={{
+      background: '#f5f5f5',
       minHeight: '100vh',
       padding: '0',
       overflow: 'hidden',
@@ -920,14 +1326,14 @@ const OEligibility = ({ fun, ID }) => {
             activeKey={activeTab}
             onChange={setActiveTab}
             items={tabItems}
-            style={{ 
+            style={{
               height: '100vh',
               overflow: 'hidden'
             }}
             tabBarStyle={{
               margin: '0',
-              paddingLeft: window.innerWidth <= 768 ? '16px' : '40px',
-              paddingRight: window.innerWidth <= 768 ? '16px' : '40px',
+              paddingLeft: windowWidth <= 768 ? '16px' : '40px',
+              paddingRight: windowWidth <= 768 ? '16px' : '40px',
               background: '#fff',
               borderBottom: '1px solid #f0f0f0',
               position: 'sticky',
@@ -936,9 +1342,8 @@ const OEligibility = ({ fun, ID }) => {
             }}
           />
         )}
-        
-        {/* Fixed Footer */}
-        <div style={{ 
+
+        <div style={{
           position: 'fixed',
           bottom: 0,
           left: 0,
@@ -961,7 +1366,7 @@ const OEligibility = ({ fun, ID }) => {
               borderRadius: '6px',
               padding: '0 32px',
               height: '40px',
-              minWidth: window.innerWidth <= 768 ? '120px' : '180px'
+              minWidth: windowWidth <= 768 ? '120px' : '180px'
             }}
             onClick={saveEligibilityData}
           >
@@ -969,8 +1374,7 @@ const OEligibility = ({ fun, ID }) => {
           </Button>
         </div>
       </div>
-      
-      {/* Media Queries for Additional Responsive Styling */}
+
       <style>
         {`
           @media (max-width: 768px) {
@@ -990,7 +1394,7 @@ const OEligibility = ({ fun, ID }) => {
               padding: 12px 16px !important;
             }
           }
-          
+
           @media (max-width: 480px) {
             .ant-tabs-tab {
               padding: 8px 12px !important;

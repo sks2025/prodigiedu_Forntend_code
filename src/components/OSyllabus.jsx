@@ -234,8 +234,8 @@ const OSyllabus = ({ fun, ID }) => {
       const myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
 
-      // Transform subjects to include subject type (category)
-      const subjectsWithType = newSubjects.map(subjectName => {
+      // Create topics array with subjectstype for each subject
+      const topicsWithSubjectType = newSubjects.map(subjectName => {
         let subjectType = "Others"; // Default fallback
         
         for (const [category, subjectList] of Object.entries(subjectCategories)) {
@@ -247,18 +247,20 @@ const OSyllabus = ({ fun, ID }) => {
         
         return {
           name: subjectName,
-          type: subjectType
+          weight: 0,
+          subtopics: [],
+          stage: stages.length > 0 ? stages[0].name : "Default",
+          subjectstype: subjectType
         };
       });
 
       const data = {
         syllabus: {
-          subjects: subjectsWithType,
-          topics: [] // Keep existing topics
+          topics: topicsWithSubjectType
         }
       };
 
-      console.log("Auto-saving subjects:", subjectsWithType);
+      console.log("Auto-saving topics with subjectstype:", topicsWithSubjectType);
 
       const requestOptions = {
         method: "PUT",
@@ -275,12 +277,12 @@ const OSyllabus = ({ fun, ID }) => {
       }
 
       const result = await response.json();
-      console.log("Subjects auto-saved successfully:", result);
-      message.success("Subjects saved automatically!");
+      console.log("Topics auto-saved successfully:", result);
+      message.success("Topics saved automatically!");
       
     } catch (error) {
-      console.error("Error auto-saving subjects:", error);
-      message.error("Failed to auto-save subjects. Please try again.");
+      console.error("Error auto-saving topics:", error);
+      message.error("Failed to auto-save topics. Please try again.");
     } finally {
       setAutoSaveInProgress(false);
     }
@@ -477,37 +479,30 @@ const OSyllabus = ({ fun, ID }) => {
     stages.forEach((stage) => {
       const stageTopics = topicsByTab[stage.id.toString()] || [];
       stageTopics.forEach((topic) => {
+        // Find which category this topic belongs to
+        let subjectType = "Others"; // Default fallback
+        
+        for (const [category, subjectList] of Object.entries(subjectCategories)) {
+          if (subjectList.includes(topic.name)) {
+            subjectType = category;
+            break;
+          }
+        }
+        
         topics.push({
           name: topic.name,
           weight: topic.weight,
           subtopics: topic.subtopics || [],
-          stage: stage.name
+          stage: stage.name,
+          subjectstype: subjectType // Add subjectstype key here
         });
       });
     });
 
-    // Transform subjects to include subject type (category)
-    const subjectsWithType = subjects.map(subjectName => {
-      // Find which category this subject belongs to
-      let subjectType = "Others"; // Default fallback
-      
-      for (const [category, subjectList] of Object.entries(subjectCategories)) {
-        if (subjectList.includes(subjectName)) {
-          subjectType = category;
-          break;
-        }
-      }
-      
-      return {
-        name: subjectName,
-        type: subjectType
-      };
-    });
+    // Remove the separate subjects array - just send topics with subjectstype
+    console.log("All data being sent to API:", { topics });
     
-    console.log("Subjects being sent to API:", subjectsWithType);
-    console.log("All data being sent to API:", { topics, subjects: subjectsWithType });
-    
-    return { syllabus: { topics, subjects: subjectsWithType } };
+    return { syllabus: { topics } };
   };
 
   // Check if weightage total is 100%
@@ -524,9 +519,10 @@ const OSyllabus = ({ fun, ID }) => {
 
   // Modified saveSyllabus function to handle create or update
   const saveSyllabus = async () => {
-    // Validate subjects
-    if (subjects.length === 0) {
-      message.warning("Please select at least one subject before saving.");
+    // Validate that at least one topic exists (which will have subjectstype)
+    const allTopics = Object.values(topicsByTab).flat();
+    if (allTopics.length === 0) {
+      message.warning("Please select at least one topic in any stage before saving.");
       return;
     }
 
@@ -670,24 +666,15 @@ const OSyllabus = ({ fun, ID }) => {
           }
         }
 
-        // Process existing subjects if any
-        if (result.success && result.data && Array.isArray(result.data.subjects)) {
-          // Handle both old format (just subject names) and new format (with type)
-          const subjectsData = result.data.subjects;
-          console.log("Raw subjects data from API:", subjectsData);
-          
-          if (subjectsData.length > 0 && typeof subjectsData[0] === 'object' && subjectsData[0].name) {
-            // New format: subjects with type information
-            const subjectNames = subjectsData.map(subject => subject.name);
-            console.log("Extracted subject names:", subjectNames);
-            setSubjects(subjectNames);
-          } else {
-            // Old format: just subject names
-            console.log("Using old format subjects:", subjectsData);
-            setSubjects(subjectsData);
-          }
+        // Extract subjects from topics (since we're no longer using separate subjects array)
+        if (result.success && result.data && Array.isArray(result.data.topics)) {
+          const topics = result.data.topics;
+          const subjectNames = topics.map(topic => topic.name);
+          console.log("Extracted subject names from topics:", subjectNames);
+          setSubjects(subjectNames);
         } else {
-          console.log("No subjects data found in API response");
+          console.log("No topics data found in API response");
+          setSubjects([]);
         }
         
         setTopicsByTab(initialTopicsByTab);
@@ -778,12 +765,7 @@ const OSyllabus = ({ fun, ID }) => {
             {/* Subjects Field */}
             <Row gutter={24} align="middle" style={{ marginBottom: "32px" }}>
               <Col span={24}>
-                {/* Debug Info */}
-                <div style={{ marginBottom: "8px", fontSize: "12px", color: "#666" }}>
-                  Debug: Current subjects: {JSON.stringify(subjects)} | 
-                  Selected category: {selectedCategory} | 
-                  Show selector: {showSubjectSelector.toString()}
-                </div>
+               
                 
                 <Form.Item
                   label={

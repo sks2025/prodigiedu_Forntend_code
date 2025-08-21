@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button, Input, Select, Tabs, Card, Row, Col, Typography, message } from 'antd';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { CiCirclePlus } from "react-icons/ci";
@@ -15,33 +15,29 @@ const OPattern = ({ fun, ID }) => {
   const [patternsByTab, setPatternsByTab] = useState({});
   const [stages, setStages] = useState([]); // New state for stages
   const [rules, setRules] = useState(""); // New state for rules
-  const editor = useRef(null);
+  const editorRef = useRef(null);
   
   // Use ID from props if available, otherwise use id from params
   const competitionId = ID || id;
 
-  // Jodit editor configuration
-  const editorConfig = {
+  // Optimized Jodit editor configuration
+  const editorConfig = useCallback(() => ({
     readonly: false,
     height: 300,
     toolbar: true,
-    spellcheck: true,
+    spellcheck: false,
     language: "en",
-    toolbarButtonSize: "medium",
-    toolbarAdaptive: false,
-    showCharsCounter: true,
-    showWordsCounter: true,
+    showCharsCounter: false,
+    showWordsCounter: false,
     showXPathInStatusbar: false,
-    askBeforePasteHTML: true,
-    askBeforePasteFromWord: true,
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
     defaultActionOnPaste: "insert_clear_html",
     buttons: [
-      "source",
-      "|",
       "bold",
-      "strikethrough",
-      "underline",
       "italic",
+      "underline",
+      "strikethrough",
       "|",
       "ul",
       "ol",
@@ -64,21 +60,37 @@ const OPattern = ({ fun, ID }) => {
       "|",
       "hr",
       "eraser",
-      "copyformat",
       "|",
       "fullsize"
     ],
-    uploader: {
-      insertImageAsBase64URI: true
-    },
     removeButtons: [],
     removePlugins: [],
-    events: {}
-  };
+    events: {},
+    // Add these settings for better stability
+    autoHeight: false,
+    saveModeInStorage: false,
+    saveModeInCookie: false,
+    saveModeInLocalStorage: false,
+    saveModeInSessionStorage: false,
+    // Prevent auto-save issues
+    saveMode: false,
+    // Better focus handling
+    focus: false,
+    // Prevent unnecessary updates
+    updateMode: 'blur'
+  }), []);
 
-  const handleEditorChange = (newContent) => {
+  // Use useCallback to prevent unnecessary re-renders
+  const handleEditorChange = useCallback((newContent) => {
+    console.log('Editor content changed:', newContent);
     setRules(newContent);
-  };
+  }, []);
+
+  // Handle editor blur event
+  const handleEditorBlur = useCallback((newContent) => {
+    console.log('Editor blur event:', newContent);
+    setRules(newContent);
+  }, []);
 
   // Fetch pattern data when component mounts
   useEffect(() => {
@@ -418,9 +430,7 @@ const OPattern = ({ fun, ID }) => {
                 padding: '12px 16px', 
                 marginBottom: '20px' 
               }}>
-                <Text style={{ color: '#52c41a', fontSize: '14px' }}>
-                  <strong>Note:</strong> At least one pattern section is mandatory for each stage. Each section must have a name and at least one format with questions and marks.
-                </Text>
+               
               </div>
 
               {(patternsByTab[activeTab] || []).map((section, sectionIndex) => (
@@ -547,23 +557,15 @@ const OPattern = ({ fun, ID }) => {
             {/* Rules Section */}
             <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
               <Title level={4} style={{ marginBottom: '24px', fontWeight: '600' }}>Rules</Title>
-              {/* <div style={{ 
-                backgroundColor: '#f6ffed', 
-                border: '1px solid #b7eb8f', 
-                borderRadius: '6px', 
-                padding: '12px 16px', 
-                marginBottom: '20px' 
-              }}>
-                <Text style={{ color: '#52c41a', fontSize: '14px' }}>
-                  <strong>Note:</strong> Tell the students about the competition and why they should register for this one.
-                </Text>
-              </div> */}
+              
+             
               
               <JoditEditor
-                ref={editor}
+                ref={editorRef}
                 value={rules}
-                config={editorConfig}
+                config={editorConfig()}
                 onChange={handleEditorChange}
+                onBlur={handleEditorBlur}
               />
             </div>
           </>

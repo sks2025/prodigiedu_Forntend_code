@@ -28,6 +28,14 @@ import { useParams } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+// CSS for spinner animation
+const spinnerStyle = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
 const OSyllabus = ({ fun, ID }) => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("");
@@ -38,16 +46,52 @@ const OSyllabus = ({ fun, ID }) => {
   const [stages, setStages] = useState([]);
   const [showWeightage, setShowWeightage] = useState(false); // New state for weightage visibility
   const [subjects, setSubjects] = useState([]); // New state for subjects
+  const [selectedCategory, setSelectedCategory] = useState("Academic"); // New state for selected category
+  const [showSubjectSelector, setShowSubjectSelector] = useState(false); // New state for subject selector visibility
+  const [autoSaveInProgress, setAutoSaveInProgress] = useState(false); // New state for auto-save progress
   
   // Use ID from props if available, otherwise use id from params
   const competitionId = ID || id;
 
-  // Updated subject list from excel sheet
-  const allSubjects = [
-    "Academic",
-    "Extra-curricular", 
-    "Others"
-  ];
+  // Updated subject list from excel sheet with categories
+  const subjectCategories = {
+    "Academic": [
+      "Maths",
+      "English", 
+      "Physics",
+      "Chemistry",
+      "Environmental Studies",
+      "History",
+      "General Knowledge",
+      "Computer Science",
+      "Biology",
+      "Geography",
+      "Economics",
+      "Literature"
+    ],
+    "Extra-curricular": [
+      "Art",
+      "Music",
+      "Sports",
+      "Dance",
+      "Drama",
+      "Debate",
+      "Quiz",
+      "Science Fair",
+      "Robotics",
+      "Coding",
+      "Photography",
+      "Creative Writing"
+    ],
+    "Others": [
+      "Life Skills",
+      "Leadership",
+      "Communication",
+      "Team Building",
+      "Problem Solving",
+      "Critical Thinking"
+    ]
+  };
 
   // Updated topic list from excel sheet
   const allTopics = [
@@ -148,7 +192,99 @@ const OSyllabus = ({ fun, ID }) => {
   };
 
   const handleSubjectRemove = (subjectName) => {
-    setSubjects(subjects.filter(subject => subject !== subjectName));
+    const newSubjects = subjects.filter(subject => subject !== subjectName);
+    setSubjects(newSubjects);
+    autoSaveSubjects(newSubjects);
+  };
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+  };
+
+  const handleSubjectToggle = (subjectName) => {
+    console.log("Toggling subject:", subjectName);
+    console.log("Current subjects before toggle:", subjects);
+    
+    if (subjects.includes(subjectName)) {
+      const newSubjects = subjects.filter(subject => subject !== subjectName);
+      console.log("Removing subject, new subjects:", newSubjects);
+      setSubjects(newSubjects);
+      autoSaveSubjects(newSubjects);
+    } else {
+      const newSubjects = [...subjects, subjectName];
+      console.log("Adding subject, new subjects:", newSubjects);
+      setSubjects(newSubjects);
+      autoSaveSubjects(newSubjects);
+    }
+  };
+
+  const toggleSubjectSelector = () => {
+    console.log("Toggling subject selector. Current state:", showSubjectSelector);
+    const newState = !showSubjectSelector;
+    console.log("New state will be:", newState);
+    setShowSubjectSelector(newState);
+  };
+
+  // Auto-save subjects when they change
+  const autoSaveSubjects = async (newSubjects) => {
+    if (!competitionId || autoSaveInProgress) return;
+    
+    setAutoSaveInProgress(true);
+    
+    try {
+      const myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      // Transform subjects to include subject type (category)
+      const subjectsWithType = newSubjects.map(subjectName => {
+        let subjectType = "Others"; // Default fallback
+        
+        for (const [category, subjectList] of Object.entries(subjectCategories)) {
+          if (subjectList.includes(subjectName)) {
+            subjectType = category;
+            break;
+          }
+        }
+        
+        return {
+          name: subjectName,
+          type: subjectType
+        };
+      });
+
+      const data = {
+        syllabus: {
+          subjects: subjectsWithType,
+          topics: [] // Keep existing topics
+        }
+      };
+
+      console.log("Auto-saving subjects:", subjectsWithType);
+
+      const requestOptions = {
+        method: "PUT",
+        headers: myHeaders,
+        body: JSON.stringify(data),
+        redirect: "follow",
+      };
+
+      const url = `https://api.prodigiedu.com/api/competitions/updatesyllabus/${competitionId}`;
+      const response = await fetch(url, requestOptions);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Subjects auto-saved successfully:", result);
+      message.success("Subjects saved automatically!");
+      
+    } catch (error) {
+      console.error("Error auto-saving subjects:", error);
+      message.error("Failed to auto-save subjects. Please try again.");
+    } finally {
+      setAutoSaveInProgress(false);
+    }
   };
 
   const handleTopicSelect = (topicName) => {
@@ -350,8 +486,29 @@ const OSyllabus = ({ fun, ID }) => {
         });
       });
     });
+
+    // Transform subjects to include subject type (category)
+    const subjectsWithType = subjects.map(subjectName => {
+      // Find which category this subject belongs to
+      let subjectType = "Others"; // Default fallback
+      
+      for (const [category, subjectList] of Object.entries(subjectCategories)) {
+        if (subjectList.includes(subjectName)) {
+          subjectType = category;
+          break;
+        }
+      }
+      
+      return {
+        name: subjectName,
+        type: subjectType
+      };
+    });
     
-    return { syllabus: { topics, subjects } };
+    console.log("Subjects being sent to API:", subjectsWithType);
+    console.log("All data being sent to API:", { topics, subjects: subjectsWithType });
+    
+    return { syllabus: { topics, subjects: subjectsWithType } };
   };
 
   // Check if weightage total is 100%
@@ -516,7 +673,22 @@ const OSyllabus = ({ fun, ID }) => {
 
         // Process existing subjects if any
         if (result.success && result.data && Array.isArray(result.data.subjects)) {
-          setSubjects(result.data.subjects);
+          // Handle both old format (just subject names) and new format (with type)
+          const subjectsData = result.data.subjects;
+          console.log("Raw subjects data from API:", subjectsData);
+          
+          if (subjectsData.length > 0 && typeof subjectsData[0] === 'object' && subjectsData[0].name) {
+            // New format: subjects with type information
+            const subjectNames = subjectsData.map(subject => subject.name);
+            console.log("Extracted subject names:", subjectNames);
+            setSubjects(subjectNames);
+          } else {
+            // Old format: just subject names
+            console.log("Using old format subjects:", subjectsData);
+            setSubjects(subjectsData);
+          }
+        } else {
+          console.log("No subjects data found in API response");
         }
         
         setTopicsByTab(initialTopicsByTab);
@@ -543,6 +715,25 @@ const OSyllabus = ({ fun, ID }) => {
     }
   }, [stages, activeTab]);
 
+  // Handle clicking outside subject selector
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSubjectSelector && !event.target.closest('.subject-selector')) {
+        setShowSubjectSelector(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSubjectSelector]);
+
+  // Debug subjects state changes
+  useEffect(() => {
+    console.log("Subjects state changed:", subjects);
+  }, [subjects]);
+
   // Check if all stages have topics for save button state
   const allStagesHaveTopics = stages.length > 0 && stages.every(stage => {
     const stageTopics = topicsByTab[stage.id.toString()] || [];
@@ -551,6 +742,7 @@ const OSyllabus = ({ fun, ID }) => {
 
   return (
     <div>
+      <style>{spinnerStyle}</style>
       <Card
         style={{
           margin: "0 auto",
@@ -587,6 +779,13 @@ const OSyllabus = ({ fun, ID }) => {
             {/* Subjects Field */}
             <Row gutter={24} align="middle" style={{ marginBottom: "32px" }}>
               <Col span={24}>
+                {/* Debug Info */}
+                <div style={{ marginBottom: "8px", fontSize: "12px", color: "#666" }}>
+                  Debug: Current subjects: {JSON.stringify(subjects)} | 
+                  Selected category: {selectedCategory} | 
+                  Show selector: {showSubjectSelector.toString()}
+                </div>
+                
                 <Form.Item
                   label={
                     <span style={{ fontSize: "16px", fontWeight: "500" }}>
@@ -595,21 +794,188 @@ const OSyllabus = ({ fun, ID }) => {
                   }
                   style={{ marginBottom: 0 }}
                 >
-                  <Select
-                    mode="multiple"
-                    placeholder="Select All Subjects"
-                    style={{ width: "100%" }}
-                    suffixIcon={<DownOutlined />}
-                    size="large"
-                    value={subjects}
-                    onChange={setSubjects}
+                  <div 
+                    className="subject-selector"
+                    style={{
+                      border: "1px solid #d9d9d9",
+                      borderRadius: "6px",
+                      backgroundColor: "#fff",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      cursor: "pointer",
+                      position: "relative"
+                    }}
+                    onClick={toggleSubjectSelector}
                   >
-                    {allSubjects.map((subject, index) => (
-                      <Option key={index} value={subject}>
-                        {subject}
-                      </Option>
-                    ))}
-                  </Select>
+                    <div style={{
+                      padding: "12px 16px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      color: subjects.length > 0 ? "#000" : "#bfbfbf"
+                    }}>
+                      <span>
+                        {subjects.length > 0 
+                          ? `${subjects.length} subject(s) selected`
+                          : "Select All Subjects"
+                        }
+                      </span>
+                      <DownOutlined style={{ color: "#666" }} />
+                    </div>
+                    
+                    {showSubjectSelector && (
+                      <div 
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          left: 0,
+                          right: 0,
+                          backgroundColor: "#fff",
+                          border: "1px solid #d9d9d9",
+                          borderRadius: "6px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                          zIndex: 1000,
+                          maxHeight: "400px",
+                          overflow: "hidden"
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div style={{
+                          display: "flex",
+                          borderBottom: "1px solid #f0f0f0"
+                        }}>
+                          {/* Left Column - Categories */}
+                          <div style={{
+                            width: "40%",
+                            borderRight: "1px solid #f0f0f0",
+                            backgroundColor: "#fafafa"
+                          }}>
+                            {Object.keys(subjectCategories).map((category) => (
+                              <div
+                                key={category}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCategorySelect(category);
+                                }}
+                                style={{
+                                  padding: "12px 16px",
+                                  cursor: "pointer",
+                                  backgroundColor: selectedCategory === category ? "#e6f7ff" : "transparent",
+                                  borderBottom: "1px solid #f0f0f0",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center"
+                                }}
+                              >
+                                <span style={{
+                                  color: selectedCategory === category ? "#1890ff" : "#000",
+                                  fontWeight: selectedCategory === category ? "500" : "normal"
+                                }}>
+                                  {category}
+                                </span>
+                                <DownOutlined style={{ 
+                                  color: "#666",
+                                  transform: "rotate(-90deg)",
+                                  fontSize: "12px"
+                                }} />
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Right Column - Subjects */}
+                          <div style={{
+                            width: "60%",
+                            maxHeight: "350px",
+                            overflowY: "auto"
+                          }}>
+                            {subjectCategories[selectedCategory]?.map((subject) => (
+                              <div
+                                key={subject}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSubjectToggle(subject);
+                                }}
+                                style={{
+                                  padding: "12px 16px",
+                                  cursor: "pointer",
+                                  borderBottom: "1px solid #f0f0f0",
+                                  backgroundColor: subjects.includes(subject) ? "#f6ffed" : "transparent",
+                                  display: "flex",
+                                  alignItems: "center"
+                                }}
+                              >
+                                <div style={{
+                                  width: "16px",
+                                  height: "16px",
+                                  border: "2px solid #d9d9d9",
+                                  borderRadius: "3px",
+                                  marginRight: "12px",
+                                  backgroundColor: subjects.includes(subject) ? "#52c41a" : "transparent",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center"
+                                }}>
+                                  {subjects.includes(subject) && (
+                                    <span style={{ color: "#fff", fontSize: "12px", fontWeight: "bold" }}>✓</span>
+                                  )}
+                                </div>
+                                <span style={{
+                                  color: subjects.includes(subject) ? "#52c41a" : "#000"
+                                }}>
+                                  {subject}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Selected Subjects Display */}
+                  {subjects.length > 0 && (
+                    <div style={{ marginTop: "12px" }}>
+                      <Space wrap>
+                        {subjects.map((subject, index) => (
+                          <Tag
+                            key={index}
+                            closable
+                            onClose={() => handleSubjectRemove(subject)}
+                            style={{
+                              fontSize: "14px",
+                              padding: "4px 8px",
+                              border: "1px solid #4CAF50",
+                              borderRadius: "999px",
+                              color: "#4CAF50",
+                              backgroundColor: "#f6ffed"
+                            }}
+                          >
+                            {subject}
+                          </Tag>
+                        ))}
+                      </Space>
+                      {/* Auto-save indicator */}
+                      {autoSaveInProgress && (
+                        <div style={{ 
+                          marginTop: "8px", 
+                          fontSize: "12px", 
+                          color: "#1890ff",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px"
+                        }}>
+                          <div style={{
+                            width: "12px",
+                            height: "12px",
+                            border: "2px solid #1890ff",
+                            borderTop: "2px solid transparent",
+                            borderRadius: "50%",
+                            animation: "spin 1s linear infinite"
+                          }}></div>
+                          Auto-saving subjects...
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </Form.Item>
               </Col>
             </Row>

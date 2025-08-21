@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button, Input, Select, Tabs, Card, Row, Col, Typography, message } from 'antd';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { CiCirclePlus } from "react-icons/ci";
 import { useParams } from "react-router-dom";
+import JoditEditor from "jodit-react";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -13,9 +14,71 @@ const OPattern = ({ fun, ID }) => {
   const [loading, setLoading] = useState(false);
   const [patternsByTab, setPatternsByTab] = useState({});
   const [stages, setStages] = useState([]); // New state for stages
+  const [rules, setRules] = useState(""); // New state for rules
+  const editor = useRef(null);
   
   // Use ID from props if available, otherwise use id from params
   const competitionId = ID || id;
+
+  // Jodit editor configuration
+  const editorConfig = {
+    readonly: false,
+    height: 300,
+    toolbar: true,
+    spellcheck: true,
+    language: "en",
+    toolbarButtonSize: "medium",
+    toolbarAdaptive: false,
+    showCharsCounter: true,
+    showWordsCounter: true,
+    showXPathInStatusbar: false,
+    askBeforePasteHTML: true,
+    askBeforePasteFromWord: true,
+    defaultActionOnPaste: "insert_clear_html",
+    buttons: [
+      "source",
+      "|",
+      "bold",
+      "strikethrough",
+      "underline",
+      "italic",
+      "|",
+      "ul",
+      "ol",
+      "|",
+      "outdent",
+      "indent",
+      "|",
+      "font",
+      "fontsize",
+      "brush",
+      "paragraph",
+      "|",
+      "image",
+      "link",
+      "table",
+      "|",
+      "align",
+      "undo",
+      "redo",
+      "|",
+      "hr",
+      "eraser",
+      "copyformat",
+      "|",
+      "fullsize"
+    ],
+    uploader: {
+      insertImageAsBase64URI: true
+    },
+    removeButtons: [],
+    removePlugins: [],
+    events: {}
+  };
+
+  const handleEditorChange = (newContent) => {
+    setRules(newContent);
+  };
 
   // Fetch pattern data when component mounts
   useEffect(() => {
@@ -47,7 +110,7 @@ const OPattern = ({ fun, ID }) => {
           });
           
           // Set the first stage as active tab if available
-          if (stagesData.length > 0 && !activeTab) {
+          if (stagesData.length > 0) {
             setActiveTab(stagesData[0].id.toString());
           }
 
@@ -72,6 +135,26 @@ const OPattern = ({ fun, ID }) => {
             }
           }
           
+          // Always add at least one default section if no existing data or if existing data is empty
+          if (stagesData.length > 0) {
+            const firstStageId = stagesData[0].id.toString();
+            if (!initialPatternsByTab[firstStageId] || initialPatternsByTab[firstStageId].length === 0) {
+              const defaultSection = {
+                id: Date.now(),
+                name: "",
+                formats: [
+                  {
+                    id: Date.now() + 1,
+                    format: "",
+                    questions: "",
+                    marks: ""
+                  }
+                ]
+              };
+              initialPatternsByTab[firstStageId] = [defaultSection];
+            }
+          }
+          
           setPatternsByTab(initialPatternsByTab);
         } else {
           console.warn("No stages found in overviewdata");
@@ -86,14 +169,14 @@ const OPattern = ({ fun, ID }) => {
     if (competitionId) {
       getPattern();
     }
-  }, [competitionId]);
+  }, [competitionId]); // Only depend on competitionId
 
-  // Update active tab when stages change
+  // Update active tab when stages change - separate useEffect to prevent loops
   useEffect(() => {
     if (stages.length > 0 && !activeTab) {
       setActiveTab(stages[0].id.toString());
     }
-  }, [stages, activeTab]);
+  }, [stages]); // Remove activeTab dependency to prevent infinite loops
 
   const addSection = () => {
     const newSection = {
@@ -192,7 +275,8 @@ const OPattern = ({ fun, ID }) => {
     });
 
     return {
-      sections: allSections
+      sections: allSections,
+      rules: rules // Include rules in the API call
     };
   };
 
@@ -323,140 +407,166 @@ const OPattern = ({ fun, ID }) => {
             <Text>No stages found for this competition. Please add stages first.</Text>
           </div>
         ) : (
-          <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <Title level={4} style={{ marginBottom: '24px', fontWeight: '600' }}>Pattern</Title>
-            <div style={{ 
-              backgroundColor: '#f6ffed', 
-              border: '1px solid #b7eb8f', 
-              borderRadius: '6px', 
-              padding: '12px 16px', 
-              marginBottom: '20px' 
-            }}>
-              <Text style={{ color: '#52c41a', fontSize: '14px' }}>
-                <strong>Note:</strong> At least one pattern section is mandatory for each stage. Each section must have a name and at least one format with questions and marks.
-              </Text>
-            </div>
-
-            {(patternsByTab[activeTab] || []).map((section, sectionIndex) => (
-              <div key={section.id} style={{
-                border: '1px solid #f0f0f0',
-                borderRadius: '8px',
-                padding: '20px',
-                marginBottom: '16px',
-                backgroundColor: '#fafafa'
+          <>
+            {/* Pattern Section */}
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
+              <Title level={4} style={{ marginBottom: '24px', fontWeight: '600' }}>Pattern</Title>
+              <div style={{ 
+                backgroundColor: '#f6ffed', 
+                border: '1px solid #b7eb8f', 
+                borderRadius: '6px', 
+                padding: '12px 16px', 
+                marginBottom: '20px' 
               }}>
-                {/* Section Header */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '20px'
+                <Text style={{ color: '#52c41a', fontSize: '14px' }}>
+                  <strong>Note:</strong> At least one pattern section is mandatory for each stage. Each section must have a name and at least one format with questions and marks.
+                </Text>
+              </div>
+
+              {(patternsByTab[activeTab] || []).map((section, sectionIndex) => (
+                <div key={section.id} style={{
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  marginBottom: '16px',
+                  backgroundColor: '#fafafa'
                 }}>
-                  <Text strong style={{ fontSize: '16px' }}>Section {sectionIndex + 1}</Text>
-                  <Button
-                    type="text"
-                    icon={<CloseOutlined />}
-                    onClick={() => removeSection(section.id)}
-                    size="small"
-                    style={{ color: '#999' }}
-                  />
-                </div>
+                  {/* Section Header */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px'
+                  }}>
+                    <Text strong style={{ fontSize: '16px' }}>Section {sectionIndex + 1}</Text>
+                    <Button
+                      type="text"
+                      icon={<CloseOutlined />}
+                      onClick={() => removeSection(section.id)}
+                      size="small"
+                      style={{ color: '#999' }}
+                    />
+                  </div>
 
-                {/* Name Field */}
-                <div style={{ marginBottom: '20px' }}>
-                  <Row align="middle" gutter={[16, 0]}>
-                    <Col span={3}>
-                      <Text strong>
-                        Name<span style={{ color: 'red' }}>*</span>
-                      </Text>
-                    </Col>
-                    <Col span={21}>
-                      <Input
-                        placeholder="Name of the Section"
-                        value={section.name}
-                        onChange={(e) => updateSection(section.id, 'name', e.target.value)}
-                        style={{ width: '300px' }}
-                      />
-                    </Col>
-                  </Row>
-                </div>
-
-                {/* Format Fields */}
-                {section.formats.map((format, formatIndex) => (
-                  <div key={format.id} style={{ marginBottom: '16px' }}>
+                  {/* Name Field */}
+                  <div style={{ marginBottom: '20px' }}>
                     <Row align="middle" gutter={[16, 0]}>
                       <Col span={3}>
                         <Text strong>
-                          Format<span style={{ color: 'red' }}>*</span>
+                          Name<span style={{ color: 'red' }}>*</span>
                         </Text>
                       </Col>
-                      <Col span={5}>
-                        <Select
-                          placeholder="Select"
-                          value={format.format}
-                          onChange={(value) => updateFormat(section.id, format.id, 'format', value)}
-                          style={{ width: '100%' }}
-                          suffixIcon={<div style={{ color: '#999' }}>▼</div>}
-                        >
-                          {formatOptions.map(option => (
-                            <Option key={option} value={option}>{option}</Option>
-                          ))}
-                        </Select>
-                      </Col>
-                      <Col span={3}>
-                        <Text strong>
-                          Questions<span style={{ color: 'red' }}>*</span>
-                        </Text>
-                      </Col>
-                      <Col span={3}>
+                      <Col span={21}>
                         <Input
-                          placeholder="Enter"
-                          value={format.questions}
-                          onChange={(e) => updateFormat(section.id, format.id, 'questions', e.target.value)}
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                      <Col span={3}>
-                        <Text strong>
-                          {formatIndex === 0 ? 'Marks' : 'Marks Per Question'}<span style={{ color: 'red' }}>*</span>
-                        </Text>
-                      </Col>
-                      <Col span={4}>
-                        <Input
-                          placeholder="Enter"
-                          value={format.marks}
-                          onChange={(e) => updateFormat(section.id, format.id, 'marks', e.target.value)}
-                          style={{ width: '100%' }}
+                          placeholder="Name of the Section"
+                          value={section.name}
+                          onChange={(e) => updateSection(section.id, 'name', e.target.value)}
+                          style={{ width: '300px' }}
                         />
                       </Col>
                     </Row>
                   </div>
-                ))}
 
-                {/* Add Format Button */}
-                <div style={{ marginTop: '16px', marginLeft: '120px' }}>
-                  <Button
-                    type="link"
-                    icon={<CiCirclePlus className="fs-4" />}
-                    onClick={() => addFormat(section.id)}
-                    style={{ padding: '0', color: '#1890ff', fontSize: '14px' }}
-                  >
-                    Add Format
-                  </Button>
+                  {/* Format Fields */}
+                  {section.formats.map((format, formatIndex) => (
+                    <div key={format.id} style={{ marginBottom: '16px' }}>
+                      <Row align="middle" gutter={[16, 0]}>
+                        <Col span={3}>
+                          <Text strong>
+                            Format<span style={{ color: 'red' }}>*</span>
+                          </Text>
+                        </Col>
+                        <Col span={5}>
+                          <Select
+                            placeholder="Select"
+                            value={format.format}
+                            onChange={(value) => updateFormat(section.id, format.id, 'format', value)}
+                            style={{ width: '100%' }}
+                            suffixIcon={<div style={{ color: '#999' }}>▼</div>}
+                          >
+                            {formatOptions.map(option => (
+                              <Option key={option} value={option}>{option}</Option>
+                            ))}
+                          </Select>
+                        </Col>
+                        <Col span={3}>
+                          <Text strong>
+                            Questions<span style={{ color: 'red' }}>*</span>
+                          </Text>
+                        </Col>
+                        <Col span={3}>
+                          <Input
+                            placeholder="Enter"
+                            value={format.questions}
+                            onChange={(e) => updateFormat(section.id, format.id, 'questions', e.target.value)}
+                            style={{ width: '100%' }}
+                          />
+                        </Col>
+                        <Col span={3}>
+                          <Text strong>
+                            {formatIndex === 0 ? 'Marks' : 'Marks Per Question'}<span style={{ color: 'red' }}>*</span>
+                          </Text>
+                        </Col>
+                        <Col span={4}>
+                          <Input
+                            placeholder="Enter"
+                            value={format.marks}
+                            onChange={(e) => updateFormat(section.id, format.id, 'marks', e.target.value)}
+                            style={{ width: '100%' }}
+                          />
+                        </Col>
+                      </Row>
+                    </div>
+                  ))}
+
+                  {/* Add Format Button */}
+                  <div style={{ marginTop: '16px', marginLeft: '120px' }}>
+                    <Button
+                      type="link"
+                      icon={<CiCirclePlus className="fs-4" />}
+                      onClick={() => addFormat(section.id)}
+                      style={{ padding: '0', color: '#1890ff', fontSize: '14px' }}
+                    >
+                      Add Format
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {/* Add Section Button */}
-            <Button
-              type="link"
-              icon={<CiCirclePlus className="fs-4" />}
-              onClick={addSection}
-              style={{ padding: '0', color: '#1890ff', fontSize: '14px', marginTop: '8px' }}
-            >
-              Add Section
-            </Button>
-          </div>
+              {/* Add Section Button */}
+              <Button
+                type="link"
+                icon={<CiCirclePlus className="fs-4" />}
+                onClick={addSection}
+                style={{ padding: '0', color: '#1890ff', fontSize: '14px', marginTop: '8px' }}
+              >
+                Add Section
+              </Button>
+            </div>
+
+            {/* Rules Section */}
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <Title level={4} style={{ marginBottom: '24px', fontWeight: '600' }}>Rules</Title>
+              {/* <div style={{ 
+                backgroundColor: '#f6ffed', 
+                border: '1px solid #b7eb8f', 
+                borderRadius: '6px', 
+                padding: '12px 16px', 
+                marginBottom: '20px' 
+              }}>
+                <Text style={{ color: '#52c41a', fontSize: '14px' }}>
+                  <strong>Note:</strong> Tell the students about the competition and why they should register for this one.
+                </Text>
+              </div> */}
+              
+              <JoditEditor
+                ref={editor}
+                value={rules}
+                config={editorConfig}
+                onChange={handleEditorChange}
+              />
+            </div>
+          </>
         )}
       </div>
 

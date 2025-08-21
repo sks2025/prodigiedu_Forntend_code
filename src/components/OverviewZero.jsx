@@ -44,9 +44,6 @@ const OverviewZero = () => {
     <div className="OverviewZero">
       <div className="app-container">
       
-
-        
-
         <div className="main-content">
           <Oleftsidbar fun={sibarbarData} page={page} ID={ID} />
 

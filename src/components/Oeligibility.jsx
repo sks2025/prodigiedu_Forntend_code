@@ -16,13 +16,14 @@ import {
 import {
   DownOutlined,
   CloseOutlined,
-  CaretRightOutlined
+  CaretRightOutlined,
+  PlusOutlined
 } from "@ant-design/icons";
 import { useParams } from "react-router-dom";
 
 const { Option } = Select;
 const { Panel } = Collapse;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const OEligibility = ({ fun, ID }) => {
   const { id } = useParams();
@@ -31,6 +32,7 @@ const OEligibility = ({ fun, ID }) => {
   const [loading, setLoading] = useState(false);
   const [dataByTab, setDataByTab] = useState({});
   const [stages, setStages] = useState([]); // New state for stages
+  const [additionalForms, setAdditionalForms] = useState([]); // New state for additional forms
   
   // Use ID from props if available, otherwise use id from params
   const competitionId = ID || id;
@@ -145,6 +147,11 @@ const OEligibility = ({ fun, ID }) => {
     return stageData && stageData.selectedCriteria.length > 0 && stageData.studentDetails.length > 0;
   });
 
+  // Check if additional forms have required data
+  const additionalFormsValid = additionalForms.every(form => 
+    form.name.trim() && form.type
+  );
+
   // API call function
   const saveEligibilityData = async () => {
     setLoading(true);
@@ -222,7 +229,8 @@ const OEligibility = ({ fun, ID }) => {
         StudentInformation: {
           StudentDetails: studentDetails.length > 0 ? studentDetails : [],
           SchoolDetails: schoolDetails.length > 0 ? schoolDetails : []
-        }
+        },
+        additionalDetails: additionalForms.filter(form => form.name.trim() && form.type) // Only include valid forms
       };
 
       const raw = JSON.stringify(formattedData);
@@ -316,6 +324,123 @@ const OEligibility = ({ fun, ID }) => {
         schoolDetails: values
       }
     });
+  };
+
+  // Function to add additional detail form
+  const addAdditionalForm = () => {
+    const newFormId = Date.now();
+    const newForm = {
+      id: newFormId,
+      name: "",
+      type: "Short Answer",
+      options: [],
+      selectedOptions: [],
+      stage: activeTab
+    };
+    setAdditionalForms([...additionalForms, newForm]);
+  };
+
+  // Function to handle form type change and initialize options if needed
+  const handleFormTypeChange = (formId, newType) => {
+    const form = additionalForms.find(f => f.id === formId);
+    if (form) {
+      let newOptions = [...form.options];
+      
+      // Initialize with default options for types that need them
+      if ((newType === "Multiple Choice" || newType === "Checkbox" || newType === "Drop Down") && form.options.length === 0) {
+        newOptions = ["Option 1", "Option 2"];
+      }
+      
+      // Clear options for types that don't need them
+      if (newType === "Short Answer" || newType === "Date" || newType === "Photo Upload") {
+        newOptions = [];
+      }
+      
+      updateAdditionalForm(formId, 'type', newType);
+      if (newOptions.length !== form.options.length) {
+        setAdditionalForms(additionalForms.map(f =>
+          f.id === formId ? { ...f, options: newOptions } : f
+        ));
+      }
+    }
+  };
+
+  // Function to duplicate additional detail form
+  const duplicateAdditionalForm = (formId) => {
+    const formToDuplicate = additionalForms.find(form => form.id === formId);
+    if (formToDuplicate) {
+      const newFormId = Date.now();
+      const duplicatedForm = {
+        ...formToDuplicate,
+        id: newFormId,
+        name: `${formToDuplicate.name} (Copy)`,
+        options: [...formToDuplicate.options],
+        selectedOptions: []
+      };
+      setAdditionalForms([...additionalForms, duplicatedForm]);
+    }
+  };
+
+  // Function to remove additional detail form
+  const removeAdditionalForm = (formId) => {
+    setAdditionalForms(additionalForms.filter(form => form.id !== formId));
+  };
+
+  // Function to update additional form data
+  const updateAdditionalForm = (formId, field, value) => {
+    setAdditionalForms(additionalForms.map(form =>
+      form.id === formId ? { ...form, [field]: value } : form
+    ));
+  };
+
+  // Function to add option to dropdown form
+  const addOptionToForm = (formId) => {
+    const newOption = `Option ${additionalForms.find(f => f.id === formId)?.options.length + 1}`;
+    setAdditionalForms(additionalForms.map(form =>
+      form.id === formId 
+        ? { ...form, options: [...form.options, newOption] }
+        : form
+    ));
+  };
+
+  // Function to update option in dropdown form
+  const updateOptionInForm = (formId, optionIndex, value) => {
+    setAdditionalForms(additionalForms.map(form =>
+      form.id === formId
+        ? {
+            ...form,
+            options: form.options.map((option, index) =>
+              index === optionIndex ? value : option
+            )
+          }
+        : form
+    ));
+  };
+
+  // Function to remove option from dropdown form
+  const removeOptionFromForm = (formId, optionIndex) => {
+    setAdditionalForms(additionalForms.map(form =>
+      form.id === formId
+        ? {
+            ...form,
+            options: form.options.filter((_, index) => index !== optionIndex)
+          }
+        : form
+    ));
+  };
+
+  // Function to toggle checkbox selection (single selection only)
+  const toggleCheckboxOption = (formId, optionIndex) => {
+    setAdditionalForms(additionalForms.map(form =>
+      form.id === formId
+        ? {
+            ...form,
+            selectedOptions: form.selectedOptions?.includes(optionIndex) 
+              ? [] // If already selected, deselect it
+              : [optionIndex] // Otherwise, select only this option
+          }
+        : form
+    ));
   };
 
   const renderCriteriaContent = (criteriaKey) => (
@@ -576,6 +701,190 @@ const OEligibility = ({ fun, ID }) => {
           </div>
         </div>
       </div>
+
+      {/* Additional Details Section */}
+      <div style={{ marginBottom: '32px' }}>
+        <Title level={3} style={{ 
+          marginBottom: '16px', 
+          fontSize: '18px', 
+          fontWeight: '600',
+          '@media (max-width: 768px)': {
+            fontSize: '16px'
+          }
+        }}>
+          Additional Details
+        </Title>
+        
+        {/* Existing Additional Forms */}
+        {additionalForms.filter(form => form.stage === activeTab).map((form, index) => (
+          <div key={form.id} style={{
+            border: '1px solid #f0f0f0',
+            borderRadius: '8px',
+            padding: '20px',
+            marginBottom: '16px',
+            backgroundColor: '#fafafa'
+          }}>
+            {/* Form Header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <Text strong style={{ fontSize: '16px' }}>Additional Detail {index + 1}</Text>
+            </div>
+
+            {/* Question, Type, and Action Icons in Same Row */}
+            <div style={{ marginBottom: '20px' }}>
+              <Row align="middle" gutter={[16, 0]}>
+                <Col span={12}>
+                  <Input
+                    placeholder="Enter Question"
+                    value={form.name}
+                    onChange={(e) => updateAdditionalForm(form.id, 'name', e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+                <Col span={8}>
+                  <Select
+                    placeholder="Select Type"
+                    value={form.type}
+                    onChange={(value) => handleFormTypeChange(form.id, value)}
+                    style={{ width: '100%' }}
+                  >
+                    <Option value="Short Answer">Short Answer</Option>
+                    <Option value="Multiple Choice">Multiple Choice</Option>
+                    <Option value="Checkbox">Checkbox</Option>
+                    <Option value="Drop Down">Drop Down</Option>
+                    <Option value="Date">Date</Option>
+                    <Option value="Photo Upload">Photo Upload</Option>
+                  </Select>
+                </Col>
+                <Col span={4}>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <Button
+                      type="text"
+                      icon={<PlusOutlined />}
+                      onClick={() => duplicateAdditionalForm(form.id)}
+                      size="small"
+                      style={{ color: '#1890ff' }}
+                      title="Duplicate"
+                    />
+                    <Button
+                      type="text"
+                      icon={<CloseOutlined />}
+                      onClick={() => removeAdditionalForm(form.id)}
+                      size="small"
+                      style={{ color: '#999' }}
+                      title="Delete"
+                    />
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
+            {/* Options for Drop Down, Multiple Choice, and Checkbox Types */}
+            {(form.type === "Drop Down" || form.type === "Multiple Choice" || form.type === "Checkbox") && (
+              <div style={{ marginBottom: '20px' }}>
+                {form.options.map((option, optionIndex) => (
+                  <div key={optionIndex} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    marginBottom: '8px',
+                    gap: '8px'
+                  }}>
+                    {/* Checkbox for Checkbox type questions */}
+                    {form.type === "Checkbox" && (
+                      <div 
+                        onClick={() => toggleCheckboxOption(form.id, optionIndex)}
+                        style={{ 
+                          width: '16px', 
+                          height: '16px', 
+                          border: `2px solid ${form.selectedOptions?.includes(optionIndex) ? '#1890ff' : '#d9d9d9'}`, 
+                          borderRadius: '3px',
+                          backgroundColor: form.selectedOptions?.includes(optionIndex) ? '#1890ff' : '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {form.selectedOptions?.includes(optionIndex) && (
+                          <div style={{ 
+                            width: '8px', 
+                            height: '5px', 
+                            border: '2px solid #fff',
+                            borderTop: 'none',
+                            borderRight: 'none',
+                            transform: 'rotate(-45deg)',
+                            marginTop: '-2px'
+                          }} />
+                        )}
+                      </div>
+                    )}
+                    
+                    <Input
+                      placeholder={`Option ${optionIndex + 1}`}
+                      value={option}
+                      onChange={(e) => updateOptionInForm(form.id, optionIndex, e.target.value)}
+                      style={{ width: '100%' }}
+                    />
+                    <Button
+                      type="text"
+                      icon={<CloseOutlined />}
+                      onClick={() => removeOptionInForm(form.id, optionIndex)}
+                      size="small"
+                      style={{ color: '#999' }}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="link"
+                  icon={<PlusOutlined />}
+                  onClick={() => addOptionToForm(form.id)}
+                  style={{ padding: '0', color: '#1890ff', fontSize: '14px', marginTop: '8px' }}
+                >
+                  Add
+                </Button>
+              </div>
+            )}
+
+            {/* Photo Upload Instructions */}
+            {form.type === "Photo Upload" && (
+              <div style={{ marginBottom: '20px' }}>
+                <Row align="middle" gutter={[16, 0]}>
+                  <Col span={6}>
+                    <Text strong>Upload Settings</Text>
+                  </Col>
+                  <Col span={18}>
+                    <div style={{ 
+                      padding: '12px', 
+                      backgroundColor: '#f6ffed', 
+                      border: '1px solid #b7eb8f', 
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      color: '#52c41a'
+                    }}>
+                      <Text>Students will be able to upload photos for this question. Supported formats: JPG, PNG, GIF (Max size: 5MB)</Text>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* Add Additional Detail Button */}
+        <Button
+          type="link"
+          icon={<PlusOutlined />}
+          onClick={addAdditionalForm}
+          style={{ padding: '0', color: '#1890ff', fontSize: '14px', marginTop: '8px' }}
+        >
+          Add Additional Detail
+        </Button>
+      </div>
     </div>
     );
   };
@@ -645,10 +954,10 @@ const OEligibility = ({ fun, ID }) => {
           <Button
             type="primary"
             size="large"
-            disabled={!allStagesHaveData || loading}
+            disabled={!allStagesHaveData || !additionalFormsValid || loading}
             loading={loading}
             style={{
-              background: (!allStagesHaveData || loading) ? '#d9d9d9' : '#4CAF50',
+              background: (!allStagesHaveData || !additionalFormsValid || loading) ? '#d9d9d9' : '#4CAF50',
               borderRadius: '6px',
               padding: '0 32px',
               height: '40px',

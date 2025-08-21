@@ -92,8 +92,7 @@ const OSyllabus = ({ fun, ID }) => {
       "Critical Thinking"
     ]
   };
-
-  // Updated topic list from excel sheet
+  
   const allTopics = [
     "Maths",
     "English", 

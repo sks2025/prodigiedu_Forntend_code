@@ -253,19 +253,13 @@ const Oawards = ({ fun, ID }) => {
                   >
                     Given To<span style={{ color: "red" }}>*</span>
                   </label>
-                  <Select
-                    placeholder="Select"
-                    style={{ width: "100%" }}
+                  <Input
+                    placeholder="Enter who gets the award (e.g., Student, Class, School)"
                     value={row.givenTo}
-                    onChange={(value) =>
-                      updateRow(type.id, row.id, "givenTo", value)
+                    onChange={(e) =>
+                      updateRow(type.id, row.id, "givenTo", e.target.value)
                     }
-                  >
-                    <Option value="student">Student</Option>
-                    <Option value="class">Class</Option>
-                    <Option value="school">School</Option>
-                    <Option value="grade">Grade</Option>
-                  </Select>
+                  />
                 </div>
               </Col>
               <Col

@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2"; // Import SweetAlert2
 import Organisersheader from "./Organisersheader";
+import OrganiserFooter from "./OrganiserFooter";
 
 const OrganiserHomepage = ({ title }) => {
   const [compitions, setCompitions] = useState([]);
@@ -390,21 +391,25 @@ const OrganiserHomepage = ({ title }) => {
           marginTop: "30px",
         }}
       >
-        <a
-          href="/organiser/competition"
+        <button
+          onClick={() => navigate("/organiser/competition")}
           style={{
             padding: "10px 20px",
             background: "#388E3B",
             color: "#fff",
             textDecoration: "none",
             borderRadius: "6px",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "16px",
+            fontWeight: "500"
           }}
         >
           Create New Competition
-        </a>
+        </button>
       </div>
 
-      <FooterUsers />
+      <OrganiserFooter />
     </div>
   );
 };

@@ -12,7 +12,7 @@ import {
 import { Link } from "react-router-dom";
 import { FaFacebook, FaLinkedin } from "react-icons/fa";
 import headerlogos from "../images/prodigilogowhite.svg"
-import namelogo from "../images/prodigiwhitelogo.svg"
+import namelogo from "../images/footerlogo.png"
 
 const OrganiserFooter = () => {
   const scrollToTop = () => {
@@ -30,7 +30,7 @@ const OrganiserFooter = () => {
           <div className="footer-logo">
           <Link to="/" style={{textDecoration:"none"}} >
                              <div className='pt-1' style={{display: 'flex', alignItems: 'center', gap:'5px'}}>
-                 <img src={headerlogos} alt="" style={{height: '30px'}} />
+                 {/* <img src={headerlogos} alt="" style={{height: '30px'}} /> */}
                  <img src={namelogo} alt="" style={{width: '170px', objectFit: 'cover', display: 'block'}} />
                </div>
             </Link>

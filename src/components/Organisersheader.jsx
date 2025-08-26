@@ -9,7 +9,7 @@ import { Modal, Button } from "antd";
 // import { toast } from "react-toastify";
 
 import headerlogos from "../images/logos2.svg";
-import namelogo from "../images/prodiginew.svg";
+import namelogo from "../images/logoprodigi.png";
 import { FaUserCircle } from "react-icons/fa";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -140,7 +140,7 @@ const Organisersheader = () => {
           <div className="logo">
             <NavLink style={{ textDecoration: "none" }} to="/">
               <div className='pt-2' style={{ display: 'flex', alignItems: 'center', minHeight: '70px' }}>
-                <img src={headerlogos} alt="" style={{ height: '50px' }} />
+                {/* <img src={headerlogos} alt="" style={{ height: '50px' }} /> */}
                 <img src={namelogo} alt="" style={{ width: '270px', objectFit: 'cover', display: 'block' }} />
               </div>
             </NavLink>

@@ -594,7 +594,7 @@ img.section2 {
 footer {
     background: #0B3B13;
     color: white;
-    padding: 3rem 7%;
+    padding: 2rem 7%;
     margin-top: 100px;
 }
 
@@ -626,7 +626,7 @@ footer {
     flex: 2;
     display: flex;
     justify-content: space-between;
-    padding-top: 30px;
+    padding-top: 10px;
 }
 
 .link-column h4 {

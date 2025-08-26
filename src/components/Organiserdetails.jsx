@@ -9,10 +9,8 @@ import Input from "./common/Input";
 import Card from "./common/Card";
 import { useOrganisationRegisterMutation } from "../store/api/apiSlice";
 // import { toast } from "react-toastify";
-import { City } from 'country-state-city';
+
 const Organiserdetails = () => {
-  const cities = City.getCitiesOfState('IN', 'RJ'); // IN = India, RJ = Rajasthan
-  console.log(cities);
   const navigate = useNavigate();
   const [organisationRegister, { isLoading }] = useOrganisationRegisterMutation();
   const location = useLocation();
@@ -269,8 +267,9 @@ const Organiserdetails = () => {
                     <label htmlFor="cityDistrict" className="contit">
                       City / District
                     </label>
-                    <select
-                      className="custom-select select-input"
+                    <Input
+                      type="text"
+                      className="custom-select"
                       name="cityDistrict"
                       value={formData.organiserAddress.cityDistrict}
                       onChange={(e) =>
@@ -280,15 +279,9 @@ const Organiserdetails = () => {
                           "cityDistrict"
                         )
                       }
+                      placeholder="Enter City / District"
                       required
-                    >
-                      <option value="">Select City</option>
-                      {cities.map((city) => (
-                        <option key={city.id} value={city.name}>
-                          {city.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
                     {errors.cityDistrict && (
                       <div className="error-message1">{errors.cityDistrict}</div>
                     )}

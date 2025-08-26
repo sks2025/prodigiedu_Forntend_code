@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import OrganiserFooter from "./OrganiserFooter";
 import Organisersheader from "./Organisersheader";
 import "./BankAcount.css"
+import { useLocation, useNavigate } from "react-router-dom";
 
 const BankAcount = () => {
+  const {competitionId} = useLocation().state;
+const Navigate = useNavigate();
   const [formData, setFormData] = useState({
     accountNumber: "",
     ifsc: "",
@@ -13,6 +16,26 @@ const BankAcount = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [organizerId, setOrganizerId] = useState(null);
+
+  // Format account number as user types
+  const formatAccountNumber = (value) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Format as XXXX XXXX XXXX XXXX
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 8) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+    if (digits.length <= 12) return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`;
+    if (digits.length <= 16) return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)} ${digits.slice(12)}`;
+    
+    // Limit to 16 digits
+    return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)} ${digits.slice(12, 16)}`;
+  };
+
+  // Get raw account number (without spaces) for API
+  const getRawAccountNumber = () => {
+    return formData.accountNumber.replace(/\s/g, '');
+  };
   // Get organizerId from localStorage
   useEffect(() => {
     try {
@@ -37,10 +60,20 @@ const BankAcount = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    if (name === 'accountNumber') {
+      // Format account number as user types
+      const formattedValue = formatAccountNumber(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -60,7 +93,10 @@ const BankAcount = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          accountNumber: getRawAccountNumber() // Send raw account number without spaces
+        })
       });
 
       const result = await response.json();
@@ -73,6 +109,8 @@ const BankAcount = () => {
           ifsc: "",
           accountType: ""
         });
+        localStorage.setItem('bankAccount', JSON.stringify(result.data));
+        Navigate(`/organiser/competition/${competitionId}`,{state:{pager:4}})
       } else {
         setMessage({ type: 'error', text: result.message || 'Failed to add bank account' });
       }
@@ -84,7 +122,7 @@ const BankAcount = () => {
     }
   };
 
-  const isFormValid = formData.accountNumber.trim() &&
+  const isFormValid = getRawAccountNumber().length >= 8 && // At least 8 digits
     formData.ifsc.trim() &&
     formData.accountType;
 
@@ -141,12 +179,19 @@ const BankAcount = () => {
               type="text"
               name="accountNumber"
               className="bankAccount-input"
-              placeholder="Enter Bank Account number"
+              placeholder="XXXX XXXX XXXX XXXX"
               value={formData.accountNumber}
               onChange={handleInputChange}
-              maxLength="18"
+              maxLength="19" // 16 digits + 3 spaces
               disabled={loading}
+              style={{
+                fontFamily: 'Arial, sans-serif',
+                fontSize: '18px',
+                fontWeight: '500',
+                color: '#333'
+              }}
             />
+           
           </div>
 
           <div className="bankAccount-formGroup">
@@ -188,8 +233,12 @@ const BankAcount = () => {
             disabled={!isFormValid || loading}
             onClick={handleSubmit}
             style={{
+              backgroundColor: isFormValid && !loading ? '#4CAF50' : '#d9d9d9',
+              color: isFormValid && !loading ? '#ffffff' : '#666666',
               opacity: (!isFormValid || loading) ? 0.6 : 1,
-              cursor: (!isFormValid || loading) ? 'not-allowed' : 'pointer'
+              cursor: (!isFormValid || loading) ? 'not-allowed' : 'pointer',
+              border: isFormValid && !loading ? '1px solid #4CAF50' : '1px solid #d9d9d9',
+              transition: 'all 0.3s ease'
             }}
           >
             {loading ? 'Adding...' : 'Add Bank Account'}

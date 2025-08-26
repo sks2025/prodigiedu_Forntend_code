@@ -25,7 +25,7 @@ const { Option } = Select;
 const { Panel } = Collapse;
 const { Title, Text } = Typography;
 
-const OEligibility = ({ fun, ID }) => {
+  const OEligibility = ({ fun, ID }) => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("");
   const [activeKeys, setActiveKeys] = useState([]);
@@ -34,6 +34,16 @@ const OEligibility = ({ fun, ID }) => {
   const [stages, setStages] = useState([]);
   const [additionalForms, setAdditionalForms] = useState([]);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
+
+  // Debug: Log component props and state
+  useEffect(() => {
+    console.log('OEligibility component mounted with:', { fun, ID, id, competitionId: ID || id });
+  }, [fun, ID, id]);
+
+  // Debug: Log additionalForms state changes
+  useEffect(() => {
+    console.log('AdditionalForms state changed:', additionalForms);
+  }, [additionalForms]);
 
   const competitionId = ID || id;
 
@@ -83,6 +93,10 @@ const OEligibility = ({ fun, ID }) => {
       if (!competitionId) return;
 
       try {
+        // Check localStorage first for saved eligibility data
+        const localKey = `competition_eligibility_${competitionId}`;
+        const savedEligibilityData = localStorage.getItem(localKey);
+        
         const requestOptions = {
           method: "GET",
           redirect: "follow",
@@ -103,26 +117,55 @@ const OEligibility = ({ fun, ID }) => {
         if (result.overviewdata && Array.isArray(result.overviewdata.stages)) {
           const stagesData = result.overviewdata.stages;
           setStages(stagesData);
-
-          const initialDataByTab = {};
-          stagesData.forEach((stage) => {
-            initialDataByTab[stage.id.toString()] = {
-              selectedCriteria: [],
-              criteriaData: {},
-              studentDetails: ["Student's Name", "Parent's / Guardian's Name", "Contact number", "Email ID"],
-              schoolDetails: ["School Name", "Address", "Contact Number", "City"]
-            };
-          });
-
+          
+          // Process saved data after we have the stages
+          if (savedEligibilityData) {
+            try {
+              const parsedData = JSON.parse(savedEligibilityData);
+              console.log("Loading saved eligibility data from localStorage:", parsedData);
+              
+              // Check if saved data is not too old (24 hours)
+              const isDataFresh = Date.now() - parsedData.timestamp < 24 * 60 * 60 * 1000;
+              
+              if (isDataFresh && parsedData.dataByTab && parsedData.additionalForms) {
+                // Merge saved data with any new stages that might have been added
+                const mergedDataByTab = { ...parsedData.dataByTab };
+                
+                // Check if there are new stages that don't have saved data
+                stagesData.forEach((stage) => {
+                  const stageId = stage.id.toString();
+                  if (!mergedDataByTab[stageId]) {
+                    // Initialize new stage with default data
+                    mergedDataByTab[stageId] = {
+                      selectedCriteria: [],
+                      criteriaData: {},
+                      studentDetails: ["Student's Name", "Parent's / Guardian's Name", "Contact number", "Email ID"],
+                      schoolDetails: ["School Name", "Address", "Contact Number", "City"]
+                    };
+                  }
+                });
+                
+                setDataByTab(mergedDataByTab);
+                setAdditionalForms(parsedData.additionalForms);
+                console.log("Restored eligibility data from localStorage with merged stages");
+              } else {
+                // Initialize with default data if saved data is invalid or old
+                initializeDefaultData(stagesData);
+              }
+            } catch (localError) {
+              console.error("Error parsing localStorage data:", localError);
+              // Initialize with default data if parsing fails
+              initializeDefaultData(stagesData);
+            }
+          } else {
+            // No saved data, initialize with defaults
+            initializeDefaultData(stagesData);
+          }
+          
+          // Set active tab
           if (stagesData.length > 0 && !activeTab) {
             setActiveTab(stagesData[0].id.toString());
           }
-
-          if (result.success && result.data && result.data.eligibility) {
-            // Process existing eligibility data if needed
-          }
-
-          setDataByTab(initialDataByTab);
         } else {
           console.warn("No stages found in overviewdata");
           message.error("No stages found for this competition");
@@ -133,20 +176,92 @@ const OEligibility = ({ fun, ID }) => {
       }
     };
 
+    // Helper function to initialize default data
+    const initializeDefaultData = (stagesData) => {
+      const initialDataByTab = {};
+      stagesData.forEach((stage) => {
+        initialDataByTab[stage.id.toString()] = {
+          selectedCriteria: [],
+          criteriaData: {},
+          studentDetails: ["Student's Name", "Parent's / Guardian's Name", "Contact number", "Email ID"],
+          schoolDetails: ["School Name", "Address", "Contact Number", "City"]
+        };
+      });
+      setDataByTab(initialDataByTab);
+      setAdditionalForms([]);
+    };
+
     getCompetitionData();
   }, [competitionId]);
 
-  // Update active tab when stages change
+  // Update active tab when stages change and ensure localStorage is up to date
   useEffect(() => {
     if (stages.length > 0 && !activeTab) {
       setActiveTab(stages[0].id.toString());
     }
-  }, [stages, activeTab]);
+    
+    // Update localStorage if stages have changed and we have existing data
+    if (stages.length > 0 && competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const savedData = localStorage.getItem(localKey);
+      
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          if (parsedData.dataByTab) {
+            // Check if we need to add new stages to saved data
+            let needsUpdate = false;
+            const updatedDataByTab = { ...parsedData.dataByTab };
+            
+            stages.forEach((stage) => {
+              const stageId = stage.id.toString();
+              if (!updatedDataByTab[stageId]) {
+                updatedDataByTab[stageId] = {
+                  selectedCriteria: [],
+                  criteriaData: {},
+                  studentDetails: ["Student's Name", "Parent's / Guardian's Name", "Contact number", "Email ID"],
+                  schoolDetails: ["School Name", "Address", "Contact Number", "City"]
+                };
+                needsUpdate = true;
+              }
+            });
+            
+            // Update localStorage if new stages were added
+            if (needsUpdate) {
+              localStorage.setItem(localKey, JSON.stringify({
+                ...parsedData,
+                dataByTab: updatedDataByTab,
+                timestamp: Date.now()
+              }));
+              console.log("Updated localStorage with new stages");
+            }
+          }
+        } catch (error) {
+          console.error("Error updating localStorage with new stages:", error);
+        }
+      }
+    }
+    
+    // Debug: Log current localStorage data
+    if (competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const savedData = localStorage.getItem(localKey);
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          console.log('Current localStorage data:', parsedData);
+          console.log('Additional forms in localStorage:', parsedData.additionalForms);
+        } catch (error) {
+          console.error('Error parsing localStorage for debug:', error);
+        }
+      }
+    }
+  }, [stages, activeTab, competitionId]);
 
   const allStagesHaveData = useMemo(() =>
     stages.length > 0 && stages.every(stage => {
       const stageData = dataByTab[stage.id.toString()];
-      return stageData && stageData.selectedCriteria.length > 0 && stageData.studentDetails.length > 0;
+      return stageData && stageData.studentDetails.length > 0;
     }), [stages, dataByTab]
   );
 
@@ -176,13 +291,13 @@ const OEligibility = ({ fun, ID }) => {
 
       const stagesWithoutData = stages.filter(stage => {
         const stageData = dataByTab[stage.id.toString()];
-        return !stageData || stageData.selectedCriteria.length === 0 || stageData.studentDetails.length === 0;
+        return !stageData || stageData.studentDetails.length === 0;
       });
 
       if (stagesWithoutData.length > 0) {
         const stageNames = stagesWithoutData.map(stage => stage.name).join(', ');
         message.warning(
-          `Please select at least one criteria and student detail in the following stage(s): ${stageNames}`
+          `Please select at least one student detail in the following stage(s): ${stageNames}`
         );
         return;
       }
@@ -302,10 +417,7 @@ const OEligibility = ({ fun, ID }) => {
         console.error('Data structure validation failed');
         throw new Error('Invalid data structure format');
       }
-      
-      // Log the exact data being sent
-      console.log('Final data being sent to API:', JSON.stringify(formattedData, null, 2));
-      
+
       // Final safety check - ensure arrays are valid
       if (!Array.isArray(formattedData.StudentInformation.StudentDetails)) {
         formattedData.StudentInformation.StudentDetails = [];
@@ -349,6 +461,17 @@ const OEligibility = ({ fun, ID }) => {
         throw new Error(`API Error: ${e.message}`);
       }
 
+      // Save to localStorage for persistence
+      const localKey = `competition_eligibility_${competitionId}`;
+      const dataToSave = {
+        dataByTab,
+        additionalForms,
+        timestamp: Date.now()
+      };
+      
+      console.log('Saving to localStorage:', dataToSave);
+      localStorage.setItem(localKey, JSON.stringify(dataToSave));
+      
       message.success('Eligibility criteria saved successfully!');
       fun(4, competitionId);
     } catch (error) {
@@ -360,7 +483,7 @@ const OEligibility = ({ fun, ID }) => {
   };
 
   const handleCriteriaChange = (values) => {
-    setDataByTab({
+    const newDataByTab = {
       ...dataByTab,
       [activeTab]: {
         ...dataByTab[activeTab] || {
@@ -371,12 +494,25 @@ const OEligibility = ({ fun, ID }) => {
         },
         selectedCriteria: values
       }
-    });
+    };
+    
+    setDataByTab(newDataByTab);
     setActiveKeys(values);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const currentData = {
+        dataByTab: newDataByTab,
+        additionalForms,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const handleCriteriaDataChange = (criteriaKey, field, value) => {
-    setDataByTab({
+    const newDataByTab = {
       ...dataByTab,
       [activeTab]: {
         ...dataByTab[activeTab] || {
@@ -393,7 +529,20 @@ const OEligibility = ({ fun, ID }) => {
           }
         }
       }
-    });
+    };
+    
+    setDataByTab(newDataByTab);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const currentData = {
+        dataByTab: newDataByTab,
+        additionalForms,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const removeCriteria = (criteriaToRemove) => {
@@ -402,19 +551,32 @@ const OEligibility = ({ fun, ID }) => {
     const newCriteriaData = { ...currentTabData.criteriaData };
     delete newCriteriaData[criteriaToRemove];
 
-    setDataByTab({
+    const newDataByTab = {
       ...dataByTab,
       [activeTab]: {
         ...currentTabData,
         selectedCriteria: newSelectedCriteria,
         criteriaData: newCriteriaData
       }
-    });
+    };
+
+    setDataByTab(newDataByTab);
     setActiveKeys(newSelectedCriteria);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const currentData = {
+        dataByTab: newDataByTab,
+        additionalForms,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const handleStudentDetailsChange = (values) => {
-    setDataByTab({
+    const newDataByTab = {
       ...dataByTab,
       [activeTab]: {
         ...dataByTab[activeTab] || {
@@ -425,11 +587,24 @@ const OEligibility = ({ fun, ID }) => {
         },
         studentDetails: values
       }
-    });
+    };
+    
+    setDataByTab(newDataByTab);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const currentData = {
+        dataByTab: newDataByTab,
+        additionalForms,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const handleSchoolDetailsChange = (values) => {
-    setDataByTab({
+    const newDataByTab = {
       ...dataByTab,
       [activeTab]: {
         ...dataByTab[activeTab] || {
@@ -440,10 +615,28 @@ const OEligibility = ({ fun, ID }) => {
         },
         schoolDetails: values
       }
-    });
+    };
+    
+    setDataByTab(newDataByTab);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const currentData = {
+        dataByTab: newDataByTab,
+        additionalForms,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const addAdditionalForm = useCallback(() => {
+    if (!activeTab) {
+      message.warning('Please select a stage first');
+      return;
+    }
+    
     const newFormId = Date.now();
     const newForm = {
       id: newFormId,
@@ -456,12 +649,26 @@ const OEligibility = ({ fun, ID }) => {
         wordLimit: 50
       }
     };
-    setAdditionalForms(prevForms => [...prevForms, newForm]);
-  }, [activeTab]);
+    
+    const newForms = [...additionalForms, newForm];
+    setAdditionalForms(newForms);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const currentData = {
+        dataByTab,
+        additionalForms: newForms,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+      console.log('Saved additional form to localStorage:', newForm);
+    }
+  }, [activeTab, additionalForms, dataByTab, competitionId]);
 
   const handleFormTypeChange = useCallback((formId, newType) => {
     setAdditionalForms(prevForms => {
-      return prevForms.map(form => {
+      const newForms = prevForms.map(form => {
         if (form.id !== formId) return form;
 
         let newOptions = [...form.options];
@@ -471,7 +678,7 @@ const OEligibility = ({ fun, ID }) => {
           newOptions = [];
         }
 
-        if (newType === "Short Answer" || newType === "Date" || newType === "Photo Upload") {
+        if (newType === "Short Answer" || newType === "Date") {
           newOptions = [];
         }
 
@@ -483,10 +690,6 @@ const OEligibility = ({ fun, ID }) => {
             maxDate: new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString().split('T')[0],
             allowFuture: true,
             allowPast: true
-          };
-        } else if (newType === "Photo Upload") {
-          newSettings = {
-            enabled: true
           };
         } else if (newType === "Drop Down") {
           newSettings = {
@@ -516,8 +719,21 @@ const OEligibility = ({ fun, ID }) => {
           settings: newSettings
         };
       });
+      
+      // Auto-save to localStorage
+      if (competitionId) {
+        const localKey = `competition_eligibility_${competitionId}`;
+        const currentData = {
+          dataByTab,
+          additionalForms: newForms,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(localKey, JSON.stringify(currentData));
+      }
+      
+      return newForms;
     });
-  }, []);
+  }, [competitionId, dataByTab]);
 
   const duplicateAdditionalForm = useCallback((formId) => {
     setAdditionalForms(prevForms => {
@@ -532,27 +748,69 @@ const OEligibility = ({ fun, ID }) => {
           selectedOptions: [],
           settings: { ...formToDuplicate.settings }
         };
-        return [...prevForms, duplicatedForm];
+        
+        const newForms = [...prevForms, duplicatedForm];
+        
+        // Auto-save to localStorage
+        if (competitionId) {
+          const localKey = `competition_eligibility_${competitionId}`;
+          const currentData = {
+            dataByTab,
+            additionalForms: newForms,
+            timestamp: Date.now()
+          };
+          localStorage.setItem(localKey, JSON.stringify(currentData));
+        }
+        
+        return newForms;
       }
       return prevForms;
     });
-  }, []);
+  }, [competitionId, dataByTab]);
 
   const removeAdditionalForm = useCallback((formId) => {
-    setAdditionalForms(prevForms => prevForms.filter(form => form.id !== formId));
-  }, []);
+    setAdditionalForms(prevForms => {
+      const newForms = prevForms.filter(form => form.id !== formId);
+      
+      // Auto-save to localStorage
+      if (competitionId) {
+        const localKey = `competition_eligibility_${competitionId}`;
+        const currentData = {
+          dataByTab,
+          additionalForms: newForms,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(localKey, JSON.stringify(currentData));
+      }
+      
+      return newForms;
+    });
+  }, [competitionId, dataByTab]);
 
   const updateAdditionalForm = (formId, field, value) => {
-    setAdditionalForms(prevForms =>
-      prevForms.map(form =>
+    setAdditionalForms(prevForms => {
+      const newForms = prevForms.map(form =>
         form.id === formId ? { ...form, [field]: value } : form
-      )
-    );
+      );
+      
+      // Auto-save to localStorage
+      if (competitionId) {
+        const localKey = `competition_eligibility_${competitionId}`;
+        const currentData = {
+          dataByTab,
+          additionalForms: newForms,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(localKey, JSON.stringify(currentData));
+      }
+      
+      return newForms;
+    });
   };
 
   const updateFormSettings = (formId, settingKey, value) => {
-    setAdditionalForms(prevForms =>
-      prevForms.map(form =>
+    setAdditionalForms(prevForms => {
+      const newForms = prevForms.map(form =>
         form.id === formId ? {
           ...form,
           settings: {
@@ -560,88 +818,153 @@ const OEligibility = ({ fun, ID }) => {
             [settingKey]: value
           }
         } : form
-      )
-    );
+      );
+      
+      // Auto-save to localStorage
+      if (competitionId) {
+        const localKey = `competition_eligibility_${competitionId}`;
+        const currentData = {
+          dataByTab,
+          additionalForms: newForms,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(localKey, JSON.stringify(currentData));
+      }
+      
+      return newForms;
+    });
   };
 
   const addOptionToForm = useCallback((formId) => {
-    setAdditionalForms(prevForms =>
-      prevForms.map(form =>
+    setAdditionalForms(prevForms => {
+      const newForms = prevForms.map(form =>
         form.id === formId
           ? { ...form, options: [...form.options, `Option ${form.options.length + 1}`] }
           : form
-      )
-    );
-  }, []);
+      );
+      
+      // Auto-save to localStorage
+      if (competitionId) {
+        const localKey = `competition_eligibility_${competitionId}`;
+        const currentData = {
+          dataByTab,
+          additionalForms: newForms,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(localKey, JSON.stringify(currentData));
+      }
+      
+      return newForms;
+    });
+  }, [competitionId, dataByTab]);
 
-  const updateOptionInForm = useCallback((formId, optionIndex, value) => {
-    setAdditionalForms(prevForms =>
-      prevForms.map(form =>
+    const updateOptionInForm = useCallback((formId, optionIndex, value) => {
+    setAdditionalForms(prevForms => {
+      const newForms = prevForms.map(form =>
         form.id === formId
           ? {
-              ...form,
-              options: form.options.map((option, index) =>
-                index === optionIndex ? value : option
-              )
-            }
+            ...form,
+            options: form.options.map((option, index) =>
+              index === optionIndex ? value : option
+            )
+          }
           : form
-      )
-    );
-  }, []);
+      );
+      
+      // Auto-save to localStorage
+      if (competitionId) {
+        const localKey = `competition_eligibility_${competitionId}`;
+        const currentData = {
+          dataByTab,
+          additionalForms: newForms,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(localKey, JSON.stringify(currentData));
+      }
+      
+      return newForms;
+    });
+  }, [competitionId, dataByTab]);
 
-  const removeOptionInForm = useCallback((formId, optionIndex) => {
-    setAdditionalForms(prevForms =>
-      prevForms.map(form =>
+    const removeOptionInForm = useCallback((formId, optionIndex) => {
+    setAdditionalForms(prevForms => {
+      const newForms = prevForms.map(form =>
         form.id === formId
           ? {
-              ...form,
-              options: form.options.filter((_, index) => index !== optionIndex)
-            }
+            ...form,
+            options: form.options.filter((_, index) => index !== optionIndex)
+          }
           : form
-      )
-    );
-  }, []);
+      );
+      
+      // Auto-save to localStorage
+      if (competitionId) {
+        const localKey = `competition_eligibility_${competitionId}`;
+        const currentData = {
+          dataByTab,
+          additionalForms: newForms,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(localKey, JSON.stringify(currentData));
+      }
+      
+      return newForms;
+    });
+  }, [competitionId, dataByTab]);
 
-  const handleOptionSelection = useCallback((formId, optionIndex) => {
-    setAdditionalForms(prevForms =>
-      prevForms.map(form =>
+    const handleOptionSelection = useCallback((formId, optionIndex) => {
+    setAdditionalForms(prevForms => {
+      const newForms = prevForms.map(form =>
         form.id === formId
           ? {
-              ...form,
-              selectedOptions: (() => {
-                if (form.type === "Checkbox") {
-                  const maxSelection = form.settings?.maxSelection || 5;
+            ...form,
+            selectedOptions: (() => {
+              if (form.type === "Checkbox") {
+                const maxSelection = form.settings?.maxSelection || 5;
+                if (form.selectedOptions?.includes(optionIndex)) {
+                  return form.selectedOptions.filter(opt => opt !== optionIndex);
+                } else {
+                  const currentSelection = form.selectedOptions || [];
+                  if (currentSelection.length < maxSelection) {
+                    return [...currentSelection, optionIndex];
+                  } else {
+                    message.warning(`Maximum ${maxSelection} options can be selected`);
+                    return currentSelection;
+                  }
+                }
+              } else if (form.type === "Multiple Choice") {
+                return [optionIndex];
+              } else if (form.type === "Drop Down") {
+                if (form.settings?.allowMultiple) {
                   if (form.selectedOptions?.includes(optionIndex)) {
                     return form.selectedOptions.filter(opt => opt !== optionIndex);
                   } else {
-                    const currentSelection = form.selectedOptions || [];
-                    if (currentSelection.length < maxSelection) {
-                      return [...currentSelection, optionIndex];
-                    } else {
-                      message.warning(`Maximum ${maxSelection} options can be selected`);
-                      return currentSelection;
-                    }
+                    return [...(form.selectedOptions || []), optionIndex];
                   }
-                } else if (form.type === "Multiple Choice") {
+                } else {
                   return [optionIndex];
-                } else if (form.type === "Drop Down") {
-                  if (form.settings?.allowMultiple) {
-                    if (form.selectedOptions?.includes(optionIndex)) {
-                      return form.selectedOptions.filter(opt => opt !== optionIndex);
-                    } else {
-                      return [...(form.selectedOptions || []), optionIndex];
-                    }
-                  } else {
-                    return [optionIndex];
-                  }
                 }
-                return form.selectedOptions || [];
-              })()
-            }
+              }
+              return form.selectedOptions || [];
+            })()
+          }
           : form
-      )
-    );
-  }, []);
+      );
+      
+      // Auto-save to localStorage
+      if (competitionId) {
+        const localKey = `competition_eligibility_${competitionId}`;
+        const currentData = {
+          dataByTab,
+          additionalForms: newForms,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(localKey, JSON.stringify(currentData));
+      }
+      
+      return newForms;
+    });
+  }, [competitionId, dataByTab]);
 
   const renderCriteriaContent = useCallback((criteriaKey) => (
     <Row gutter={16}>
@@ -725,12 +1048,12 @@ const OEligibility = ({ fun, ID }) => {
 
           <div style={{ marginBottom: '24px' }}>
             <div style={{ marginBottom: '8px' }}>
-              <span style={{ fontSize: '14px', color: '#333' }}>Criteria</span>
+              <span style={{ fontSize: '14px', color: '#333' }}>Criteria (Optional)</span>
             </div>
             <Select
               mode="multiple"
               style={{ width: '100%' }}
-              placeholder="Select All Criteria"
+              placeholder="Select Criteria (Optional)"
               value={currentTabData.selectedCriteria}
               onChange={handleCriteriaChange}
               suffixIcon={<DownOutlined />}
@@ -929,23 +1252,23 @@ const OEligibility = ({ fun, ID }) => {
                     />
                   </Col>
                   <Col span={8}>
-                    <Select
-                      placeholder="Select Type"
-                      value={form.type}
-                      onChange={(value) => handleFormTypeChange(form.id, value)}
-                      style={{ width: '100%' }}
-                      showSearch={false}
-                      filterOption={false}
-                      notFoundContent={null}
-                      loading={false}
-                    >
-                      <Option value="Short Answer">Short Answer</Option>
-                      <Option value="Multiple Choice">Multiple Choice</Option>
-                      <Option value="Checkbox">Checkbox</Option>
-                      <Option value="Drop Down">Drop Down</Option>
-                      <Option value="Date">Date</Option>
-                      <Option value="Photo Upload">Photo Upload</Option>
-                    </Select>
+                                          <Select
+                        placeholder="Select Type"
+                        value={form.type}
+                        onChange={(value) => handleFormTypeChange(form.id, value)}
+                        style={{ width: '100%' }}
+                        showSearch={false}
+                        filterOption={false}
+                        notFoundContent={null}
+                        loading={false}
+                      >
+                        <Option value="Short Answer">Short Answer</Option>
+                        <Option value="Multiple Choice">Multiple Choice</Option>
+                        <Option value="Checkbox">Checkbox</Option>
+                        <Option value="Drop Down">Drop Down</Option>
+                        <Option value="Date">Date</Option>
+                        {/* <Option value="Photo Upload">Photo Upload</Option> */}
+                      </Select>
                   </Col>
                   <Col span={4}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -1043,7 +1366,7 @@ const OEligibility = ({ fun, ID }) => {
                 </div>
               )}
 
-              {form.type === "Photo Upload" && (
+              {/* {form.type === "Photo Upload" && (
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{
                     padding: '12px',
@@ -1056,7 +1379,7 @@ const OEligibility = ({ fun, ID }) => {
                     📷 Students will be able to upload photos for this question
                   </div>
                 </div>
-              )}
+              )} */}
 
               {form.type === "Drop Down" && (
                 <div style={{ marginBottom: '20px' }}>
@@ -1201,11 +1524,11 @@ const OEligibility = ({ fun, ID }) => {
                         Date range: {form.settings?.minDate || 'Today'} to {form.settings?.maxDate || 'Future'}
                       </div>
                     )}
-                    {form.type === "Photo Upload" && (
+                    {/* {form.type === "Photo Upload" && (
                       <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                         Photo upload enabled
                       </div>
-                    )}
+                    )} */}
                   </div>
 
                   {form.type === "Short Answer" && (
@@ -1225,7 +1548,7 @@ const OEligibility = ({ fun, ID }) => {
                     />
                   )}
 
-                  {form.type === "Photo Upload" && (
+                  {/* {form.type === "Photo Upload" && (
                     <div style={{
                       border: '2px dashed #d9d9d9',
                       borderRadius: '6px',
@@ -1240,7 +1563,7 @@ const OEligibility = ({ fun, ID }) => {
                         Students can upload photos here
                       </div>
                     </div>
-                  )}
+                  )} */}
 
                   {(form.type === "Drop Down" || form.type === "Multiple Choice" || form.type === "Checkbox") && (
                     <div>
@@ -1348,14 +1671,47 @@ const OEligibility = ({ fun, ID }) => {
           bottom: 0,
           left: 0,
           right: 0,
-          background: '#fff',
-          borderTop: '1px solid #f0f0f0',
+          // background: '#fff',
+          // borderTop: '1px solid #f0f0f0',
           padding: '16px 40px',
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           zIndex: 1000,
-          boxShadow: '0 -2px 8px rgba(0,0,0,0.1)'
+          // boxShadow: '0 -2px 8px rgba(0,0,0,0.1)'
         }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button
+              type="default"
+              size="small"
+              onClick={() => {
+                if (competitionId) {
+                  const localKey = `competition_eligibility_${competitionId}`;
+                  const savedData = localStorage.getItem(localKey);
+                  console.log('Current localStorage data:', savedData ? JSON.parse(savedData) : 'No data');
+                  message.info('Check console for localStorage data');
+                }
+              }}
+              title="Debug localStorage"
+            >
+              Debug
+            </Button>
+            <Button
+              type="default"
+              size="small"
+              onClick={() => {
+                if (competitionId) {
+                  const localKey = `competition_eligibility_${competitionId}`;
+                  localStorage.removeItem(localKey);
+                  message.success('localStorage cleared');
+                  window.location.reload();
+                }
+              }}
+              title="Clear localStorage and reload"
+            >
+              Clear & Reload
+            </Button>
+          </div>
           <Button
             type="primary"
             size="large"

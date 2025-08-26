@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react"
 import {
-  Card,
   Input,
   DatePicker,
   Select,
@@ -9,11 +8,9 @@ import {
   Row,
   Col,
   Typography,
-  Space,
   message
 } from 'antd';
 import {
-  CalendarOutlined,
   PlusOutlined,
   CloseOutlined
 } from '@ant-design/icons';
@@ -24,27 +21,16 @@ const { Title } = Typography;
 const { TextArea } = Input;
 
 // Student Details options for dropdowns (for future use)
-const studentDetailOptions = [
-  "Student's Name",
-  "Parent's / Guardian's Name",
-  "Contact number",
-  "Email ID",
-  "City",
-  "Address",
-  "Roll number",
-  "Grade",
-  "Section",
-  "Birth Date"
-];
+// Note: This array is currently not used but kept for future functionality
 
 export default function Oregistration({ fun, ID }) {
   const { id } = useParams();
-  const [plans, setPlans] = useState([]);
+  const [plans, setPlans] = useState([]); // Remove default plan
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [stages, setStages] = useState([]); // New state for stages
-  const [bankAccounts, setBankAccounts] = useState([]); // New state for bank accounts
+  const [bankAccounts, setBankAccounts] = useState([]); // Remove default bank account
   const navigate = useNavigate();
 
 
@@ -53,33 +39,35 @@ export default function Oregistration({ fun, ID }) {
 
   // Form data state
   const [registrationData, setRegistrationData] = useState({
-    totalRegistrationFee: '',
+    totalRegistrationFee: '', // Remove default fee
     registrationStartDate: '',
     registrationEndDate: '',
-    bankAccount: '', // Remove default value
+    bankAccount: '', // Remove default bank account
     bankAccountNumber: ''
   });
 
-  // Fetch bank accounts data
+  // Safely get bank data from localStorage
+  const bankDataString = localStorage.getItem("bankAccount");
+  const bankData = bankDataString ? JSON.parse(bankDataString) : null;
+  // Note: bankId is not currently used in this component
+
+
+  // Fetch bank accounts by organizer ID
   const fetchBankAccounts = async () => {
     try {
-
       const userDataString = localStorage.getItem('user_Data');
       if (!userDataString) {
-        console.log('⚠️ No user data found in localStorage');
+        setBankAccounts([]);
         return;
       }
       
       const userData = JSON.parse(userDataString);
       const organizerId = userData?._id;
 
-      
       if (!organizerId) {
-        console.log('⚠️ No user_id found in user data');
+        setBankAccounts([]);
         return;
       }
-      
-      console.log('📋 Organizer ID:', organizerId);
       
       const requestOptions = {
         method: "GET",
@@ -87,89 +75,46 @@ export default function Oregistration({ fun, ID }) {
       };
 
       const response = await fetch(
-        `https://api.prodigiedu.com/api/competitions/bankaccount/${organizerId}`,
+        `http://localhost:3001/api/competitions/bankaccount/${organizerId}`,
         requestOptions
       );
 
-      console.log('📡 Bank account API response status:', response.status, response.ok);
-
       if (response.ok) {
         const result = await response.json();
-        console.log("✅ Fetched bank accounts successfully:", result);
+        console.log(result.data,"result.data");
         
         if (result.success && result.data) {
-          // Transform the data to match your Select options format
-          const transformedAccounts = [
-            
-          ];
+          // Handle both single object and array responses
+          let accountsArray = result.data;
           
-          // Add fetched accounts if any
-          if (result.data.accountNumber) {
-            console.log('💳 Adding fetched bank account:', result.data.accountNumber);
-            transformedAccounts.push({
-              value: `custom_${result.data.accountNumber}`,
-              label: "BANK",
-              number: `****${result.data.accountNumber.slice(-4)}`,
-              color: "#52c41a"
-            });
+          // If result.data is not an array, convert it to an array
+          if (!Array.isArray(result.data)) {
+            accountsArray = [result.data];
           }
           
-          console.log('🔄 Setting transformed bank accounts:', transformedAccounts);
-          setBankAccounts(transformedAccounts);
+          // Format the data for Select component
+          const formattedAccounts = accountsArray.map(account => ({
+            value: account._id,
+            label: `Bank Account - ${account.accountNumber}`,
+            accountNumber: account.accountNumber,
+            color: '#1890ff'
+          }));
+          console.log('Formatted accounts:', formattedAccounts);
+          setBankAccounts(formattedAccounts);
+        } else {
+          console.log('No valid data in response');
+          setBankAccounts([]);
         }
+       
       } else {
-        console.log('⚠️ No bank accounts found, using default options');
-        // Set default bank account options
-        const defaultAccounts = [
-          {
-            value: "visa_6798",
-            label: "VISA",
-            number: "XXXX XXXX XXXX 6798",
-            color: "#1e40af"
-          },
-          {
-            value: "mastercard",
-            label: "MASTER",
-            number: "XXXX XXXX XXXX 1234", 
-            color: "#eb001b"
-          },
-          {
-            value: "custom",
-            label: "CUSTOM",
-            number: "Enter Account Number",
-            color: "#666"
-          }
-        ];
-        console.log('🔧 Setting default bank accounts:', defaultAccounts);
-        setBankAccounts(defaultAccounts);
+        console.log("error");
       }
     } catch (error) {
-      console.error("❌ Error fetching bank accounts:", error);
-      // Set default options on error
-      const fallbackAccounts = [
-        {
-          value: "visa_6798",
-          label: "VISA",
-          number: "XXXX XXXX XXXX 6798",
-          color: "#1e40af"
-        },
-        {
-          value: "mastercard",
-          label: "MASTER",
-          number: "XXXX XXXX XXXX 1234", 
-          color: "#eb001b"
-        },
-        {
-          value: "custom",
-          label: "CUSTOM",
-          number: "Enter Account Number",
-          color: "#666"
-        }
-      ];
-      console.log('🔄 Setting fallback bank accounts due to error:', fallbackAccounts);
-      setBankAccounts(fallbackAccounts);
+      setBankAccounts([]);
     }
   };
+
+  console.log(bankAccounts,"bankAccounts");
 
   // Fetch competition data and stages
   const fetchCompetitionData = async () => {
@@ -182,7 +127,7 @@ export default function Oregistration({ fun, ID }) {
       };
 
       const response = await fetch(
-        `https://api.prodigiedu.com/api/competitions/getsyllabus/${competitionId}`,
+        `http://localhost:3001/api/competitions/getsyllabus/${competitionId}`,
         requestOptions
       );
 
@@ -191,13 +136,11 @@ export default function Oregistration({ fun, ID }) {
       }
 
       const result = await response.json();
-      console.log("Fetched competition data:", result);
-
+      
       // Extract stages from overviewdata
       if (result.overviewdata && Array.isArray(result.overviewdata.stages)) {
         const stagesData = result.overviewdata.stages;
         setStages(stagesData);
-        console.log("Stages loaded:", stagesData);
       } else {
         console.warn("No stages found in overviewdata");
       }
@@ -222,18 +165,16 @@ export default function Oregistration({ fun, ID }) {
         redirect: "follow"
       };
 
-      const response = await fetch(`https://api.prodigiedu.com/api/competitions/registration/${competitionId}`, requestOptions);
+      const response = await fetch(`http://localhost:3001/api/competitions/registration/${competitionId}`, requestOptions);
       
       if (response.ok) {
         const result = await response.json();
-        console.log('Fetched Registration Data:', result);
         
         if (result.success && result.data) {
           const { registration_type, plans: fetchedPlans } = result.data;
           
           // Update registration data
           if (registration_type) {
-            console.log('Setting registration data:', registration_type);
             setRegistrationData({
               totalRegistrationFee: registration_type.total_registration_fee || '',
               registrationStartDate: registration_type.registration_start_date || '',
@@ -245,7 +186,6 @@ export default function Oregistration({ fun, ID }) {
           
           // Update plans data
           if (fetchedPlans && Array.isArray(fetchedPlans)) {
-            console.log('Setting plans data:', fetchedPlans);
             const formattedPlans = fetchedPlans.map((plan, index) => ({
               id: Date.now() + index,
               name: plan.name || '',
@@ -253,7 +193,7 @@ export default function Oregistration({ fun, ID }) {
               studentLimit: plan.student_limit || '',
               description: plan.description || '',
               included: plan.included || '',
-              notIncluded: plan.not_included || ''
+              not_included: plan.not_included || ''
             }));
             setPlans(formattedPlans);
           }
@@ -271,26 +211,15 @@ export default function Oregistration({ fun, ID }) {
 
   // Fetch data on component mount
   useEffect(() => {
-    console.log('🚀 useEffect triggered with competitionId:', competitionId);
     if (competitionId) {
-      console.log('📡 Fetching data for competition ID:', competitionId);
       fetchCompetitionData(); // Fetch stages data
       fetchRegistrationData(); // Fetch registration data
-      fetchBankAccounts(); // Fetch bank accounts
+      // Don't fetch bank accounts automatically - only when user clicks
+      // fetchBankAccounts(); // Removed automatic fetch
     } else {
       console.log('⚠️ No competition ID available, skipping data fetch');
     }
   }, [competitionId]);
-
-  console.log('🔍 Oregistration Component State:', {
-    competitionId,
-    plansCount: plans.length,
-    bankAccountsCount: bankAccounts.length,
-    stagesCount: stages.length,
-    registrationData,
-    loading,
-    fetchLoading
-  });
 
   const addPlan = () => {
     const newPlan = {
@@ -302,19 +231,15 @@ export default function Oregistration({ fun, ID }) {
       included: '• ',
       notIncluded: '• '
     };
-    console.log('➕ Adding new plan:', newPlan);
     setPlans([...plans, newPlan]);
   };
 
   const removePlan = (planId) => {
-    console.log('🗑️ Removing plan with ID:', planId);
     const updatedPlans = plans.filter(plan => plan.id !== planId);
-    console.log('📋 Plans after removal:', updatedPlans.length);
     setPlans(updatedPlans);
   };
 
   const updatePlan = (planId, field, value) => {
-    console.log('✏️ Updating plan:', { planId, field, value });
     
     // Auto-format bullet points for included and notIncluded fields
     let formattedValue = value;
@@ -330,7 +255,6 @@ export default function Oregistration({ fun, ID }) {
       }).join('\n');
       
       if (formattedValue !== value) {
-        console.log('🔧 Auto-formatted bullet points:', { original: value, formatted: formattedValue });
       }
     }
     
@@ -338,7 +262,6 @@ export default function Oregistration({ fun, ID }) {
       plan.id === planId ? { ...plan, [field]: formattedValue } : plan
     ));
     
-    console.log('✅ Plan updated successfully');
   };
 
   const updateRegistrationData = (field, value) => {
@@ -349,25 +272,37 @@ export default function Oregistration({ fun, ID }) {
   };
 
   const handleSubmit = async () => {
-    console.log('🚀 Starting form submission...');
-    console.log('📋 Current form data:', { registrationData, plans });
+  
     
     try {
       // Validate required fields
-      if (!registrationData.totalRegistrationFee) {
-        console.log('❌ Validation failed: Missing total registration fee');
+      if (!registrationData.totalRegistrationFee || registrationData.totalRegistrationFee.trim() === '') {
         message.error('Please enter total registration fee');
         return;
       }
 
-      // if ((registrationData.bankAccount === 'custom' || registrationData.bankAccount?.startsWith('custom_')) && !registrationData.bankAccountNumber) {
-      //   console.log('❌ Validation failed: Missing bank account number for custom account');
-      //   message.error('Please enter bank account number');
-      //   return;
-      // }
+      if (!registrationData.registrationStartDate) {
+        message.error('Please select registration start date');
+        return;
+      }
+
+      if (!registrationData.registrationEndDate) {
+        message.error('Please select registration end date');
+        return;
+      }
+
+      if (!registrationData.bankAccount) {
+        message.error('Please select a bank account');
+        return;
+      }
+
+      // Validate custom bank account number if custom account is selected
+      if ((registrationData.bankAccount === 'custom' || registrationData.bankAccount?.startsWith('custom_')) && !registrationData.bankAccountNumber) {
+        message.error('Please enter bank account number');
+        return;
+      }
 
       if (plans.length === 0) {
-        console.log('❌ Validation failed: No plans added');
         message.error('Please add at least one plan');
         return;
       }
@@ -375,27 +310,23 @@ export default function Oregistration({ fun, ID }) {
       // Validate plans
       for (let i = 0; i < plans.length; i++) {
         const plan = plans[i];
-        if (!plan.name || !plan.planFee || !plan.description || !plan.included || !plan.notIncluded) {
-          console.log(`❌ Validation failed: Plan ${i + 1} missing required fields:`, plan);
+        if (!plan.name || !plan.planFee || !plan.description) {
           message.error(`Please fill all required fields for Plan ${i + 1}`);
           return;
         }
         
         // Check if included and notIncluded have content beyond just bullet points
-        if (plan.included.trim() === '•' || plan.included.trim() === '') {
-          console.log(`❌ Validation failed: Plan ${i + 1} missing included content:`, plan.included);
+        if (!plan.included || plan.included.trim() === '•' || plan.included.trim() === '') {
           message.error(`Please add content for "What Is Included?" in Plan ${i + 1}`);
           return;
         }
         
-        if (plan.notIncluded.trim() === '•' || plan.notIncluded.trim() === '') {
-          console.log(`❌ Validation failed: Plan ${i + 1} missing not included content:`, plan.notIncluded);
+        if (!plan.notIncluded || plan.notIncluded.trim() === '•' || plan.notIncluded.trim() === '') {
           message.error(`Please add content for "What Is Not Included?" in Plan ${i + 1}`);
           return;
         }
       }
 
-      console.log('✅ All validations passed, proceeding with submission');
       setLoading(true);
 
       // Prepare API data structure
@@ -404,26 +335,25 @@ export default function Oregistration({ fun, ID }) {
 
       const apiData = {
         registration_type: {
-          total_registration_fee: registrationData.totalRegistrationFee,
+          total_registration_fee: parseFloat(registrationData.totalRegistrationFee),
           registration_start_date: registrationData.registrationStartDate,
           registration_end_date: registrationData.registrationEndDate,
           bank_account: registrationData.bankAccount,
-          bank_account_number: registrationData.bankAccountNumber
+          bank_account_number: registrationData.bankAccountNumber || ''
         },
         plans: plans.map(plan => ({
           name: plan.name,
-          plan_fee: plan.planFee,
-          student_limit: plan.studentLimit || null,
+          plan_fee: parseFloat(plan.planFee),
+          student_limit: plan.studentLimit ? parseInt(plan.studentLimit) : null,
           description: plan.description,
           included: plan.included,
           not_included: plan.notIncluded
         }))
       };
+      
       const raw = JSON.stringify(apiData);
 
-      // Determine if this is create or update
-      const isUpdate = plans.length > 0 && registrationData.totalRegistrationFee; // Assuming if data exists, it's an update
-      console.log('🔄 Operation type:', isUpdate ? 'UPDATE' : 'CREATE');
+      // Note: Backend handles both create and update with the same POST endpoint
       
       const requestOptions = {
         method: "POST", // Backend uses POST for both create and update
@@ -432,32 +362,34 @@ export default function Oregistration({ fun, ID }) {
         redirect: "follow"
       }; 
       
-      console.log('🌐 Calling registration API:', `https://api.prodigiedu.com/api/competitions/registration/${competitionId}`);
-      const response = await fetch(`https://api.prodigiedu.com/api/competitions/registration/${competitionId}`, requestOptions);
-      
-      console.log('📡 API response status:', response.status, response.ok);
+      const response = await fetch(`http://localhost:3001/api/competitions/registration/${competitionId}`, requestOptions);
       
       if (response.ok) {
         const result = await response.text();
-        console.log('✅ API Response received:', result);
         message.success('Registration data saved successfully!');
 
-        // Call parent function if provided
-        if (fun) {
-          console.log('📞 Calling parent function with:', 5, competitionId);
-          fun(5, competitionId);
-        } else {
-          console.log('⚠️ No parent function provided');
-        }
+        // Wait a moment for the message to be visible
+        setTimeout(() => {
+          // Call parent function if provided
+          if (fun) {
+            fun(5, competitionId);
+          } else {
+            // If no parent function, navigate manually to next step
+            try {
+              navigate(`/competition/${competitionId}/overview`);
+            } catch (navError) {
+              navigate(`/overview/${competitionId}`);
+            }
+          }
+        }, 1000);
       } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
     } catch (error) {
-      console.error('❌ API Error during submission:', error);
-      message.error('Failed to save registration data. Please try again.');
+      message.error(`Failed to save registration data: ${error.message}`);
     } finally {
-      console.log('🏁 Form submission completed');
       setLoading(false);
     }
   };
@@ -477,8 +409,6 @@ export default function Oregistration({ fun, ID }) {
       </div>
     );
   }
-
-  console.log('🎨 Rendering main component UI');
 
   return (
     <div style={{
@@ -523,7 +453,23 @@ export default function Oregistration({ fun, ID }) {
                   placeholder="Enter"
                   addonBefore={<span style={{ color: '#000000' }}>₹</span>}
                   value={registrationData.totalRegistrationFee}
-                  onChange={(e) => updateRegistrationData('totalRegistrationFee', e.target.value)}
+                  onChange={(e) => {
+                    // Only allow numbers and decimal point
+                    const value = e.target.value;
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      updateRegistrationData('totalRegistrationFee', value);
+                    }
+                  }}
+                  onKeyPress={(e) => {
+                    // Prevent non-numeric characters except decimal point
+                    if (!/[\d.]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                    // Prevent multiple decimal points
+                    if (e.key === '.' && e.target.value.includes('.')) {
+                      e.preventDefault();
+                    }
+                  }}
                   style={{
                     height: '48px',
                     fontSize: '16px',
@@ -593,39 +539,42 @@ export default function Oregistration({ fun, ID }) {
               </label>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '16px' }}>
                 <Select
-                onClick={()=>{fetchBankAccounts()}}
                   value={registrationData.bankAccount}
-                  onChange={(value) => updateRegistrationData('bankAccount', value)}
+                  onChange={(value) => {
+                    updateRegistrationData('bankAccount', value);
+                  }}
                   style={{
                     width: '400px',
                     height: '48px'
                   }}
                   dropdownStyle={{ borderRadius: '6px' }}
+                  placeholder={bankAccounts.length === 0 ? "Click to load bank accounts" : "Select bank account"}
+                  onClick={() => {
+                    if (bankAccounts.length === 0) {
+                      fetchBankAccounts();
+                      message.info('Loading bank account options...');
+                    }
+                  }}
                 >
                   {bankAccounts.map(account => (
                     <Select.Option key={account.value} value={account.value}>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span style={{
-                          backgroundColor: account.color,
-                          color: 'white',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          marginRight: '12px'
-                        }}>
-                          {account.label}
-                        </span>
-                        <span style={{ fontSize: '16px', color: '#000000' }}>
-                          {account.number}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ 
+                          width: '12px', 
+                          height: '12px', 
+                          borderRadius: '50%', 
+                          backgroundColor: account.color 
+                        }} />
+                        <span>{account.label}</span>
+                        <span style={{ color: '#666', fontSize: '12px' }}>({account.accountNumber})</span>
                       </div>
                     </Select.Option>
                   ))}
                 </Select>
+                
                 <Button
                 onClick={()=>{
-                  navigate('/BankAcount')
+                  navigate('/BankAcount', {state: {competitionId: competitionId}})
                   
                 }}
                   type="primary"
@@ -642,9 +591,36 @@ export default function Oregistration({ fun, ID }) {
                 >
                   Add Bank Account
                 </Button>
+              
               </div>
               
-           
+              {/* Custom Bank Account Number Input - Only show when custom account is selected */}
+              {(registrationData.bankAccount === 'custom' || registrationData.bankAccount?.startsWith('custom_')) && (
+                <div style={{ marginTop: '16px' }}>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    color: '#000000'
+                  }}>
+                    Bank Account Number<span style={{ color: '#ff4d4f' }}>*</span>
+                  </label>
+                  <Input
+                    placeholder="Enter bank account number"
+                    value={registrationData.bankAccountNumber}
+                    onChange={(e) => updateRegistrationData('bankAccountNumber', e.target.value)}
+                    style={{
+                      height: '48px',
+                      fontSize: '16px',
+                      borderColor: '#d9d9d9',
+                      borderRadius: '6px',
+                      maxWidth: '400px'
+                    }}
+                  />
+                </div>
+              )}
+         
             </div>
 
             {/* Plans */}
@@ -726,7 +702,23 @@ export default function Oregistration({ fun, ID }) {
                       placeholder="Enter"
                       addonBefore={<span style={{ color: '#000000' }}>₹</span>}
                       value={plan.planFee}
-                      onChange={(e) => updatePlan(plan.id, 'planFee', e.target.value)}
+                      onChange={(e) => {
+                        // Only allow numbers and decimal point
+                        const value = e.target.value;
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          updatePlan(plan.id, 'planFee', value);
+                        }
+                      }}
+                      onKeyPress={(e) => {
+                        // Prevent non-numeric characters except decimal point
+                        if (!/[\d.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                        // Prevent multiple decimal points
+                        if (e.key === '.' && e.target.value.includes('.')) {
+                          e.preventDefault();
+                        }
+                      }}
                       style={{
                         height: '48px',
                         fontSize: '16px',

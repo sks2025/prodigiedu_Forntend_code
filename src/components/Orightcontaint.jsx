@@ -235,16 +235,29 @@ const Orightcontaint = ({ fun, ID }) => {
         setFileName(file.name);
         const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
         setFileSize(sizeInMB);
+        
+        // Update competition data with file
         setCompetitionData((prev) => ({
           ...prev,
           image: file,
         }));
+        
+        // Save to localStorage immediately
+        if (competitionId) {
+          const localKey = `competition_overview_${competitionId}`;
+          const currentData = {
+            ...competitionData,
+            image: file,
+            imageSize: sizeInMB
+          };
+          localStorage.setItem(localKey, JSON.stringify(currentData));
+        }
       };
       reader.readAsDataURL(file);
     } else {
       console.log("No file selected");
     }
-  }, []);
+  }, [competitionId, competitionData]);
 
   // Remove uploaded image
   const handleRemoveImage = useCallback(() => {
@@ -255,7 +268,18 @@ const Orightcontaint = ({ fun, ID }) => {
       ...prev,
       image: "",
     }));
-  }, []);
+    
+    // Clear from localStorage
+    if (competitionId) {
+      const localKey = `competition_overview_${competitionId}`;
+      const currentData = {
+        ...competitionData,
+        image: "",
+        imageSize: 0
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
+  }, [competitionId, competitionData]);
 
   // Debounced save function to prevent excessive localStorage writes
   const debouncedSave = useCallback((data) => {
@@ -264,7 +288,22 @@ const Orightcontaint = ({ fun, ID }) => {
     }
     saveTimeoutRef.current = setTimeout(() => {
       const localKey = `competition_overview_${competitionId}`;
-      localStorage.setItem(localKey, JSON.stringify(data));
+      
+      // Handle image data properly for localStorage
+      let dataToSave = { ...data };
+      
+      // If image is a File object, we need to handle it specially
+      if (data.image instanceof File) {
+        // For File objects, we'll save the file info but not the actual file
+        // The file will be handled separately in handleImageUpload
+        dataToSave = {
+          ...data,
+          image: data.image.name, // Save filename instead of File object
+          imageSize: (data.image.size / (1024 * 1024)).toFixed(2)
+        };
+      }
+      
+      localStorage.setItem(localKey, JSON.stringify(dataToSave));
     }, 1000); // Save after 1 second of inactivity
   }, [competitionId]);
 
@@ -338,21 +377,38 @@ const Orightcontaint = ({ fun, ID }) => {
   // Fetch overview data if ID exists
   const getOverview = async () => {
     if (!competitionId) return;
-    // alert(competitionId)
+    
     // Check localStorage first
     const localKey = `competition_overview_${competitionId}`;
     const saved = localStorage.getItem(localKey);
-    // alert(saved)
+    
     if (saved) {
-      setCompetitionData(JSON.parse(saved));
-      // Also set image preview if available
-      const savedData = JSON.parse(saved);
-      if (savedData.image && typeof savedData.image === "string") {
-        setShowImage(savedData.image);
-        setFileName(savedData.image.split("/").pop() || "Uploaded Image");
+      try {
+        const savedData = JSON.parse(saved);
+        setCompetitionData(savedData);
+        
+        // Set image preview if available
+        if (savedData.image) {
+          if (typeof savedData.image === "string") {
+            // If it's a URL string (from API or base64)
+            setShowImage(savedData.image);
+            setFileName(savedData.image.split("/").pop() || "Uploaded Image");
+            // Try to get file size from localStorage if available
+            if (savedData.imageSize) {
+              setFileSize(savedData.imageSize);
+            }
+          } else if (savedData.image instanceof File) {
+            // If it's a File object (from file input)
+            setShowImage(URL.createObjectURL(savedData.image));
+            setFileName(savedData.image.name);
+            setFileSize((savedData.image.size / (1024 * 1024)).toFixed(2));
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing localStorage data:", error);
       }
-      // return;
     }
+    
     try {
       const response = await fetch(
         `https://api.prodigiedu.com/api/competitions/getoverview/${competitionId}`,
@@ -362,13 +418,15 @@ const Orightcontaint = ({ fun, ID }) => {
         }
       );
       const result = await response.json();
-      console.log("API Response:", result); // Debug: Log API response
+      console.log("API Response:", result);
+      
       if (result.success && result.data) {
         const fetchedData = result.data;
+        
         // Normalize stages to ensure all required fields
         const normalizedStages = fetchedData.stages?.length
           ? fetchedData.stages.map((stage, index) => ({
-              id: stage.id || Date.now() + index, // Ensure unique ID
+              id: stage.id || Date.now() + index,
               name: stage.name || "",
               date: stage.date ? dayjs(stage.date).format("YYYY-MM-DD") : "",
               endDate: stage.endDate
@@ -379,7 +437,7 @@ const Orightcontaint = ({ fun, ID }) => {
               location: Array.isArray(stage.location)
                 ? stage.location
                 : ["IN"],
-                             duration: stage.duration || "",
+              duration: stage.duration || "",
             }))
           : [
               {
@@ -402,20 +460,24 @@ const Orightcontaint = ({ fun, ID }) => {
         };
 
         setCompetitionData(updatedCompetitionData);
-        console.log("Updated competitionData:", updatedCompetitionData); // Debug: Log state
+        console.log("Updated competitionData:", updatedCompetitionData);
 
+        // Handle image from API
         if (fetchedData.image) {
-          // Assuming image is a relative path; prepend base URL if needed
           const imageUrl = fetchedData.image.startsWith("http")
             ? fetchedData.image
             : `https://api.prodigiedu.com${fetchedData.image}`;
           setShowImage(imageUrl);
           setFileName(fetchedData.image.split("/").pop() || "Uploaded Image");
-          setFileSize(fetchedData.imageSize || 0); // Update if API provides imageSize
+          setFileSize(fetchedData.imageSize || 0);
+          
+          // Update localStorage with API data
+          localStorage.setItem(localKey, JSON.stringify({
+            ...updatedCompetitionData,
+            image: imageUrl, // Save the full URL
+            imageSize: fetchedData.imageSize || 0
+          }));
         }
-
-        // Save to localStorage
-        localStorage.setItem(localKey, JSON.stringify(updatedCompetitionData));
       } else {
         console.error("No valid data found in response:", result);
       }
@@ -443,9 +505,19 @@ const Orightcontaint = ({ fun, ID }) => {
       formdata.append("organizerId", userId);
       formdata.append("name", competitionData.name);
       formdata.append("description", stripHtml(competitionData.description));
-      if (competitionData.image && typeof competitionData.image !== "string") {
-        formdata.append("image", competitionData.image);
+      
+      // Handle image data properly
+      if (competitionData.image) {
+        if (competitionData.image instanceof File) {
+          // If it's a new file, append it to FormData
+          formdata.append("image", competitionData.image);
+        } else if (typeof competitionData.image === "string" && competitionData.image.trim() !== "") {
+          // If it's an existing image URL, we might need to handle it differently
+          // For now, we'll skip it if it's already a URL
+          console.log("Image already exists:", competitionData.image);
+        }
       }
+      
       formdata.append("user_id", userId);
       formdata.append("stages", JSON.stringify(competitionData.stages));
 
@@ -462,16 +534,18 @@ const Orightcontaint = ({ fun, ID }) => {
       });
 
       const result = await response.json();
-      console.log("Save/Update Response:", result); // Debug: Log API response
+      console.log("Save/Update Response:", result);
       
       // Pass the ID to next step - use existing ID for updates, new ID for creates
       const resultId = competitionId || result._id;
+      
       // Clear localStorage for this step on successful save
       if (competitionId) {
         localStorage.removeItem(`competition_overview_${competitionId}`);
       } else if (result._id) {
         localStorage.removeItem(`competition_overview_${result._id}`);
       }
+      
       fun(1, resultId);
     } catch (error) {
       console.error(`${competitionId ? "Update" : "Save"} error:`, error);
@@ -895,7 +969,7 @@ const Orightcontaint = ({ fun, ID }) => {
                   <div style={{ flex: 1, display: "flex", gap: "12px" }}>
                                                                {/* Country Select */}
                       <Select
-                        placeholder="Select Country"
+                        placeholder="Select Country/देश चुनें"
                         style={{ width: "160px", height: "40px" }}
                         value={selectedCountry}
                         onChange={handleCountryChange}
@@ -916,7 +990,7 @@ const Orightcontaint = ({ fun, ID }) => {
 
                                                                {/* State Select */}
                       <Select
-                        placeholder="Select State"
+                        placeholder="Select State/राज्य चुनें"
                         style={{ width: "160px", height: "40px" }}
                         value={selectedState}
                         onChange={handleStateChange}
@@ -938,7 +1012,7 @@ const Orightcontaint = ({ fun, ID }) => {
 
                                                                {/* City Select */}
                       <Select
-                        placeholder="Select City"
+                        placeholder="Select City/शहर चुनें"
                         style={{ width: "160px", height: "40px" }}
                         value={selectedCity}
                         onChange={handleCityChange}

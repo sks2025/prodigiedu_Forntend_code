@@ -65,13 +65,36 @@ const OPattern = ({ fun, ID }) => {
     askBeforePasteHTML: false,
     askBeforePasteFromWord: false,
     defaultActionOnPaste: "insert_clear_html",
+    // Prevent refresh issues
+    events: {
+      beforeInit: function(editor) {
+        // Custom initialization if needed
+      }
+    },
+    // Disable auto-save to prevent refresh
+    saveModeInStorage: false,
+    // Prevent unnecessary re-renders
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
+    defaultActionOnPaste: "insert_clear_html",
   }), []);
 
   // JoditEditor change handler
   const handleRulesChange = useCallback((newContent) => {
     console.log('Rules content changed:', newContent);
     setRules(newContent);
-  }, []);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_pattern_${competitionId}`;
+      const currentData = {
+        patternsByTab,
+        rules: newContent,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
+  }, [competitionId, patternsByTab]);
 
   // Check if subjects are academic
   const getsyllabus = async () => {
@@ -116,6 +139,28 @@ const OPattern = ({ fun, ID }) => {
   useEffect(() => {
     const getPattern = async () => {
       try {
+        // Check localStorage first for saved pattern data
+        const localKey = `competition_pattern_${competitionId}`;
+        const savedPatternData = localStorage.getItem(localKey);
+        
+        if (savedPatternData) {
+          try {
+            const parsedData = JSON.parse(savedPatternData);
+            console.log("Loading saved pattern data from localStorage:", parsedData);
+            
+            // Check if saved data is not too old (24 hours)
+            const isDataFresh = Date.now() - parsedData.timestamp < 24 * 60 * 60 * 1000;
+            
+            if (isDataFresh && parsedData.patternsByTab && parsedData.rules) {
+              setPatternsByTab(parsedData.patternsByTab);
+              setRules(parsedData.rules);
+              console.log("Restored pattern data from localStorage");
+            }
+          } catch (localError) {
+            console.error("Error parsing localStorage data:", localError);
+          }
+        }
+
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
@@ -150,20 +195,49 @@ const OPattern = ({ fun, ID }) => {
           if (response.ok && result.success && result.data && result.data.sections) {
             console.log(result.data.sections, "result.data.sections");
 
-            const fetchedSections = result.data.sections?.map((section, index) => ({
-              id: Date.now() + index,
-              name: section.sectionName || section.name,
-              formats: [{
-                id: Date.now() + index + 1,
-                format: "MCQ", // Default format, can be adjusted based on API data
-                questions: section.questions.toString(),
-                marks: `+${section.marksPerQuestion}`
-              }]
-            }));
+            // Group sections by stage if stage information is available
+            const sectionsByStage = {};
+            
+            result.data.sections.forEach((section, index) => {
+              const stageName = section.stage;
+              const stageId = stagesData.find(stage => stage.name === stageName)?.id.toString();
+              
+              if (stageId) {
+                if (!sectionsByStage[stageId]) {
+                  sectionsByStage[stageId] = [];
+                }
+                
+                sectionsByStage[stageId].push({
+                  id: Date.now() + index,
+                  name: section.sectionName || section.name,
+                  formats: [{
+                    id: Date.now() + index + 1,
+                    format: section.format || "MCQ",
+                    questions: section.questions ? section.questions.toString() : "",
+                    marks: section.marksPerQuestion ? `+${section.marksPerQuestion}` : ""
+                  }]
+                });
+              }
+            });
 
-            // Put all sections in the first stage for now (can be enhanced later)
-            if (stagesData.length > 0) {
-              initialPatternsByTab[stagesData[0].id.toString()] = fetchedSections;
+            // Assign sections to their respective stages
+            Object.keys(sectionsByStage).forEach(stageId => {
+              initialPatternsByTab[stageId] = sectionsByStage[stageId];
+            });
+
+            // If no sections were assigned to stages, put them in the first stage
+            if (Object.keys(sectionsByStage).length === 0 && stagesData.length > 0) {
+              const firstStageId = stagesData[0].id.toString();
+              initialPatternsByTab[firstStageId] = result.data.sections.map((section, index) => ({
+                id: Date.now() + index,
+                name: section.sectionName || section.name,
+                formats: [{
+                  id: Date.now() + index + 1,
+                  format: section.format || "MCQ",
+                  questions: section.questions ? section.questions.toString() : "",
+                  marks: section.marksPerQuestion ? `+${section.marksPerQuestion}` : ""
+                }]
+              }));
             }
           }
 
@@ -230,32 +304,72 @@ const OPattern = ({ fun, ID }) => {
         }
       ]
     };
-    setPatternsByTab({
+    
+    const newPatternsByTab = {
       ...patternsByTab,
       [activeTab]: [...(patternsByTab[activeTab] || []), newSection]
-    });
+    };
+    
+    setPatternsByTab(newPatternsByTab);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_pattern_${competitionId}`;
+      const currentData = {
+        patternsByTab: newPatternsByTab,
+        rules,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const removeSection = (sectionId) => {
-    setPatternsByTab({
+    const newPatternsByTab = {
       ...patternsByTab,
       [activeTab]: (patternsByTab[activeTab] || []).filter(section => section.id !== sectionId)
-    });
+    };
+    
+    setPatternsByTab(newPatternsByTab);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_pattern_${competitionId}`;
+      const currentData = {
+        patternsByTab: newPatternsByTab,
+        rules,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const updateSection = (sectionId, field, value) => {
-    setPatternsByTab({
+    const newPatternsByTab = {
       ...patternsByTab,
       [activeTab]: (patternsByTab[activeTab] || []).map(section =>
         section.id === sectionId
           ? { ...section, [field]: value }
           : section
       )
-    });
+    };
+    
+    setPatternsByTab(newPatternsByTab);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_pattern_${competitionId}`;
+      const currentData = {
+        patternsByTab: newPatternsByTab,
+        rules,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const addFormat = (sectionId) => {
-    setPatternsByTab({
+    const newPatternsByTab = {
       ...patternsByTab,
       [activeTab]: (patternsByTab[activeTab] || []).map(section =>
         section.id === sectionId
@@ -273,11 +387,24 @@ const OPattern = ({ fun, ID }) => {
           }
           : section
       )
-    });
+    };
+    
+    setPatternsByTab(newPatternsByTab);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_pattern_${competitionId}`;
+      const currentData = {
+        patternsByTab: newPatternsByTab,
+        rules,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const updateFormat = (sectionId, formatId, field, value) => {
-    setPatternsByTab({
+    const newPatternsByTab = {
       ...patternsByTab,
       [activeTab]: (patternsByTab[activeTab] || []).map(section =>
         section.id === sectionId
@@ -291,7 +418,20 @@ const OPattern = ({ fun, ID }) => {
           }
           : section
       )
-    });
+    };
+    
+    setPatternsByTab(newPatternsByTab);
+    
+    // Auto-save to localStorage
+    if (competitionId) {
+      const localKey = `competition_pattern_${competitionId}`;
+      const currentData = {
+        patternsByTab: newPatternsByTab,
+        rules,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localKey, JSON.stringify(currentData));
+    }
   };
 
   const transformDataForAPI = () => {
@@ -421,6 +561,15 @@ const OPattern = ({ fun, ID }) => {
       if (response.ok) {
         const result = await response.text();
         console.log('Success:', result);
+        
+        // Save to localStorage for persistence
+        const localKey = `competition_pattern_${competitionId}`;
+        localStorage.setItem(localKey, JSON.stringify({
+          patternsByTab,
+          rules,
+          timestamp: Date.now()
+        }));
+        
         message.success('Pattern saved successfully!');
         fun(3, competitionId);
       } else {
@@ -622,7 +771,6 @@ const OPattern = ({ fun, ID }) => {
               
               {/* Main Rules Input - JoditEditor */}
               <div style={{ marginBottom: '16px' }}>
-                <Text strong>Rules:</Text>
                                  <div style={{ marginTop: '8px' }}>
                    <JoditEditor
                      key={`rules-editor-${competitionId}`}

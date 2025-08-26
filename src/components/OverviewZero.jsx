@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Home, Upload, User, X } from "lucide-react";
 import Oleftsidbar from "./Oleftsidbar";
 import Orightcontaint from "./Orightcontaint";
@@ -16,11 +16,12 @@ import settings from '../images/settings.png'
 import AccountHistory from '../images/clock.png' 
 import LogOut from '../images/sign-out.png' 
 import Help from '../images/help.png'
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import Organisersheader from "./Organisersheader";
 
 const OverviewZero = () => {
-  const [page, setpage] = useState(0);
+  const {state} = useLocation(); 
+   const [page, setpage] = useState(0);
   const [ID, setID] = useState("")
   const { id } = useParams();
 
@@ -37,6 +38,12 @@ const OverviewZero = () => {
     const handleClose = () => {
       setAnchorEl(null);
     };
+
+    useEffect(() => {
+      if(state?.pager){
+        setpage(state?.pager);
+      }
+    }, [state?.pager]);
   return (
     <>
         <Organisersheader/>

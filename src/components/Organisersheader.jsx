@@ -19,7 +19,7 @@ import settings from "../images/settings.png";
 import AccountHistory from "../images/clock.png";
 import LogOut from "../images/sign-out.png";
 import Help from "../images/help.png";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/apiConfig";
 
 const Organisersheader = () => {
@@ -30,6 +30,8 @@ const Organisersheader = () => {
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isOrganiserRoute = location.pathname.startsWith('/organiser');
 
   const open = Boolean(anchorEl);
 
@@ -136,7 +138,7 @@ const Organisersheader = () => {
   return (
     <div>
       <header>
-        <nav className="navbar" style={{padding: '0px 5vw'}}>
+        <nav className="navbar" style={{padding: '0px 5vw', position: 'relative'}}>
           <div className="logo">
             <NavLink style={{ textDecoration: "none" }} to="/">
               <div className='pt-2' style={{ display: 'flex', alignItems: 'center', minHeight: '70px' }}>
@@ -146,6 +148,20 @@ const Organisersheader = () => {
             </NavLink>
           </div>
 
+          {/* Mobile menu toggle */}
+          {isOrganiserRoute && (
+            <button
+              className="mobile-menu-btn"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
+              onClick={toggleMobileMenu}
+              style={{ background: 'none', border: 'none' }}
+            >
+              {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+            </button>
+          )}
+
+          {/* Nav links (slides in on mobile) */}
           <div className={`nav-links ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
             {/* Organiser link always visible */}
             <NavLink
@@ -271,6 +287,18 @@ const Organisersheader = () => {
               </>
             )}
           </div>
+          {/* Backdrop for mobile menu */}
+          {isMobileMenuOpen && (
+            <div
+              onClick={closeMobileMenu}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.25)',
+                zIndex: 998
+              }}
+            />
+          )}
         </nav>
       </header>
 

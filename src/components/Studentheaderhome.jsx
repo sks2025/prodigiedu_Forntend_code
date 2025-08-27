@@ -107,24 +107,71 @@ const Studentheaderhome = () => {
                 <Link to="/organiser" onClick={handleDrawerClose}>Organiser</Link>
                 <Link to="/compition" onClick={handleDrawerClose}>Competitions</Link>
                 {isLoggedIn ? (
-                  <>
-                    <Link to="/student/persnol-setting" className="profile mt-4" onClick={handleDrawerClose}>Profile</Link>
-                    <MenuItem onClick={handleDrawerClose}>
+                <>
+                  <Link to="/student/persnol-setting" className="profile mt-4">Profile</Link>
+                  <div
+                    className="avatar"
+                    style={{ cursor: "pointer" }}
+                    onClick={handleClick}
+                  >
+                    <FaUserCircle />
+                  </div>
+                  <Menu
+                    anchorEl={anchorEl}
+                    id="account-menu"
+                    open={open}
+                    onClose={handleClose}
+                    onClick={handleClose}
+                    slotProps={{
+                      paper: {
+                        elevation: 0,
+                        sx: {
+                          overflow: "visible",
+                          filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+                          mt: 1.5,
+                          "& .MuiAvatar-root": {
+                            width: 32,
+                            height: 32,
+                            ml: -0.5,
+                            mr: 1,
+                          },
+                          "&::before": {
+                            content: '""',
+                            display: "block",
+                            position: "absolute",
+                            top: 0,
+                            right: 14,
+                            width: 10,
+                            height: 10,
+                            bgcolor: "background.paper",
+                            transform: "translateY(-50%) rotate(45deg)",
+                            zIndex: 0,
+                          },
+                        },
+                      },
+                    }}
+                    transformOrigin={{ horizontal: "right", vertical: "top" }}
+                    anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                  >
+                    <MenuItem
+                      onClick={handleClose}
+                      className="flex flex-column justify-content-start align-items-start"
+                    >
                       Admin Name
                       <p className="text-themcolor">Oberoi International School</p>
                     </MenuItem>
-                    <MenuItem onClick={handleDrawerClose}>
+                    <MenuItem onClick={handleClose}>
                       <img src={settings} alt="" /> &nbsp;&nbsp; <Link to="/student/persnol-setting" style={{ textDecoration: 'none', color: 'inherit' }}>Account Settings</Link>
                     </MenuItem>
                     <Divider />
-                    <MenuItem onClick={handleDrawerClose}>
+                    <MenuItem onClick={handleClose}>
                       <ListItemIcon>
                         <img src={AccountHistory} alt="help" />
                       </ListItemIcon>
                       Account History
                     </MenuItem>
                     <Divider />
-                    <MenuItem onClick={handleDrawerClose}>
+                    <MenuItem onClick={handleClose}>
                       <ListItemIcon>
                         <img src={Help} alt="help" />
                       </ListItemIcon>
@@ -137,8 +184,9 @@ const Studentheaderhome = () => {
                       </ListItemIcon>
                       Logout
                     </MenuItem>
-                  </>
-                ) : (
+                  </Menu>
+                </>
+              ) : (
                   <>
                     <Link to="/student/login" className="login" onClick={handleDrawerClose}>Login</Link>
                     <Link to="/student/register/mobile" className="signup drawer-signup-btn" onClick={handleDrawerClose}>Sign up</Link>

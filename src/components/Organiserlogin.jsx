@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import './StudentLogin.css';
 import './Schoollogin.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { useOrganisationloginMutation } from '../store/api/apiSlice';
 import Button from './common/Button';
 import Input from './common/Input';
 import Card from './common/Card';
@@ -12,8 +11,6 @@ import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Organiserlogin = () => {
   const navigate = useNavigate();
-  const [login, { isLoading }] = useOrganisationloginMutation();
-
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -27,6 +24,7 @@ const Organiserlogin = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,18 +54,18 @@ const Organiserlogin = () => {
   const validate = () => {
     let errors = {};
     if (!formData.email.trim()) {
-      errors.email = 'Email or Mobile number is required';
+      errors.email = 'Please enter your email or mobile number.';
     } else if (
       formData.email.includes('@') &&
       !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email)
     ) {
-      errors.email = 'Invalid email format';
+      errors.email = 'Please enter a valid email ID.';
     } else if (!formData.email.includes('@') && !/^\+91[0-9]{10}$/.test(formData.email)) {
-      errors.email = 'Mobile number must be 10 digits and start with +91';
+      errors.email = 'Please enter a valid mobile number (+91XXXXXXXXXX).';
     }
 
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = 'Please enter your password.';
     } else if (!validatePassword(formData.password)) {
       errors.password =
         'Password must be at least 8 characters, include 1 capital letter, 1 number, and 1 special character.';
@@ -81,22 +79,41 @@ const Organiserlogin = () => {
     e.preventDefault();
     if (!validate()) return;
 
+    setIsLoading(true);
+
     const isEmail = formData.email.includes('@');
     const credentials = isEmail
       ? { email: formData.email, password: formData.password }
       : { mobile_num: formData.email, password: formData.password };
 
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify(credentials),
+      redirect: 'follow',
+    };
+
     try {
-      const response = await login(credentials).unwrap();
-      localStorage.setItem('token', JSON.stringify(response.token));
-      localStorage.setItem('user_Data', JSON.stringify(response.data));
-      navigate('/organiser/dashboard');
-    } catch (err) {
-      const errorMessage = err.data?.message || 'Login failed. Please try again.';
+      const response = await fetch('https://api.prodigiedu.com/api/organisations/login', requestOptions);
+      const result = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('token', JSON.stringify(result.token));
+        localStorage.setItem('user_Data', JSON.stringify(result.data));
+        navigate('/organiser/dashboard');
+      } else {
+        throw new Error(result.message || 'Login failed. Please try again.');
+      }
+    } catch (error) {
       setFormErrors((prev) => ({
         ...prev,
-        password: errorMessage,
+        password: 'Please enter correct password',
       }));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -192,10 +209,10 @@ const Organiserlogin = () => {
                   type="submit"
                   variant="primary"
                   size="large"
-                  disabled={isFormInvalid}
+                  disabled={isFormInvalid || isLoading}
                   className="submit-btn"
                   style={{
-                    background: isFormInvalid ? '#D3D3D3' : '#4CAF4F',
+                    background: isFormInvalid || isLoading ? '#D3D3D3' : '#4CAF4F',
                   }}
                 >
                   {isLoading ? 'Logging in...' : 'LOG IN'}

@@ -3,11 +3,12 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import "./schoolHome.css";
+import section2 from "../images/Rectangle 157.png";
+import "./home.css"
 
-import section2 from "../images/section2.png";
 import headerlogo from "../images/headerlogo.png";
 import herosec3 from "../images/organiserhome.png";
-import { decore, decore1, frame37, frame38, frame40,frame39, socialIcon1, socialIcon2, socialIcon, socialIcon11, sendIcon } from "../assets/images";
+import { decore, decore1, frame37, frame38, frame40, frame39, socialIcon1, socialIcon2, socialIcon, socialIcon11, sendIcon } from "../assets/images";
 import { FaUserCircle } from "react-icons/fa";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -48,6 +49,36 @@ const testimonials = [
   },
 ];
 
+const featuresData = [
+  {
+    id: 1,
+    title: "Expanded Reach",
+    description: "Reach your target audience and scale-up your competitions.",
+    img: frame37,
+  },
+  {
+    id: 2,
+    title: "Seamless registration",
+    description: "Let students register directly in a short and simple flow",
+    img: frame38,
+    special: true, // mark this for outer shape
+  },
+  {
+    id: 3,
+    title: "Gamified practice",
+    description:
+      "Personalise and gamify your prep material, and get instant insights.",
+    img: frame39,
+  },
+  {
+    id: 4,
+    title: "Effortless certification",
+    description: "Publish certificates instantly to every student",
+    img: frame40,
+  },
+];
+
+
 const sliderSettings = {
   dots: true,
   infinite: true,
@@ -85,59 +116,68 @@ function Organiserhome() {
     <div className="schoolHome">
       <Organisersheader />
 
-      <section className="herohome">
-        <div className="hero-content-home">
-          <p className="subtitle">Your Competition, Our Technology</p>
-          <h1>Simplify Process, Deliver Excellence</h1>
-          <p className="description">
-            Digitizing Your Competitions for Wider Reach and Efficiency.  <br /> From
-            Registration to Results — All in One Platform.
-          </p>
-        </div>
-        <div className="hero-images">
-          <img src={herosec3} alt="Winner holding a trophy" />
+      <section className="organiser-hero-section container">
+        <div className="row align-items-center">
+          {/* Left Content */}
+          <div className="col-md-6 organiser-hero-text" style={{ position: "relative", zIndex: 10 }}>
+            <p className="organiser-hero-subtitle">Your Competition, Our Technology</p>
+            <h2 className="organiser-hero-title">Simplify Process, Deliver Excellence</h2>
+            <p className="organiser-hero-description">
+              Digitizing Your Competitions for Wider Reach and Efficiency.
+              <br /> From Registration to Results — All in One Platform.
+            </p>
+          </div>
+
+          {/* Right Image */}
+          <div className="col-md-6 text-center organiser-hero-image">
+            <img
+              src={herosec3}
+              alt="Winner holding a trophy"
+              className="img-fluid"
+            />
+          </div>
         </div>
       </section>
+
+
+
 
       <img className="top-images" src={decore} alt="Decorative element" />
 
-      <section className="features">
-        <img className="section2" src={section2} alt="Competition illustration" />
-        <h2 className="features-title">One Stop for All Your Competition Needs</h2>
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="icon">
-              <img src={frame37} alt="Exam Recommendations Icon" />
-            </div>
-            <h3>Expanded Reach</h3>
-            <p>Reach your target audience and scale-up your competitions</p>
-          </div>
-          <div className="feature-card-wrapper">
-            <div className='outer-shap'></div>
-            <div className="feature-card feature-card-2">
-              <div className="icon">
-                <img src={frame38} alt="Quick Registration Icon" />
+
+      <section className="organiser-features m-5" >
+        <h2 className="organiser-features-title">
+          One Stop For All Your Competitions
+        </h2>
+
+        <div className="organiser-features-grid">
+          {featuresData.map((feature) =>
+            feature.special ? (
+              <div key={feature.id} className="organiser-features-card-wrapper">
+                <div className="organiser-features-outer-shap">
+                  <img src={section2} alt="" />
+                </div>
+                <div className="organiser-features-card organiser-features-card-2" style={{ textAlign: "center" }}>
+                  <div className="organiser-features-icon">
+                    <img src={feature.img} alt={feature.title} />
+                  </div>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.description}</p>
+                </div>
               </div>
-              <h3>Seamless registration</h3>
-              <p>Let students register directly in a short and simple flow</p>
-            </div>
-          </div>
-          <div className="feature-card">
-            <div className="icon">
-              <img src={frame39} alt="Tangible Achievements Icon" />
-            </div>
-            <h3>Gamified practice</h3>
-            <p>Personalise and gamify your prep material, and get instant insights.</p>
-          </div>
-          <div className="feature-card">
-            <div className="icon">
-              <img src={frame40} alt="Tangible Achievements Icon" />
-            </div>
-            <h3>Effortless certification</h3>
-            <p>Publish certificates instantly to every student</p>
-          </div>
+            ) : (
+              <div key={feature.id} className="organiser-features-card" style={{ textAlign: "center" }}>
+                <div className="organiser-features-icon">
+                  <img style={{}} src={feature.img} alt={feature.title} />
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+              </div>
+            )
+          )}
         </div>
       </section>
+
 
       {/* <div className="comb-sec">
         <section className="testimonials">

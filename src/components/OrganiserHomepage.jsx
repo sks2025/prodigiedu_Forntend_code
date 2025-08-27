@@ -137,8 +137,8 @@ const OrganiserHomepage = ({ title }) => {
   console.log("Active competitions:", compitions);
 
   return (
-    <div className="OrganiserHomepage">
-      <Organisersheader />
+    <div className="schoolHome">
+      <Organisersheader/>
 
       <div className=" container mb-5 active-competitions">
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', marginTop: '20px' }}>Active Competitions</h1>

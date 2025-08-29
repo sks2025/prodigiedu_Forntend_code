@@ -45,7 +45,7 @@ const OverviewZero = () => {
       }
     }, [state?.pager]);
   return (
-    <>
+    <div className="schoolHome">
         <Organisersheader/>
     
     <div className="OverviewZero">
@@ -161,7 +161,7 @@ const OverviewZero = () => {
           Logout
         </MenuItem>
       </Menu>
-    </>
+    </div>
   )
 }
 

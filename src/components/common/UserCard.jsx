@@ -154,26 +154,28 @@ const UserCard = ({ card, onClick, onBookmarkChange }) => {
       <div className="user-card-content">
         <h2 className="user-card-name">{card.name}</h2>
         <p className="user-card-institute">{card.institute}</p>
-        <div className="user-card-details">
-          <div className="d-flex">
-            <div className='d-flex gap-2'>
-              <p className="user-card-label">Date:</p>
-              <p className="user-card-value">{card.date}</p>
-            </div>
-            <div className='d-flex gap-2'>
-              <p className="user-card-label">Variance Score:</p>
-              <p className="user-card-badge mt-3">{card.score || 70}</p>
-            </div>
+        <div className="user-card-details" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+          {/* Row 1: Date | Similarity Score */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <span>
+              <span className="user-card-label" style={{ color: '#888', fontWeight: 400 }}>Date: </span>
+              <span className="user-card-value" style={{ fontWeight: 700 }}>{card.date}</span>
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="user-card-label" style={{ color: '#888', fontWeight: 400 }}>Similarity Score</span>
+              <span className="user-card-badge mt-3" style={{ background: '#e6f4ea', color: '#1a7f37', borderRadius: '8px', padding: '2px 16px', fontWeight: 700, fontSize: '1rem', minWidth: '48px', textAlign: 'center', display: 'inline-block' }}>{card.score || '97%'}</span>
+            </span>
           </div>
-          <div className="d-flex ">
-            <div className='d-flex gap-2'>
-              <p className="user-card-label">Enrollments:</p>
-              <p className="user-card-value">{card.enrollments || 770}</p>
-            </div>
-            <div className='d-flex gap-2'>
-              <p className="user-card-label">Registration Fee:</p>
-              <p className="user-card-value">{card.fee || 70000}</p>
-            </div>
+          {/* Row 2: Subjects | Registration Fee */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <span>
+              <span className="user-card-label" style={{ color: '#888', fontWeight: 400 }}>Subjects: </span>
+              <span className="user-card-value" style={{ fontWeight: 700 }}>{card.subjects ? card.subjects.join(', ') : (card.subject || 'Maths')}</span>
+            </span>
+            <span>
+              <span className="user-card-label" style={{ color: '#888', fontWeight: 400 }}>Registration fee : </span>
+              <span className="user-card-value" style={{ fontWeight: 700 }}>{card.fee || '₹150'}</span>
+            </span>
           </div>
         </div>
       </div>

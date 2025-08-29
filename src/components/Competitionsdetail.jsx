@@ -303,9 +303,12 @@ function Ocompetitionsdetail() {
                         </p>
                       ))}
                     </div>
-                    <div className="info-item">
+                    {/* <div className="info-item">
                       <h4>Scale: National</h4>
-                    </div>
+                    </div> */}
+                    {/* <div className="info-item">
+                      <h4>Grade: ...</h4>
+                    </div> */}
                     <div className="info-item">
                       <h4>
                         Date of 1st level: {getOverviewData().stages?.[0]?.date || "N/A"}
@@ -319,6 +322,14 @@ function Ocompetitionsdetail() {
                     </div>
                     <div className="info-item">
                       <h4>Duration: {getOverviewData().stages?.[0]?.duration || "N/A"}</h4>
+                    </div>
+                    {/* Registration Fee */}
+                    <div className="info-item">
+                      <h4>Registration fee: ₹{getRegistrationData().registration_type?.total_registration_fee || "N/A"}</h4>
+                    </div>
+                    {/* Subject */}
+                    <div className="info-item">
+                      <h4>Subject: {getOverviewData().subject || (getOverviewData().subjects ? getOverviewData().subjects.join(', ') : 'N/A')}</h4>
                     </div>
                     {/* Awards Preview in Overview */}
                     {!sectionLoading.awards && getAwardsData().length > 0 && (
@@ -434,51 +445,63 @@ function Ocompetitionsdetail() {
                           onRetry={fetchPatternData}
                         />
                       ) : (
-                        <div className="table-container">
-                          <table className="exam-table">
-                            <thead className="thhead">
-                              <tr>
-                                <th>Section</th>
-                                <th>Pattern</th>
-                                <th>No. of Questions</th>
-                                <th>Marks per Question</th>
-                              </tr>
-                            </thead>
-                            <tbody className="table-boby">
-                              {getPatternData().sections?.length > 0 ? (
-                                getPatternData().sections.map((section, index) => (
-                                  <tr key={index}>
-                                    <td>{section.name || section.sectionName || "N/A"}</td>
-                                    <td>{section.type || section.format || "MCQ"}</td>
-                                    <td>{section.questions || section.numberOfQuestions || "N/A"}</td>
-                                    <td>{section.marks || section.marksPerQuestion || "N/A"}</td>
+                        <>
+                          {/* Show Rules if present */}
+                          {getPatternData().rules && (
+                            <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', border: '1px solid #e0e0e0' }}>
+                              <strong>Rules:</strong>
+                              <div style={{ marginTop: '0.5rem', color: '#333' }}>{getPatternData().rules}</div>
+                            </div>
+                          )}
+                          <div className="table-container">
+                            <table className="exam-table">
+                              <thead className="thhead">
+                                <tr>
+                                  <th>Section</th>
+                                  <th>Pattern</th>
+                                  <th>No. of Questions</th>
+                                  <th>Marks per Question</th>
+                                  <th>Rules</th>
+                                </tr>
+                              </thead>
+                              <tbody className="table-boby">
+                                {getPatternData().sections?.length > 0 ? (
+                                  getPatternData().sections.map((section, index) => (
+                                    <tr key={index}>
+                                      <td>{section.name || section.sectionName || "N/A"}</td>
+                                      <td>{section.type || section.format || "MCQ"}</td>
+                                      <td>{section.questions || section.numberOfQuestions || "N/A"}</td>
+                                      <td>{section.marks || section.marksPerQuestion || "N/A"}</td>
+                                      <td>{section.rules || "-"}</td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td colSpan="5">No exam pattern data available</td>
                                   </tr>
-                                ))
-                              ) : (
-                                <tr>
-                                  <td colSpan="4">No exam pattern data available</td>
-                                </tr>
-                              )}
-                              {getPatternData().sections?.length > 0 && (
-                                <tr>
-                                  <td>
-                                    <strong>Grand Total</strong>
-                                  </td>
-                                  <td></td>
-                                  <td>
-                                    <strong>
-                                      {getPatternData().sections.reduce(
-                                        (total, section) => total + (parseInt(section.questions) || parseInt(section.numberOfQuestions) || 0),
-                                        0
-                                      )}
-                                    </strong>
-                                  </td>
-                                  <td></td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
+                                )}
+                                {getPatternData().sections?.length > 0 && (
+                                  <tr>
+                                    <td>
+                                      <strong>Grand Total</strong>
+                                    </td>
+                                    <td></td>
+                                    <td>
+                                      <strong>
+                                        {getPatternData().sections.reduce(
+                                          (total, section) => total + (parseInt(section.questions) || parseInt(section.numberOfQuestions) || 0),
+                                          0
+                                        )}
+                                      </strong>
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </>
                       )}
                     </div>
 
@@ -600,51 +623,60 @@ function Ocompetitionsdetail() {
                   onRetry={fetchPatternData}
                 />
               ) : (
-                <div className="table-container">
-                  <table className="exam-table">
-                    <thead className="thhead">
-                      <tr>
-                        <th>Section</th>
-                        <th>Pattern</th>
-                        <th>No. of Questions</th>
-                        <th>Marks per Question</th>
-                      </tr>
-                    </thead>
-                    <tbody className="table-boby">
-                      {getPatternData().sections?.length > 0 ? (
-                        getPatternData().sections.map((section, index) => (
-                          <tr key={index}>
-                            <td>{section.name || section.sectionName || "N/A"}</td>
-                            <td>{section.type || section.format || "MCQ"}</td>
-                            <td>{section.questions || section.numberOfQuestions || "N/A"}</td>
-                            <td>{section.marks || section.marksPerQuestion || "N/A"}</td>
+                <>
+                  {/* Show Rules if present */}
+                  {getPatternData().rules && (
+                    <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '16px', marginBottom: '16px', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                      <h4 style={{ margin: 0, color: '#2c3e50' }}>Rules</h4>
+                      <div style={{ marginTop: '8px', color: '#333', whiteSpace: 'pre-wrap' }}>{getPatternData().rules}</div>
+                    </div>
+                  )}
+                  <div className="table-container">
+                    <table className="exam-table">
+                      <thead className="thhead">
+                        <tr>
+                          <th>Section</th>
+                          <th>Pattern</th>
+                          <th>No. of Questions</th>
+                          <th>Marks per Question</th>
+                        </tr>
+                      </thead>
+                      <tbody className="table-boby">
+                        {getPatternData().sections?.length > 0 ? (
+                          getPatternData().sections.map((section, index) => (
+                            <tr key={index}>
+                              <td>{section.name || section.sectionName || "N/A"}</td>
+                              <td>{section.type || section.format || "MCQ"}</td>
+                              <td>{section.questions || section.numberOfQuestions || "N/A"}</td>
+                              <td>{section.marks || section.marksPerQuestion || "N/A"}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="4">No exam pattern data available</td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="4">No exam pattern data available</td>
-                        </tr>
-                      )}
-                      {getPatternData().sections?.length > 0 && (
-                        <tr>
-                          <td>
-                            <strong>Grand Total</strong>
-                          </td>
-                          <td></td>
-                          <td>
-                            <strong>
-                              {getPatternData().sections.reduce(
-                                (total, section) => total + (parseInt(section.questions) || parseInt(section.numberOfQuestions) || 0),
-                                0
-                              )}
-                            </strong>
-                          </td>
-                          <td></td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                        )}
+                        {getPatternData().sections?.length > 0 && (
+                          <tr>
+                            <td>
+                              <strong>Grand Total</strong>
+                            </td>
+                            <td></td>
+                            <td>
+                              <strong>
+                                {getPatternData().sections.reduce(
+                                  (total, section) => total + (parseInt(section.questions) || parseInt(section.numberOfQuestions) || 0),
+                                  0
+                                )}
+                              </strong>
+                            </td>
+                            <td></td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -719,16 +751,104 @@ function Ocompetitionsdetail() {
                     <div>
                       <h3>Eligibility Criteria</h3>
                       <ul>
-                        {getEligibilityData().map((criteria, index) => (
+                        {getEligibilityData().map((criteriaObj, index) => (
                           <li key={`criteria-${index}`}>
-                            <span className="icon">✔</span>
-                            <strong>{criteria.title}:</strong> {criteria.requirement}
+                            {criteriaObj.criteria && criteriaObj.criteria.map((c, i) => (
+                              <div key={i}>
+                                <span className="icon">✔</span>
+                                <strong>{c.title}:</strong> {c.requirement}
+                              </div>
+                            ))}
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
+                  {/* Additional Details */}
+                  {getEligibilityData().some(e => e.additionalDetails && e.additionalDetails.length > 0) && (
+                    <div style={{ marginTop: '30px' }}>
+                      <h3>Additional Details Required</h3>
+                      <div style={{ display: 'grid', gap: '15px' }}>
+                        {getEligibilityData().map((e, idx) => (
+                          e.additionalDetails && e.additionalDetails.length > 0 && (
+                            e.additionalDetails.map((detail, index) => (
+                              <div key={`${idx}-${detail.id || index}`} style={{
+                                border: '1px solid #ddd',
+                                padding: '20px',
+                                borderRadius: '8px',
+                                backgroundColor: '#f8f9fa',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                              }}>
+                                <h4 style={{ color: '#2c3e50', marginBottom: '10px' }}>
+                                  {detail.name || `Question ${index + 1}`}
+                                </h4>
+                                <p><strong>Type:</strong> {detail.type}</p>
 
+                                {detail.type === 'Multiple Choice' && detail.options && (
+                                  <div>
+                                    <p><strong>Options:</strong></p>
+                                    <ul style={{ marginLeft: '20px' }}>
+                                      {detail.options.map((option, optIndex) => (
+                                        <li key={optIndex}>{option}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {detail.type === 'Checkbox' && detail.options && (
+                                  <div>
+                                    <p><strong>Options:</strong></p>
+                                    <ul style={{ marginLeft: '20px' }}>
+                                      {detail.options.map((option, optIndex) => (
+                                        <li key={optIndex}>{option}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {detail.type === 'Drop Down' && detail.options && (
+                                  <div>
+                                    <p><strong>Options:</strong></p>
+                                    <ul style={{ marginLeft: '20px' }}>
+                                      {detail.options.map((option, optIndex) => (
+                                        <li key={optIndex}>{option}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {detail.type === 'Short Answer' && (
+                                  <p><strong>Word Limit:</strong> {detail.settings?.wordLimit || 50} words</p>
+                                )}
+
+                                {detail.type === 'Date' && (
+                                  <p><strong>Date Input Required</strong></p>
+                                )}
+
+                                {detail.type === 'Photo Upload' && (
+                                  <p><strong>Photo Upload Required</strong></p>
+                                )}
+
+                                {detail.settings && Object.keys(detail.settings).length > 0 && (
+                                  <div style={{ marginTop: '10px' }}>
+                                    <p><strong>Settings:</strong></p>
+                                    <ul style={{ marginLeft: '20px', fontSize: '14px' }}>
+                                      {Object.entries(detail.settings).map(([key, value]) => (
+                                        <li key={key}>
+                                          <strong>{key}:</strong> {String(value)}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Student Details Required */}
                   <h3>Student Details Required</h3>
                   <ul>
                     {getStudentInformation().StudentDetails?.length > 0 ? (
@@ -742,7 +862,7 @@ function Ocompetitionsdetail() {
                       <li>No student details specified</li>
                     )}
                   </ul>
-
+                  {/* School Details Required */}
                   <h3>School Details Required</h3>
                   <ul>
                     {getStudentInformation().SchoolDetails?.length > 0 ? (

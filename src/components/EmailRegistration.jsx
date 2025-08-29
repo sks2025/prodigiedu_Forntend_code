@@ -9,6 +9,8 @@ import eyeIcon from '../assets/eye.svg';
 import eyeOffIcon from '../assets/eye-off.svg';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/apiConfig';
 import { FaCalendarAlt } from 'react-icons/fa';
+import googleIcon from '../assets/google-icon.svg';
+import microsoftIcon from '../assets/microsoft-icon.svg';
 
 const EmailRegistration = () => {
   const location = useLocation();
@@ -184,11 +186,11 @@ const EmailRegistration = () => {
 
         <div className="social-buttons">
           <Button onClick={handleGoogleSignUp} variant="outline" className="social-button google">
-            <img src="/src/assets/google-icon.svg" alt="Google" />
+            <img src={googleIcon} alt="Google" />
             Sign up with Google
           </Button>
           <Button onClick={handleMicrosoftSignUp} variant="outline" className="social-button microsoft">
-            <img src="/src/assets/microsoft-icon.svg" alt="Microsoft" />
+            <img src={microsoftIcon} alt="Microsoft" />
             Sign up with Microsoft
           </Button>
         </div>

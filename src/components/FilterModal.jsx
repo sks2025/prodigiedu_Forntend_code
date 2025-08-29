@@ -462,24 +462,6 @@ const FilterModal = ({ isOpen, onRequestClose, onApplyFilters, anchorRef }) => {
           </div>
         </div>
 
-        {/* Scale Section */}
-        <div className="filter-section">
-          <div className="section-header">
-            <h3>Scale</h3>
-            <button className="reset-link" onClick={() => resetSection('scale')}>Reset</button>
-          </div>
-          <RangeSlider
-            min={0}
-            max={1000000}
-            minValue={filters.scaleMin}
-            maxValue={filters.scaleMax}
-            onMinChange={(value) => setFilters(prev => ({ ...prev, scaleMin: value }))}
-            onMaxChange={(value) => setFilters(prev => ({ ...prev, scaleMax: value }))}
-            step={1000}
-            formatValue={formatNumber}
-          />
-        </div>
-
         {/* Location Section */}
         <div className="filter-section">
           <div className="section-header">
@@ -515,6 +497,28 @@ const FilterModal = ({ isOpen, onRequestClose, onApplyFilters, anchorRef }) => {
               <option value="Ahmedabad">Ahmedabad</option>
               <option value="Jaipur">Jaipur</option>
               <option value="Lucknow">Lucknow</option>
+              <option value="Indore">Indore</option>
+              <option value="Surat">Surat</option>
+              <option value="Bhopal">Bhopal</option>
+              <option value="Patna">Patna</option>
+              <option value="Nagpur">Nagpur</option>
+              <option value="Kanpur">Kanpur</option>
+              <option value="Visakhapatnam">Visakhapatnam</option>
+              <option value="Thane">Thane</option>
+              <option value="Vadodara">Vadodara</option>
+              <option value="Agra">Agra</option>
+              <option value="Varanasi">Varanasi</option>
+              <option value="Meerut">Meerut</option>
+              <option value="Ranchi">Ranchi</option>
+              <option value="Rajkot">Rajkot</option>
+              <option value="Jodhpur">Jodhpur</option>
+              <option value="Coimbatore">Coimbatore</option>
+              <option value="Gwalior">Gwalior</option>
+              <option value="Chandigarh">Chandigarh</option>
+              <option value="Guwahati">Guwahati</option>
+              <option value="Amritsar">Amritsar</option>
+              <option value="Noida">Noida</option>
+              <option value="Other">Other</option>
             </select>
           </div>
         </div>

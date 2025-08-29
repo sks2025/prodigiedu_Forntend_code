@@ -93,18 +93,19 @@ const UserLoginpage = ({ title }) => {
     }));
   }
 
-  const competitions = [
-    {
-      name: "Competition 1",
-      daysAway: 90,
-      progress: 60,
-    },
-    {
-      name: "Competition 2",
-      daysAway: 100,
-      progress: 60,
-    },
-  ];
+  // Remove the default competitions array
+  // const competitions = [
+  //   {
+  //     name: "Competition 1",
+  //     daysAway: 90,
+  //     progress: 60,
+  //   },
+  //   {
+  //     name: "Competition 2",
+  //     daysAway: 100,
+  //     progress: 60,
+  //   },
+  // ];
 
   const handleCardClick = (id) => {
     navigate(`/Competitionsdetail/${id}`);
@@ -120,29 +121,21 @@ const UserLoginpage = ({ title }) => {
           <h2 style={{ fontWeight: 900 }}>Your Progress</h2>
         <div className=" progress-container">
           <div className="container progress-card-container">
-            {competitions.map((comp, index) => (
-              <div key={index} className="progress-card">
-                <div className="card-left">
-                
-                  <div>
-                    <div className="card-title">{comp.name}</div>
-                    <div className="card-days">{comp.daysAway} Days Away</div>
-                  </div>
-                </div>
-                <div className="card-progress">
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${comp.progress}%` }}
-                    ></div>
-                  </div>
-                  <div className="progress-info">
-                    <strong>{comp.progress}%</strong> Completed
-                  </div>
-                </div>
-                <button className="prep-button">Continue Prep</button>
-              </div>
-            ))}
+            {/* Render progress cards only if you have real progress data */}
+            <div style={{
+              textAlign: 'center',
+              margin: '1.5rem',
+              padding: '1rem',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px',
+              color: '#666',
+              fontSize: '18px',
+              minHeight: 'unset', // Remove any fixed/min height
+              height: 'auto' // Ensure it only takes needed space
+            }}>
+              <h3 style={{ margin: '0 0 0.5rem 0' }}>No progress yet</h3>
+              <p style={{ margin: 0 }}>Start participating in competitions to see your progress here!</p>
+            </div>
           </div>
         </div>
       </div>

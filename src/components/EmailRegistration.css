@@ -180,8 +180,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 
 .form-group input::placeholder {
-  color: #1A1A1A;
-  opacity: 0.8;
+  color: #b0b0b0; /* Change to your desired color */
+  opacity: 1;
 }
 
 .password-group .password-input {

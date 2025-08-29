@@ -4,6 +4,12 @@ import StudentFooter from './StudentFooter';
 import './StudentContactus.css';
 import { FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
 import { FaTwitter, FaInstagram } from 'react-icons/fa';
+import {
+  socialIcon1,
+  socialIcon11,
+  sendIcon,
+} from '../assets/images'
+import { FaFacebook, FaLinkedin } from 'react-icons/fa'
 
 const initialState = {
   name: '',
@@ -99,7 +105,7 @@ const StudentContactus = () => {
           </div>
           <div className="gen-contact-info-row">
             <FiMail color="#fff" size={22} style={{ minWidth: 22 }} />
-            <span>service@prodigiedu.com</span>
+            <span>support@prodigiedu.com</span>
           </div>
           <div className="gen-contact-info-row">
             <FiMapPin color="#fff" size={22} style={{ minWidth: 22 }} />
@@ -113,14 +119,28 @@ const StudentContactus = () => {
               Mumbai - 400101
             </span>
           </div>
-          <div className=" gap-4 pb-4" style={{ paddingBottom: '20px',gap:"5px" }}>
+          {/* <div className=" gap-4 pb-4" style={{ paddingBottom: '20px',gap:"5px" }}>
             <a href="https://x.com/ProdigiEdu" target="_blank" rel="noopener noreferrer">
               <FaTwitter size={24} className="gen-contact-icon" />
             </a>
             <a href="https://www.instagram.com/prodigi_edu/" target="_blank" rel="noopener noreferrer">
               <FaInstagram size={24} className="gen-contact-icon ms-2" />
             </a>
-          </div>
+          </div> */}
+          <div className="social-links">
+              <a href="https://www.instagram.com/prodigi_edu/" target="_blank" rel="noopener noreferrer" className="social-icon-circle">
+                <img src={socialIcon11} alt="Instagram" />
+              </a>
+              <a href="https://www.facebook.com/people/Prodigi/61577937643476/" target="_blank" rel="noopener noreferrer" className="social-icon-circle">
+                <FaFacebook />
+              </a>
+              <a href="https://x.com/ProdigiEdu" target="_blank" rel="noopener noreferrer" className="social-icon-circle">
+                <img src={socialIcon1} alt="Twitter" />
+              </a>
+              <a href="https://www.linkedin.com/company/106125564/" target="_blank" rel="noopener noreferrer" className="social-icon-circle">
+                <FaLinkedin />
+              </a>
+            </div>
         </div>
         {/* Form */}
         <form onSubmit={handleSubmit} className="gen-contact-form">

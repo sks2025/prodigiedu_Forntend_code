@@ -75,7 +75,7 @@ export default function Oregistration({ fun, ID }) {
       };
 
       const response = await fetch(
-        `http://localhost:3001/api/competitions/bankaccount/${organizerId}`,
+        `https://api.prodigiedu.com/api/competitions/bankaccount/${organizerId}`,
         requestOptions
       );
 

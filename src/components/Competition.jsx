@@ -12,6 +12,7 @@ import "./UserLogin.css";
 import "./Compition.css";
 import { useNavigate } from "react-router-dom";
 import Studentheaderhome from "./Studentheaderhome";
+import UserCard from './common/UserCard';
 
 const SORT_OPTIONS = [
   { label: "By Competition Date: Closest First", value: "date_asc", tag: "Date: Closest first" },
@@ -223,6 +224,7 @@ const CompetitionCard = React.memo(({ card }) => {
 });
 
 const Competition = () => {
+  const navigate = useNavigate();
   const [cards, setCards] = useState([]);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
@@ -599,7 +601,27 @@ const Competition = () => {
           </div>
         )}
         {!isLoading && !error &&
-          cards.map((card, index) => <CompetitionCard key={card._id || index} card={card} />)}
+          cards.map((comp, index) => {
+            const card = {
+              id: comp._id,
+              image: comp.overview?.image
+                ? comp.overview.image.startsWith('http')
+                  ? comp.overview.image
+                  : `https://api.prodigiedu.com${comp.overview.image}`
+                : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-eE9u3e8kMX7dXfOHkTaaEHLZmZj7muf-fg&s',
+              name: comp.overview?.name || 'Competition',
+              institute: comp.organizerId?.organiserName || '',
+              date: comp.overview?.stages?.[0]?.date ? new Date(comp.overview.stages[0].date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+              score: comp.score ? `${comp.score}%` : '',
+              subjects: comp.overview?.subjects || [],
+              subject: comp.overview?.subject || '',
+              fee: comp.registration?.registration_type?.total_registration_fee ? `₹${comp.registration.registration_type.total_registration_fee}` : '₹150',
+            };
+            return (
+              <UserCard key={card.id || index} card={card} onClick={() => navigate(`/Competitionsdetail/${card.id}`)} />
+            );
+          })
+        }
       </div>
 
       {/* Pagination */}

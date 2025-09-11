@@ -1,140 +1,157 @@
-import React from 'react';
-import HeaderUser from "./HeaderUser";
+import React, { useState } from 'react';
 import FooterUsers from "./FooterUsers";
+import Studentheaderhome from './Studentheaderhome';
 import credit from "../images/credit.svg";
 import bank from "../images/bank.svg";
 import upi from "../images/UPI.svg";
-
 import './cardpay.css';
 
-function cardpay() {
+// Payment method options data
+const PAYMENT_METHODS = [
+  { id: 'card', name: 'Credit / Debit Card', icon: credit, selected: true },
+  { id: 'upi', name: 'UPI', icon: upi, selected: false },
+  { id: 'netbanking', name: 'Net Banking', icon: bank, selected: false }
+];
+
+// Card brand icons
+const CARD_BRANDS = [
+  {
+    name: 'Visa',
+    src: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg'
+  },
+  {
+    name: 'Mastercard',
+    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png'
+  },
+  {
+    name: 'RuPay',
+    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png'
+  }
+];
+
+const CardPay = () => {
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
+  const [formData, setFormData] = useState({
+    cardName: '',
+    cardNumber: '',
+    expiry: '',
+    cvc: ''
+  });
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handlePaymentMethodSelect = (methodId) => {
+    setSelectedPaymentMethod(methodId);
+  };
+
+  const handlePaymentSubmit = (e) => {
+    e.preventDefault();
+    // Payment processing logic would go here
+    console.log('Payment submitted:', formData);
+  };
+
   return (
     <div>
-        <HeaderUser/>
-       <div className="cardpay">
-       <div className="container">
-      <div className="left-panel">
-        <div className="side-icon">
-          <div className="box"></div>
-          <div className="content">
-            <h2>Competition Name</h2>
-            <p>Institute Name</p>
-          </div>
-        </div>
-
-        <div className="cardpamt">
-          <div className="card">
-            <h2 className="card-title">Plan summary</h2>
-
-            <div className="plan-item">
-              <div className="item-details">
-                <div className="item-name">Advanced Prep</div>
-                <div className="item-description">
-                  Registration + Prep + Past Year<br></br> Question Papers
-                </div>
-              </div>
-              <div className="item-price">INR 1200.00</div>
-            </div>
-
-            <div className="plan-item">
-              <div className="item-details">
-                <div className="item-name">Convenience Fee</div>
-              </div>
-              <div className="item-price">INR 60.00</div>
-            </div>
-
-            <div className="divider"></div>
-
-            <div className="total-row">
-              <div className="total-label">Overall total</div>
-              <div className="total-amount">INR 1260.00</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="right-panel">
-        {/* <h2>We Need Some More Information To Process The Application</h2> */}
-
+      <Studentheaderhome />
+      <div className="cardpay">
         <div className="payment-container">
+          {/* Payment Method Sidebar */}
           <div className="payment-sidebar">
             <h3 className="sidebar-title">Pay with</h3>
 
-            <div className="payment-option selected">
-              <div className="option-indicator"></div>
-                                  <img src={credit} alt="Winner with trophy"/>
-              
-              <span>Credit / Debit Card</span>
-            </div>
-
-            <div className="payment-option">
-            <img src={upi} alt="Winner with trophy"/>
-
-              <span>UPI</span>
-            </div>
-
-            <div className="payment-option">
-            <img src={bank} alt="Winner with trophy"/>
-
-              <span>Net Banking</span>
-            </div>
+            {PAYMENT_METHODS.map((method) => (
+              <div
+                key={method.id}
+                className={`payment-option ${selectedPaymentMethod === method.id ? 'selected' : ''}`}
+                onClick={() => handlePaymentMethodSelect(method.id)}
+              >
+                {selectedPaymentMethod === method.id && (
+                  <div className="option-indicator"></div>
+                )}
+                <img src={method.icon} alt={method.name} />
+                <span>{method.name}</span>
+              </div>
+            ))}
           </div>
 
+          {/* Payment Form */}
           <div className="payment-form">
-            <div className="form-group">
-              <label htmlFor="cardName">Name on Card</label>
-              <input type="text" id="cardName" placeholder="Name" />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="cardNumber">Card number</label>
-              <div className="card-number-container">
+            <form onSubmit={handlePaymentSubmit}>
+              <div className="form-group">
+                <label htmlFor="cardName">Name on Card</label>
                 <input
                   type="text"
-                  id="cardNumber"
-                  placeholder="1234 5678 1234 1234"
+                  id="cardName"
+                  placeholder="Name"
+                  value={formData.cardName}
+                  onChange={(e) => handleInputChange('cardName', e.target.value)}
                 />
-                <div className="card-icons">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg"
-                    alt="Visa"
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cardNumber">Card number</label>
+                <div className="card-number-container">
+                  <input
+                    type="text"
+                    id="cardNumber"
+                    placeholder="1234 1234 1234 1234"
+                    value={formData.cardNumber}
+                    onChange={(e) => handleInputChange('cardNumber', e.target.value)}
                   />
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png"
-                    alt="Mastercard"
+                  <div className="card-icons">
+                    {CARD_BRANDS.map((brand) => (
+                      <img
+                        key={brand.name}
+                        src={brand.src}
+                        alt={brand.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group half">
+                  <label htmlFor="expiry">Expiry</label>
+                  <input
+                    type="text"
+                    id="expiry"
+                    placeholder="MM / YY"
+                    value={formData.expiry}
+                    onChange={(e) => handleInputChange('expiry', e.target.value)}
                   />
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/1200px-American_Express_logo_%282018%29.svg.png"
-                    alt="Amex"
+                </div>
+
+                <div className="form-group half">
+                  <label htmlFor="cvc">CVC</label>
+                  <input
+                    type="text"
+                    id="cvc"
+                    placeholder="CVC"
+                    value={formData.cvc}
+                    onChange={(e) => handleInputChange('cvc', e.target.value)}
                   />
                 </div>
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group half">
-                <label htmlFor="expiry">Expiry</label>
-                <input type="text" id="expiry" placeholder="MM / YY" />
-              </div>
-
-              <div className="form-group half">
-                <label htmlFor="cvc">CVC</label>
-                <input type="text" id="cvc" placeholder="CVC" />
-              </div>
-            </div>
-
-            <button className="payment-button">Make Payment</button>
+              <button type="submit" className="payment-button">
+                Make Payment
+              </button>
+            </form>
           </div>
         </div>
       </div>
-    </div>
-       </div>
-<FooterUsers/>
+      <FooterUsers />
     </div>
   );
-}
+};
 
-export default cardpay;
+export default CardPay;
 
 
 

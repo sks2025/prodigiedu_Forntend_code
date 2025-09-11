@@ -117,7 +117,7 @@ function App() {
           {/* <Route path="/Competitionsplans" element={<Competitionsplans />} />
           <Route path="/Competitionpayment" element={<Competitionpayment />} /> */}
           <Route path="/Competitionsdetail/:competitionsid" element={<Competitionsdetail />} />
-          <Route path="/cardpay" element={<Cardpayw />} />
+          {/* <Route path="/cardpay" element={<Cardpayw />} /> */}
           <Route path="/schoolHome" element={<SchoolHome />} />
           <Route path="/Schoolmobile" element={<Schoolmobile />} />
           <Route path="/Schoolverifyotp" element={<Schoolverifyotp />} />
@@ -172,8 +172,7 @@ function App() {
           <Route path="/AboutUs" element={<AboutUs />} />
           <Route path="/filter" element={<FilterModal/>} />  
           <Route path="/StudentContactus" element={<StudentContactus/>} /> 
-          <Route path="/student/persnol-setting" element={<StudentPersnolSetting/>} />   
-          <Route path="/cardpay" element={<cardpay/>} />
+          <Route path="/student/persnol-setting" element={<StudentPersnolSetting/>} />   \
           {/* <Route path="/Competitiondetail" element={<Competitiondetail />} /> */}
           <Route path="/OrganiserProfile" element={<OrganiserProfile />} />
           <Route

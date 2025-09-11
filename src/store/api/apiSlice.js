@@ -30,7 +30,8 @@ export const apiSlice = createApi({
       }),
       transformResponse: (response) => {
         if (!response.status) {
-          throw new Error(response.message || 'Failed to send OTP');
+          // Throw the full backend error object for better error handling in the frontend
+          throw { data: response, status: 400 };
         }
         console.log(response,"dfkjfdfdvnfewlnv df");
         

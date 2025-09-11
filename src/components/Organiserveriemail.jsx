@@ -19,6 +19,7 @@ const Organiserveriemail = () => {
     role: "",
   });
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [backendError, setBackendError] = useState("");
 
   const isFormInvalid =
     !formData.mobile_num.trim() ||
@@ -104,38 +105,40 @@ const Organiserveriemail = () => {
   //   }
   // };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!validate()) return;
+    if (!validate()) return;
 
-  try {
-    const response = await sendOtpOrganiserPhone({
-      mobileNumber: formData.mobile_num,
-    }).unwrap();
-    console.log("API Response:", response);
+    setBackendError("");
+    try {
+      const response = await sendOtpOrganiserPhone({
+        mobileNumber: formData.mobile_num,
+      }).unwrap();
+      console.log("API Response:", response);
 
-    if (response.status) {
-      // toast.success("OTP sent successfully!");
-      Navigate("/organiser/verify-opt", {
-        state: {
-          mobileNumber: formData.mobile_num,
-          role: formData.role,
-          name: formData.name,
-        },
-      });
+      if (response.status) {
+        // toast.success("OTP sent successfully!");
+        Navigate("/organiser/verify-opt", {
+          state: {
+            mobileNumber: formData.mobile_num,
+            role: formData.role,
+            name: formData.name,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("OTP send failed:", error);
+      let errorMessage = "Failed to send OTP. Please try again.";
+      if (error.data && error.data.message) {
+        errorMessage = error.data.message; // e.g., "Mobile number already registered. Please use login instead."
+      } else if (error.error) {
+        errorMessage = error.error;
+      }
+      setBackendError(errorMessage);
+      // toast.error(errorMessage);
     }
-  } catch (error) {
-    console.error("OTP send failed:", error);
-    let errorMessage = "Failed to send OTP. Please try again.";
-    if (error.data && error.data.message) {
-      errorMessage = error.data.message; // e.g., "Mobile number already registered. Please use login instead."
-    } else if (error.error) {
-      errorMessage = error.error;
-    }
-    // toast.error(errorMessage);
-  }
-};
+  };
 
   return (
     <div className="registration-container">
@@ -228,8 +231,13 @@ const Organiserveriemail = () => {
               <NavLink to="/privacypolicy">Privacy Policy</NavLink>
             </a>
           </label>
-
+          <div>
+            {backendError && (
+              <div className="error-text" style={{ marginBottom: '10px', color: 'red', fontWeight: 'bold' }}>{backendError}</div>
+            )}
+          </div>
           <div className="form-button">
+
             <button
               type="submit"
               disabled={isFormInvalid}

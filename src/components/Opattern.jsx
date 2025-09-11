@@ -592,6 +592,8 @@ const OPattern = ({ fun, ID }) => {
   // Format options for the dropdown
   const formatOptions = [
     "Single-choice MCQ",
+    "Games",
+    "Submission",
     "Multiple-choice MCQ",
     "Fill in the Blanks",
     "True or False",

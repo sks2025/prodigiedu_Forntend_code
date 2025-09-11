@@ -39,12 +39,12 @@ const UserLoginpage = ({ title }) => {
   // Fetch bookmarked competitions
   const fetchBookmarkedCompetitions = async () => {
     if (!userId) return;
-    
+
     setBookmarksLoading(true);
     try {
       const response = await fetch(`https://api.prodigiedu.com/api/competitions/user-bookmarks/${userId}`);
       const result = await response.json();
-      
+
       if (result.success) {
         // Format bookmarked competitions for display
         const formattedBookmarks = result.competitions.map((comp) => ({
@@ -118,7 +118,7 @@ const UserLoginpage = ({ title }) => {
         <img src={left} alt="Top Right" className="corner-img top-right1" />
         <img src={right} alt="Bottom Left" className="corner-img bottom-left1" />
 
-          <h2 style={{ fontWeight: 900 }}>Your Progress</h2>
+        <h2 style={{ fontWeight: 900 }}>Your Progress</h2>
         <div className=" progress-container">
           <div className="container progress-card-container">
             {/* Render progress cards only if you have real progress data */}
@@ -140,7 +140,7 @@ const UserLoginpage = ({ title }) => {
         </div>
       </div>
 
-    
+
 
       {isLoading ? (
         <div style={{ textAlign: 'center', margin: '2rem' }}>Loading competitions...</div>
@@ -155,17 +155,17 @@ const UserLoginpage = ({ title }) => {
             ) : bookmarkedCompetitions.length > 0 ? (
               <Slider title="Your Wishlist" cards={bookmarkedCompetitions} onCardClick={handleCardClick}>
                 {bookmarkedCompetitions.map((card) => (
-                  <UserCard 
-                    key={card.id} 
-                    card={card} 
+                  <UserCard
+                    key={card.id}
+                    card={card}
                     onClick={() => handleCardClick(card.id)}
                     onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
                   />
                 ))}
               </Slider>
             ) : (
-              <div style={{ 
-                textAlign: 'center', 
+              <div style={{
+                textAlign: 'center',
                 margin: '2rem',
                 padding: '2rem',
                 backgroundColor: '#f8f9fa',
@@ -177,15 +177,15 @@ const UserLoginpage = ({ title }) => {
               </div>
             )
           )}
-          
+
           {/* Only show sliders if there are competitions */}
           {cards && cards.length > 0 ? (
             <>
               <Slider title="Top Competitions" cards={cards} onCardClick={handleCardClick}>
                 {cards.map((card) => (
-                  <UserCard 
-                    key={card.id} 
-                    card={card} 
+                  <UserCard
+                    key={card.id}
+                    card={card}
                     onClick={() => handleCardClick(card.id)}
                     onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
                   />
@@ -193,9 +193,9 @@ const UserLoginpage = ({ title }) => {
               </Slider>
               <Slider title="Recommended For You" cards={cards} onCardClick={handleCardClick}>
                 {cards.map((card) => (
-                  <UserCard 
-                    key={card.id} 
-                    card={card} 
+                  <UserCard
+                    key={card.id}
+                    card={card}
                     onClick={() => handleCardClick(card.id)}
                     onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
                   />
@@ -203,9 +203,9 @@ const UserLoginpage = ({ title }) => {
               </Slider>
               <Slider title="Latest Competitions" cards={cards} onCardClick={handleCardClick}>
                 {cards.map((card) => (
-                  <UserCard 
-                    key={card.id} 
-                    card={card} 
+                  <UserCard
+                    key={card.id}
+                    card={card}
                     onClick={() => handleCardClick(card.id)}
                     onBookmarkChange={fetchBookmarkedCompetitions} // Refresh bookmarks when changed
                   />
@@ -214,8 +214,8 @@ const UserLoginpage = ({ title }) => {
             </>
           ) : (
             /* Show a nice message when no competitions are available */
-            <div style={{ 
-              textAlign: 'center', 
+            <div style={{
+              textAlign: 'center',
               margin: '3rem 2rem',
               padding: '3rem 2rem',
               backgroundColor: '#f8f9fa',
@@ -229,10 +229,10 @@ const UserLoginpage = ({ title }) => {
               <p style={{ color: '#6c757d', fontSize: '16px', lineHeight: '1.6' }}>
                 Check back later for exciting new competitions and opportunities!
               </p>
-              <div style={{ 
-                marginTop: '2rem', 
-                padding: '1rem', 
-                backgroundColor: '#e9ecef', 
+              <div style={{
+                marginTop: '2rem',
+                padding: '1rem',
+                backgroundColor: '#e9ecef',
                 borderRadius: '8px',
                 fontSize: '14px',
                 color: '#495057'

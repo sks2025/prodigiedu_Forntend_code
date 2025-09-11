@@ -231,55 +231,65 @@ const Orightcontaint = ({ fun, ID }) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         console.log("File read complete");
-        setShowImage(reader.result);
+        const base64Image = reader.result;
+        setShowImage(base64Image);
         setFileName(file.name);
         const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
         setFileSize(sizeInMB);
         
-        // Update competition data with file
-        setCompetitionData((prev) => ({
-          ...prev,
-          image: file,
-        }));
-        
-        // Save to localStorage immediately
-        if (competitionId) {
-          const localKey = `competition_overview_${competitionId}`;
-          const currentData = {
-            ...competitionData,
+        // Update competition data with both file and base64
+        setCompetitionData((prev) => {
+          const newData = {
+            ...prev,
             image: file,
+            imageBase64: base64Image, // Store base64 for persistence
+            imageName: file.name,
             imageSize: sizeInMB
           };
-          localStorage.setItem(localKey, JSON.stringify(currentData));
-        }
+          
+          // Save to localStorage immediately with base64 data
+          if (competitionId) {
+            const localKey = `competition_overview_${competitionId}`;
+            const dataToSave = {
+              ...newData,
+              image: base64Image, // Save base64 instead of File object
+              imageFile: file.name // Save file name for reference
+            };
+            localStorage.setItem(localKey, JSON.stringify(dataToSave));
+          }
+          
+          return newData;
+        });
       };
       reader.readAsDataURL(file);
     } else {
       console.log("No file selected");
     }
-  }, [competitionId, competitionData]);
+  }, [competitionId]);
 
   // Remove uploaded image
   const handleRemoveImage = useCallback(() => {
     setShowImage("");
     setFileName("");
     setFileSize(0);
-    setCompetitionData((prev) => ({
-      ...prev,
-      image: "",
-    }));
-    
-    // Clear from localStorage
-    if (competitionId) {
-      const localKey = `competition_overview_${competitionId}`;
-      const currentData = {
-        ...competitionData,
+    setCompetitionData((prev) => {
+      const newData = {
+        ...prev,
         image: "",
+        imageBase64: "",
+        imageName: "",
         imageSize: 0
       };
-      localStorage.setItem(localKey, JSON.stringify(currentData));
-    }
-  }, [competitionId, competitionData]);
+      
+      // Clear from localStorage
+      if (competitionId) {
+        const localKey = `competition_overview_${competitionId}`;
+        localStorage.setItem(localKey, JSON.stringify(newData));
+      }
+      
+      return newData;
+    });
+  }, [competitionId]);
 
   // Debounced save function to prevent excessive localStorage writes
   const debouncedSave = useCallback((data) => {
@@ -298,8 +308,14 @@ const Orightcontaint = ({ fun, ID }) => {
         // The file will be handled separately in handleImageUpload
         dataToSave = {
           ...data,
-          image: data.image.name, // Save filename instead of File object
-          imageSize: (data.image.size / (1024 * 1024)).toFixed(2)
+          image: data.imageBase64 || data.image.name, // Save base64 or filename
+          imageSize: data.imageSize || (data.image.size / (1024 * 1024)).toFixed(2)
+        };
+      } else if (data.imageBase64) {
+        // If we have base64 data, use that
+        dataToSave = {
+          ...data,
+          image: data.imageBase64
         };
       }
       
@@ -353,14 +369,14 @@ const Orightcontaint = ({ fun, ID }) => {
     );
 
     setIsFormValid(isOverviewValid && areStagesValid);
-  }, [competitionData]);
+  }, [competitionData.name, competitionData.description, competitionData.image, competitionData.stages]);
 
   // Save to localStorage when competitionData changes (debounced)
   useEffect(() => {
     if (competitionId && competitionData.name) {
       debouncedSave(competitionData);
     }
-  }, [competitionData, competitionId, debouncedSave]);
+  }, [competitionId, competitionData.name, competitionData.description, competitionData.stages, debouncedSave]);
 
   // Sync location selection with first stage
   useEffect(() => {
@@ -373,6 +389,42 @@ const Orightcontaint = ({ fun, ID }) => {
       }
     }
   }, [competitionData.stages]);
+
+  // Sync image state when competitionData changes
+  useEffect(() => {
+    if (competitionData.image) {
+      if (typeof competitionData.image === "string") {
+        // If it's a URL or base64 string
+        if (!showImage || showImage !== competitionData.image) {
+          setShowImage(competitionData.image);
+        }
+        if (competitionData.imageName && fileName !== competitionData.imageName) {
+          setFileName(competitionData.imageName);
+        }
+        if (competitionData.imageSize && fileSize !== competitionData.imageSize) {
+          setFileSize(competitionData.imageSize);
+        }
+      } else if (competitionData.image instanceof File) {
+        // If it's a File object
+        const fileUrl = URL.createObjectURL(competitionData.image);
+        if (!showImage || showImage !== fileUrl) {
+          setShowImage(fileUrl);
+        }
+        if (fileName !== competitionData.image.name) {
+          setFileName(competitionData.image.name);
+        }
+        const sizeInMB = (competitionData.image.size / (1024 * 1024)).toFixed(2);
+        if (fileSize !== sizeInMB) {
+          setFileSize(sizeInMB);
+        }
+      }
+    } else if (competitionData.image === "" && showImage) {
+      // Clear image state if image is empty
+      setShowImage("");
+      setFileName("");
+      setFileSize(0);
+    }
+  }, [competitionData.image, competitionData.imageName, competitionData.imageSize]);
 
   // Fetch overview data if ID exists
   const getOverview = async () => {
@@ -390,13 +442,10 @@ const Orightcontaint = ({ fun, ID }) => {
         // Set image preview if available
         if (savedData.image) {
           if (typeof savedData.image === "string") {
-            // If it's a URL string (from API or base64)
+            // If it's a URL string (from API) or base64 data
             setShowImage(savedData.image);
-            setFileName(savedData.image.split("/").pop() || "Uploaded Image");
-            // Try to get file size from localStorage if available
-            if (savedData.imageSize) {
-              setFileSize(savedData.imageSize);
-            }
+            setFileName(savedData.imageName || savedData.imageFile || savedData.image.split("/").pop() || "Uploaded Image");
+            setFileSize(savedData.imageSize || 0);
           } else if (savedData.image instanceof File) {
             // If it's a File object (from file input)
             setShowImage(URL.createObjectURL(savedData.image));
@@ -490,13 +539,23 @@ const Orightcontaint = ({ fun, ID }) => {
     getOverview();
   }, [competitionId]);
 
-  // Persist competitionData to localStorage on change
+  // Persist competitionData to localStorage on change (only for non-image changes)
   useEffect(() => {
-    if (competitionId) {
-      const localKey = `competition_overview_${competitionId}`;
-      localStorage.setItem(localKey, JSON.stringify(competitionData));
+    if (competitionId && competitionData.name) {
+      // Don't save if this is just an image change - that's handled in handleImageUpload
+      if (!competitionData.image || typeof competitionData.image === "string") {
+        const localKey = `competition_overview_${competitionId}`;
+        const dataToSave = { ...competitionData };
+        
+        // If image is a File object, don't save it to localStorage
+        if (dataToSave.image instanceof File) {
+          dataToSave.image = dataToSave.imageBase64 || dataToSave.imageName || "";
+        }
+        
+        localStorage.setItem(localKey, JSON.stringify(dataToSave));
+      }
     }
-  }, [competitionData, competitionId]);
+  }, [competitionId, competitionData.name, competitionData.description, competitionData.stages]);
 
   // Save or update competition data
   const handleSave = useCallback(async () => {
@@ -512,7 +571,7 @@ const Orightcontaint = ({ fun, ID }) => {
           // If it's a new file, append it to FormData
           formdata.append("image", competitionData.image);
         } else if (typeof competitionData.image === "string" && competitionData.image.trim() !== "") {
-          // If it's an existing image URL, we might need to handle it differently
+          // If it's an existing image URL or base64, we might need to handle it differently
           // For now, we'll skip it if it's already a URL
           console.log("Image already exists:", competitionData.image);
         }
@@ -714,7 +773,7 @@ const Orightcontaint = ({ fun, ID }) => {
                 boxShadow: "0px 0px 20px 0px #00000012",
                 borderRadius: "12px",
               }}
-              bodyStyle={{ padding: "24px" }}
+              styles={{ body: { padding: "24px" } }}
             >
               <div className="stage-header-container">
                 <Title level={4} className="stage-title">
@@ -974,7 +1033,7 @@ const Orightcontaint = ({ fun, ID }) => {
                         value={selectedCountry}
                         onChange={handleCountryChange}
                         suffixIcon={<ChevronDown size={16} />}
-                        dropdownStyle={{ zIndex: 1000 }}
+                        styles={{ popup: { root: { zIndex: 1000 } } }}
                         showSearch
                         filterOption={(input, option) =>
                           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -995,7 +1054,7 @@ const Orightcontaint = ({ fun, ID }) => {
                         value={selectedState}
                         onChange={handleStateChange}
                         suffixIcon={<ChevronDown size={16} />}
-                        dropdownStyle={{ zIndex: 1000 }}
+                        styles={{ popup: { root: { zIndex: 1000 } } }}
                         disabled={!selectedCountry}
                         showSearch
                         filterOption={(input, option) =>
@@ -1017,7 +1076,7 @@ const Orightcontaint = ({ fun, ID }) => {
                         value={selectedCity}
                         onChange={handleCityChange}
                         suffixIcon={<ChevronDown size={16} />}
-                        dropdownStyle={{ zIndex: "1000" }}
+                        styles={{ popup: { root: { zIndex: 1000 } } }}
                         disabled={!selectedState}
                         showSearch
                         filterOption={(input, option) =>

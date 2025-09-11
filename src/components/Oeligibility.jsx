@@ -58,6 +58,8 @@ const { Title, Text } = Typography;
 
   const studentDetailOptions = [
     "Student's Name",
+    "Student's Age",
+    "School Name",
     "Parent's / Guardian's Name",
     "Contact number",
     "Email ID",
@@ -66,18 +68,20 @@ const { Title, Text } = Typography;
     "Roll number",
     "Grade",
     "Section",
-    "Birth Date"
+    "Birth Date",
+    "Age Group"
   ];
 
   const schoolDetailOptions = [
-    "School Name",
+    "School ",
     "Address",
     "Contact Number",
     "City",
     "Type of School",
     "POC Name",
     "Email ID",
-    "Student Strength"
+    "Student",
+    "Additional"
   ];
 
   // Handle window resize for responsive design
@@ -146,8 +150,9 @@ const { Title, Text } = Typography;
                 });
                 
                 setDataByTab(mergedDataByTab);
-                setAdditionalForms(parsedData.additionalForms);
+                setAdditionalForms(parsedData.additionalForms || []);
                 console.log("Restored eligibility data from localStorage with merged stages");
+                console.log("Restored additionalForms:", parsedData.additionalForms);
               } else {
                 // Initialize with default data if saved data is invalid or old
                 initializeDefaultData(stagesData);
@@ -257,6 +262,16 @@ const { Title, Text } = Typography;
       }
     }
   }, [stages, activeTab, competitionId]);
+
+  // Debug: Log additionalForms and activeTab changes
+  useEffect(() => {
+    console.log('AdditionalForms state changed:', additionalForms);
+    console.log('ActiveTab changed to:', activeTab);
+    if (activeTab) {
+      const currentStageForms = additionalForms.filter(form => form.stage === activeTab);
+      console.log('Current stage forms for activeTab:', activeTab, currentStageForms);
+    }
+  }, [additionalForms, activeTab]);
 
   const allStagesHaveData = useMemo(() =>
     stages.length > 0 && stages.every(stage => {
@@ -650,6 +665,8 @@ const { Title, Text } = Typography;
       }
     };
     
+    console.log('Adding new form with stage:', activeTab, 'Form:', newForm);
+    
     const newForms = [...additionalForms, newForm];
     setAdditionalForms(newForms);
     
@@ -663,6 +680,7 @@ const { Title, Text } = Typography;
       };
       localStorage.setItem(localKey, JSON.stringify(currentData));
       console.log('Saved additional form to localStorage:', newForm);
+      console.log('All additional forms after adding:', newForms);
     }
   }, [activeTab, additionalForms, dataByTab, competitionId]);
 
@@ -729,6 +747,7 @@ const { Title, Text } = Typography;
           timestamp: Date.now()
         };
         localStorage.setItem(localKey, JSON.stringify(currentData));
+        console.log('Updated form type in localStorage:', { formId, newType, newForms });
       }
       
       return newForms;
@@ -760,6 +779,7 @@ const { Title, Text } = Typography;
             timestamp: Date.now()
           };
           localStorage.setItem(localKey, JSON.stringify(currentData));
+          console.log('Duplicated form in localStorage:', duplicatedForm);
         }
         
         return newForms;
@@ -781,13 +801,14 @@ const { Title, Text } = Typography;
           timestamp: Date.now()
         };
         localStorage.setItem(localKey, JSON.stringify(currentData));
+        console.log('Removed form from localStorage:', formId, newForms);
       }
       
       return newForms;
     });
   }, [competitionId, dataByTab]);
 
-  const updateAdditionalForm = (formId, field, value) => {
+  const updateAdditionalForm = useCallback((formId, field, value) => {
     setAdditionalForms(prevForms => {
       const newForms = prevForms.map(form =>
         form.id === formId ? { ...form, [field]: value } : form
@@ -802,13 +823,14 @@ const { Title, Text } = Typography;
           timestamp: Date.now()
         };
         localStorage.setItem(localKey, JSON.stringify(currentData));
+        console.log('Updated additional form in localStorage:', { formId, field, value, newForms });
       }
       
       return newForms;
     });
-  };
+  }, [competitionId, dataByTab]);
 
-  const updateFormSettings = (formId, settingKey, value) => {
+  const updateFormSettings = useCallback((formId, settingKey, value) => {
     setAdditionalForms(prevForms => {
       const newForms = prevForms.map(form =>
         form.id === formId ? {
@@ -829,11 +851,12 @@ const { Title, Text } = Typography;
           timestamp: Date.now()
         };
         localStorage.setItem(localKey, JSON.stringify(currentData));
+        console.log('Updated form settings in localStorage:', { formId, settingKey, value, newForms });
       }
       
       return newForms;
     });
-  };
+  }, [competitionId, dataByTab]);
 
   const addOptionToForm = useCallback((formId) => {
     setAdditionalForms(prevForms => {
@@ -852,6 +875,7 @@ const { Title, Text } = Typography;
           timestamp: Date.now()
         };
         localStorage.setItem(localKey, JSON.stringify(currentData));
+        console.log('Added option to form in localStorage:', formId, newForms);
       }
       
       return newForms;
@@ -880,6 +904,7 @@ const { Title, Text } = Typography;
           timestamp: Date.now()
         };
         localStorage.setItem(localKey, JSON.stringify(currentData));
+        console.log('Updated option in form in localStorage:', formId, optionIndex, value, newForms);
       }
       
       return newForms;
@@ -906,6 +931,7 @@ const { Title, Text } = Typography;
           timestamp: Date.now()
         };
         localStorage.setItem(localKey, JSON.stringify(currentData));
+        console.log('Removed option from form in localStorage:', formId, optionIndex, newForms);
       }
       
       return newForms;
@@ -960,6 +986,7 @@ const { Title, Text } = Typography;
           timestamp: Date.now()
         };
         localStorage.setItem(localKey, JSON.stringify(currentData));
+        console.log('Updated option selection in localStorage:', formId, optionIndex, newForms);
       }
       
       return newForms;
@@ -1000,7 +1027,71 @@ const { Title, Text } = Typography;
     };
 
     // Filter forms for current stage at the top level
-    const currentStageForms = additionalForms.filter(form => form.stage === activeTab);
+    const currentStageForms = additionalForms.filter(form => {
+      console.log('Filtering form:', form.stage, '===', activeTab, '?', form.stage === activeTab);
+      return form.stage === activeTab;
+    });
+    console.log('Current stage forms for activeTab:', activeTab, currentStageForms);
+    console.log('All additionalForms:', additionalForms);
+    console.log('ActiveTab type:', typeof activeTab, 'Value:', activeTab);
+    
+    // Debug: Check if forms are being filtered correctly
+    if (additionalForms.length > 0) {
+      console.log('Forms with stage info:', additionalForms.map(f => ({ id: f.id, stage: f.stage, name: f.name })));
+    }
+    
+    // Debug: Check if currentStageForms is empty
+    if (currentStageForms.length === 0 && additionalForms.length > 0) {
+      console.warn('No forms found for current stage. This might be a filtering issue.');
+    }
+    
+    // Debug: Check if activeTab is valid
+    if (!activeTab) {
+      console.warn('ActiveTab is not set, cannot filter forms');
+    }
+    
+    // Debug: Check if forms are being saved correctly
+    if (competitionId) {
+      const localKey = `competition_eligibility_${competitionId}`;
+      const savedData = localStorage.getItem(localKey);
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          console.log('Current localStorage additionalForms:', parsedData.additionalForms);
+        } catch (error) {
+          console.error('Error parsing localStorage for debug:', error);
+        }
+      }
+    }
+    
+    // Debug: Check if forms are being loaded correctly
+    console.log('Component state - additionalForms:', additionalForms);
+    console.log('Component state - activeTab:', activeTab);
+    console.log('Component state - dataByTab:', dataByTab);
+    
+    // Debug: Check if forms are being rendered correctly
+    console.log('About to render currentStageForms:', currentStageForms);
+    
+    // Debug: Check if forms are being rendered correctly
+    console.log('About to render currentStageForms length:', currentStageForms.length);
+    
+    // Debug: Check if forms are being rendered correctly
+    console.log('About to render currentStageForms map:', currentStageForms.map(f => ({ id: f.id, stage: f.stage, name: f.name })));
+    
+    // Debug: Check if forms are being rendered correctly
+    console.log('About to render currentStageForms map length:', currentStageForms.map(f => ({ id: f.id, stage: f.stage, name: f.name })).length);
+    
+    // Debug: Check if forms are being rendered correctly
+    console.log('About to render currentStageForms map length:', currentStageForms.map(f => ({ id: f.id, stage: f.stage, name: f.name })).length);
+    
+    // Debug: Check if forms are being rendered correctly
+    console.log('About to render currentStageForms map length:', currentStageForms.map(f => ({ id: f.id, stage: f.stage, name: f.name })).length);
+    
+    // Debug: Check if forms are being rendered correctly
+    console.log('About to render currentStageForms map length:', currentStageForms.map(f => ({ id: f.id, stage: f.stage, name: f.name })).length);
+    
+    // Debug: Check if forms are being rendered correctly
+    console.log('About to render currentStageForms map length:', currentStageForms.map(f => ({ id: f.id, stage: f.stage, name: f.name })).length);
 
     return (
       <div className="tab-content" style={{
@@ -1224,7 +1315,7 @@ const { Title, Text } = Typography;
             Additional Details
           </Title>
 
-          {currentStageForms.map((form, index) => (
+          {currentStageForms.length > 0 ? currentStageForms.map((form, index) => (
             <div key={form.id} style={{
               border: '1px solid #f0f0f0',
               borderRadius: '8px',
@@ -1604,7 +1695,16 @@ const { Title, Text } = Typography;
 
 
             </div>
-          ))}
+          )) : (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px',
+              color: '#999',
+              fontSize: '14px'
+            }}>
+              No additional details added yet. Click "Add Additional Detail" to create one.
+            </div>
+          )}
 
           <Button
             type="link"
@@ -1624,6 +1724,11 @@ const { Title, Text } = Typography;
     label: stage.name,
     children: renderTabContent(),
   })), [stages, renderTabContent]);
+
+  // Debug: Log tab items
+  useEffect(() => {
+    console.log('Tab items updated:', tabItems);
+  }, [tabItems]);
 
   return (
     <div style={{
@@ -1647,7 +1752,10 @@ const { Title, Text } = Typography;
         ) : (
           <Tabs
             activeKey={activeTab}
-            onChange={setActiveTab}
+            onChange={(key) => {
+              console.log('Tab changed from', activeTab, 'to', key);
+              setActiveTab(key);
+            }}
             items={tabItems}
             style={{
               height: '100vh',

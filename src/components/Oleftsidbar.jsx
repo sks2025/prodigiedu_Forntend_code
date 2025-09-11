@@ -22,26 +22,36 @@ const Oleftsidbar = ({ fun,page,ID }) => {
         redirect: "follow"
       };
       
-      fetch(`https://api.prodigiedu.com/api/competitions/field-completion/${ID}`, requestOptions)
-        .then((response) => response.json())
-        .then((result) => {
-          console.log(result)
-          if (result.success && result.data.length > 0) {
-            const data = result.data[0];
-            setCompletionStatus({
-              overview: data.overview,
-              syllabus: data.syllabus,
-              pattern: data.pattern,
-              eligibility: data.eligibility,
-              registration: data.registration,
-              awards: data.awards
-            });
-          }
-        })
-        .catch((error) => console.error(error));
-    } catch (error) {
-      console.log(error)
+      const response = await fetch(`https://api.prodigiedu.com/api/competitions/field-completion/${ID}`, requestOptions);
       
+      // Check if response is ok and content type is JSON
+      if (!response.ok) {
+        console.error('API request failed:', response.status, response.statusText);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Response is not JSON:', contentType);
+        return;
+      }
+      
+      const result = await response.json();
+      console.log(result)
+      
+      if (result.success && result.data && result.data.length > 0) {
+        const data = result.data[0];
+        setCompletionStatus({
+          overview: data.overview || false,
+          syllabus: data.syllabus || false,
+          pattern: data.pattern || false,
+          eligibility: data.eligibility || false,
+          registration: data.registration || false,
+          awards: data.awards || false
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching completion status:', error);
     }
   }
 

@@ -74,7 +74,6 @@ const OSyllabus = ({ fun, ID }) => {
       "Art",
       "Music",
       "Sports",
-      "Dance",
       "Drama",
       "Debate",
       "Quiz",
@@ -82,7 +81,15 @@ const OSyllabus = ({ fun, ID }) => {
       "Robotics",
       "Coding",
       "Photography",
-      "Creative Writing"
+      "Creative Writing",
+      "Brain Games",
+      "Fancy Dress",
+      "Sloka",
+      "Colouring",
+      "Singing",
+      "Dancing",
+      "Drawing"
+
     ],
     "Others": [
       "Life Skills",

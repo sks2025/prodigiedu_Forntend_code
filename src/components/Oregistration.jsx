@@ -127,7 +127,7 @@ export default function Oregistration({ fun, ID }) {
       };
 
       const response = await fetch(
-        `http://localhost:3001/api/competitions/getsyllabus/${competitionId}`,
+        `https://api.prodigiedu.com/api/competitions/getsyllabus/${competitionId}`,
         requestOptions
       );
 
@@ -165,7 +165,7 @@ export default function Oregistration({ fun, ID }) {
         redirect: "follow"
       };
 
-      const response = await fetch(`http://localhost:3001/api/competitions/registration/${competitionId}`, requestOptions);
+      const response = await fetch(`https://api.prodigiedu.com/api/competitions/registration/${competitionId}`, requestOptions);
       
       if (response.ok) {
         const result = await response.json();
@@ -276,6 +276,8 @@ export default function Oregistration({ fun, ID }) {
     
     try {
       // Validate required fields
+      console.log('Validating registration data:', registrationData);
+      
       if (!registrationData.totalRegistrationFee || registrationData.totalRegistrationFee.trim() === '') {
         message.error('Please enter total registration fee');
         return;
@@ -302,28 +304,31 @@ export default function Oregistration({ fun, ID }) {
         return;
       }
 
-      if (plans.length === 0) {
-        message.error('Please add at least one plan');
-        return;
-      }
+      // Plans are now optional - no validation required
+      // if (plans.length === 0) {
+      //   message.error('Please add at least one plan');
+      //   return;
+      // }
 
-      // Validate plans
-      for (let i = 0; i < plans.length; i++) {
-        const plan = plans[i];
-        if (!plan.name || !plan.planFee || !plan.description) {
-          message.error(`Please fill all required fields for Plan ${i + 1}`);
-          return;
-        }
-        
-        // Check if included and notIncluded have content beyond just bullet points
-        if (!plan.included || plan.included.trim() === '•' || plan.included.trim() === '') {
-          message.error(`Please add content for "What Is Included?" in Plan ${i + 1}`);
-          return;
-        }
-        
-        if (!plan.notIncluded || plan.notIncluded.trim() === '•' || plan.notIncluded.trim() === '') {
-          message.error(`Please add content for "What Is Not Included?" in Plan ${i + 1}`);
-          return;
+      // Validate plans only if they exist
+      if (plans.length > 0) {
+        for (let i = 0; i < plans.length; i++) {
+          const plan = plans[i];
+          if (!plan.name || !plan.planFee || !plan.description) {
+            message.error(`Please fill all required fields for Plan ${i + 1}`);
+            return;
+          }
+          
+          // Check if included and notIncluded have content beyond just bullet points
+          if (!plan.included || plan.included.trim() === '•' || plan.included.trim() === '') {
+            message.error(`Please add content for "What Is Included?" in Plan ${i + 1}`);
+            return;
+          }
+          
+          if (!plan.notIncluded || plan.notIncluded.trim() === '•' || plan.notIncluded.trim() === '') {
+            message.error(`Please add content for "What Is Not Included?" in Plan ${i + 1}`);
+            return;
+          }
         }
       }
 
@@ -341,16 +346,17 @@ export default function Oregistration({ fun, ID }) {
           bank_account: registrationData.bankAccount,
           bank_account_number: registrationData.bankAccountNumber || ''
         },
-        plans: plans.map(plan => ({
+        plans: plans.length > 0 ? plans.map(plan => ({
           name: plan.name,
           plan_fee: parseFloat(plan.planFee),
           student_limit: plan.studentLimit ? parseInt(plan.studentLimit) : null,
           description: plan.description,
           included: plan.included,
           not_included: plan.notIncluded
-        }))
+        })) : []
       };
       
+      console.log('Sending API Data:', apiData);
       const raw = JSON.stringify(apiData);
 
       // Note: Backend handles both create and update with the same POST endpoint
@@ -362,10 +368,17 @@ export default function Oregistration({ fun, ID }) {
         redirect: "follow"
       }; 
       
-      const response = await fetch(`http://localhost:3001/api/competitions/registration/${competitionId}`, requestOptions);
+      const response = await fetch(`https://api.prodigiedu.com/api/competitions/registration/${competitionId}`, requestOptions);
       
       if (response.ok) {
-        const result = await response.text();
+        let result;
+        try {
+          result = await response.json();
+        } catch (jsonError) {
+          result = await response.text();
+        }
+        
+        console.log('Registration API Response:', result);
         message.success('Registration data saved successfully!');
 
         // Wait a moment for the message to be visible
@@ -384,10 +397,16 @@ export default function Oregistration({ fun, ID }) {
         }, 1000);
       } else {
         const errorText = await response.text();
+        console.error('Registration API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          response: errorText
+        });
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
     } catch (error) {
+      console.error('Registration Error Details:', error);
       message.error(`Failed to save registration data: ${error.message}`);
     } finally {
       setLoading(false);
@@ -623,7 +642,7 @@ export default function Oregistration({ fun, ID }) {
          
             </div>
 
-            {/* Plans */}
+            {/* Plans - Optional */}
             {plans.map((plan, index) => (
               <div
                 key={plan.id}
@@ -839,8 +858,25 @@ export default function Oregistration({ fun, ID }) {
               </div>
             ))}
 
-            {/* Add a Plan Button */}
+            {/* Add a Plan Button - Optional */}
             <div style={{ marginBottom: '40px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <Title level={4} style={{
+                  marginBottom: '8px',
+                  fontWeight: '500',
+                  color: '#000000',
+                  fontSize: '16px'
+                }}>
+                  Plans (Optional)
+                </Title>
+                <p style={{ 
+                  color: '#666', 
+                  fontSize: '14px', 
+                  margin: '0 0 16px 0' 
+                }}>
+                  Add registration plans to offer different pricing options to participants
+                </p>
+              </div>
               <Button
                 type="link"
                 icon={<PlusOutlined />}
@@ -863,11 +899,12 @@ export default function Oregistration({ fun, ID }) {
                 type="primary"
                 size="large"
                 loading={loading}
+                disabled={!registrationData.totalRegistrationFee || !registrationData.registrationStartDate || !registrationData.registrationEndDate || !registrationData.bankAccount}
                 onClick={handleSubmit}
                 style={{
-                  backgroundColor: plans.length > 0 && registrationData.totalRegistrationFee ? '#4CAF50' : '#d9d9d9',
-                  // borderColor: plans.length > 0 && registrationData.totalRegistrationFee ? '#1890ff' : '#d9d9d9',
-                  color: plans.length > 0 && registrationData.totalRegistrationFee ? '#ffffff' : '#666666',
+                  backgroundColor: (registrationData.totalRegistrationFee && registrationData.registrationStartDate && registrationData.registrationEndDate && registrationData.bankAccount) ? '#4CAF50' : '#d9d9d9',
+                  // borderColor: registrationData.totalRegistrationFee ? '#1890ff' : '#d9d9d9',
+                  color: (registrationData.totalRegistrationFee && registrationData.registrationStartDate && registrationData.registrationEndDate && registrationData.bankAccount) ? '#ffffff' : '#666666',
                   height: '48px',
                   paddingLeft: '32px',
                   paddingRight: '32px',

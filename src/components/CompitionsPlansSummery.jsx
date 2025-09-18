@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import "./Compitionspayment.css";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import "./CompitionspaymentSummery.css";
 import StudentFooter from "./StudentFooter";
 import Studentheaderhome from "./Studentheaderhome";
 import credit from "../images/credit.svg";
@@ -9,32 +9,33 @@ import upi from "../images/UPI.svg";
 
 // Payment method options data
 const PAYMENT_METHODS = [
-  { id: 'card', name: 'Credit / Debit Card', icon: credit, selected: true },
-  { id: 'upi', name: 'UPI', icon: upi, selected: false },
-  { id: 'netbanking', name: 'Net Banking', icon: bank, selected: false }
+  { id: "card", name: "Credit / Debit Card", icon: credit, selected: true },
+  { id: "upi", name: "UPI", icon: upi, selected: false },
+  { id: "netbanking", name: "Net Banking", icon: bank, selected: false },
 ];
 
 // Card brand icons
 const CARD_BRANDS = [
   {
-    name: 'Visa',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg'
+    name: "Visa",
+    src: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCA0MCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjI0IiByeD0iNCIgZmlsbD0iIzAwNTFBRCIvPgo8cGF0aCBkPSJNMTYuNSA3SDIzLjVWMTdIMTYuNVY3WiIgZmlsbD0iI0ZGQzEwNyIvPgo8cGF0aCBkPSJNMTYuNSA3SDIwVjE3SDE2LjVWN1oiIGZpbGw9IiMwMDUxQUQiLz4KPC9zdmc+Cg==",
   },
   {
-    name: 'Mastercard',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png'
+    name: "Mastercard",
+    src: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCA0MCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjI0IiByeD0iNCIgZmlsbD0iI0VCMjE0MjEiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNiIgZmlsbD0iI0VCMjE0MjEiLz4KPGNpcmNsZSBjeD0iMjQiIGN5PSIxMiIgcj0iNiIgZmlsbD0iI0Y2QzA0MyIvPgo8L3N2Zz4K",
   },
   {
-    name: 'RuPay',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png'
-  }
+    name: "RuPay",
+    src: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCA0MCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjI0IiByeD0iNCIgZmlsbD0iIzAwNzBBNCIvPgo8cGF0aCBkPSJNMjAgN0MxNi42ODYzIDcgMTQgOS42ODYzIDE0IDEzQzE0IDE2LjMxMzcgMTYuNjg2MyAxOSAyMCAxOUMyMy4zMTM3IDE5IDI2IDE2LjMxMzcgMjYgMTNDMjYgOS42ODYzIDIzLjMxMzcgNyAyMCA3WiIgZmlsbD0iI0ZGRkZGRiIvPgo8L3N2Zz4K",
+  },
 ];
 
 const CompitionsPlansSummery = () => {
+  const { competitionsid } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { plan, form } = location.state || {};
-  
+  const { plan } = location.state || {};
+
   // State management
   const [selectedPayment, setSelectedPayment] = useState("card");
   const [formData, setFormData] = useState({
@@ -45,6 +46,8 @@ const CompitionsPlansSummery = () => {
   });
   const [errors, setErrors] = useState({});
   const [cardBrand, setCardBrand] = useState("");
+  const [competitionOverview, setCompetitionOverview] = useState(null);
+  const [competitionRegistration, setCompetitionRegistration] = useState(null);
 
   // Calculate prices
   const planPrice = Number(plan?.price) || 1200;
@@ -60,7 +63,7 @@ const CompitionsPlansSummery = () => {
   const detectCardBrand = (number) => {
     const digits = number.replace(/\D/g, "");
     if (/^4/.test(digits)) return "Visa";
-    if (/^5[1-5]/.test(digits)) return "MasterCard";
+    if (/^5[1-5]/.test(digits)) return "Mastercard";
     if (/^3[47]/.test(digits)) return "Amex";
     return "";
   };
@@ -68,10 +71,10 @@ const CompitionsPlansSummery = () => {
   // Event handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === "cardNumber") {
       const formatted = formatCardNumber(value);
-      setFormData(prev => ({ ...prev, cardNumber: formatted }));
+      setFormData((prev) => ({ ...prev, cardNumber: formatted }));
       setCardBrand(detectCardBrand(formatted));
     } else if (name === "expiry") {
       let digits = value.replace(/[^\d]/g, "");
@@ -80,9 +83,9 @@ const CompitionsPlansSummery = () => {
       if (digits.length > 2) {
         formatted = digits.slice(0, 2) + " / " + digits.slice(2);
       }
-      setFormData(prev => ({ ...prev, expiry: formatted }));
+      setFormData((prev) => ({ ...prev, expiry: formatted }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -92,10 +95,14 @@ const CompitionsPlansSummery = () => {
 
   const validatePayment = () => {
     const newErrors = {};
-    if (!formData.nameOnCard.trim()) newErrors.nameOnCard = "Name on card is required";
-    if (!formData.cardNumber.trim() || formData.cardNumber.replace(/\s/g, '').length < 12) newErrors.cardNumber = "Valid card number required";
-    if (!formData.expiry.trim() || !/^(0[1-9]|1[0-2])\s*\/\s*\d{2}$/.test(formData.expiry)) newErrors.expiry = "Expiry must be MM / YY";
-    if (!formData.cvc.trim() || formData.cvc.length < 3) newErrors.cvc = "CVC required";
+    if (selectedPayment === "card") {
+      if (!formData.nameOnCard.trim()) newErrors.nameOnCard = "Name on card is required";
+      if (!formData.cardNumber.trim() || formData.cardNumber.replace(/\s/g, "").length < 12)
+        newErrors.cardNumber = "Valid card number required";
+      if (!formData.expiry.trim() || !/^(0[1-9]|1[0-2])\s*\/\s*\d{2}$/.test(formData.expiry))
+        newErrors.expiry = "Expiry must be MM / YY";
+      if (!formData.cvc.trim() || formData.cvc.length < 3) newErrors.cvc = "CVC required";
+    }
     return newErrors;
   };
 
@@ -104,175 +111,178 @@ const CompitionsPlansSummery = () => {
     const validationErrors = validatePayment();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
-    
+
     // Simulate payment success
     window.alert("Payment successful! Registration complete.");
-    navigate("/");
+    navigate(`/Competitionsdetail/${competitionsid}`);
   };
+
+  
+
+  const fetchCompetitionData = async () => {
+    try {
+      const response = await fetch(
+        `https://api.prodigiedu.com/api/competitions/getoverview/${competitionsid}`
+      );
+      const result = await response.json();
+      setCompetitionOverview(result.data);
+    } catch (error) {
+      console.error("Error fetching competition overview:", error);
+    }
+  };
+  const fetchRegisterCompetitionData = async () => {
+    try {
+      const response = await fetch(
+        `https://api.prodigiedu.com/api/competitions/registration/${competitionsid}`
+      );
+      const result = await response.json();
+      setCompetitionRegistration(result.data);
+    } catch (error) {
+      console.error("Error fetching competition registration:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompetitionData();
+    fetchRegisterCompetitionData();
+  }, [competitionsid]);
+
 
   return (
     <>
       <Studentheaderhome />
-      <div className="payment-container">
-        <div className="payment-content">
-          {/* Left Panel - Plan Summary */}
-          <div className="left-panel">
-            {/* Competition Header */}
-            <div className="competition-header">
-              <div className="logo-placeholder"></div>
-              <div className="competition-info">
-                <h2 className="competition-name">
-                  {form?.competitionName || "Competition Name"}
-                </h2>
-                <p className="institute-name">
-                  {form?.instituteName || "Institute Name"}
-                </p>
+      <div>
+        <section className="section-container">
+          <div className="left-half">
+            <div className="heading-container">
+              <div className="placeholder-div"></div>
+              <div className="heading-text">
+                <h1>{competitionOverview?.name || "Competition Name"}</h1>
+                <h2>{competitionOverview?.institute || "Institute Name"}</h2>
               </div>
             </div>
 
-            {/* Plan Summary Card */}
-            <div className="plan-summary-card">
-              <h3 className="plan-summary-title">Plan summary</h3>
-              
-              <div className="plan-item">
-                <div className="plan-details">
-                  <div className="plan-name">
-                    {plan?.title || "Advanced Prep"}
-                  </div>
-                  <div className="plan-description">
-                    {plan?.subtitle || "Registration + Prep + Past Year Question Papers"}
-                  </div>
+            <div className="plan-summary">
+              <h2>Plan Summary</h2>
+              <div className="plan-details">
+                <div className="detail-row">
+                  <p>{plan?.name || "Advanced Prep"}</p>
+                  <p>INR {planPrice.toFixed(2)}</p>
                 </div>
-                <div className="plan-price">INR {planPrice.toFixed(2)}</div>
-              </div>
-
-              <div className="plan-item">
-                <div className="plan-details">
-                  <div className="plan-name">Convenience Fee</div>
+                <p className="description">
+                  {plan?.description || "Registration + Prep + Past Year Question Papers"}
+                </p>
+                <div className="detail-row">
+                  <p>Convenience Fee</p>
+                  <p>INR {convenienceFee.toFixed(2)}</p>
                 </div>
-                <div className="plan-price">INR {convenienceFee.toFixed(2)}</div>
               </div>
-
-              <div className="plan-divider"></div>
-
-              <div className="total-section">
-                <div className="total-label">Overall total</div>
-                <div className="total-amount">INR {total.toFixed(2)}</div>
+              <div className="total-row detail-row">
+                <p>Overall Total</p>
+                <p>INR {total.toFixed(2)}</p>
               </div>
             </div>
           </div>
 
-          {/* Right Panel - Payment Form */}
-          <div className="right-panel">
-            <div className="payment-form-container">
-              {/* Payment Methods Sidebar */}
-              <div className="payment-sidebar">
-                <h3 className="sidebar-title">Pay with</h3>
-                
-                <div className="payment-options">
-                  {PAYMENT_METHODS.map((method) => (
-                    <div
-                      key={method.id}
-                      className={`payment-option ${selectedPayment === method.id ? "selected" : ""}`}
-                      onClick={() => handlePaymentMethodSelect(method.id)}
-                    >
-                      {selectedPayment === method.id && (
-                        <div className="option-indicator"></div>
-                      )}
-                      <img src={method.icon} alt={method.name} />
-                      <span>{method.name}</span>
-                    </div>
-                  ))}
+          <div className="right-half">
+            <div className="sidebar">
+              <h3>Pay with</h3>
+              {PAYMENT_METHODS.map((method) => (
+                <div
+                  key={method.id}
+                  className={`payment-option ${selectedPayment === method.id ? "selected" : ""}`}
+                  onClick={() => handlePaymentMethodSelect(method.id)}
+                >
+                  <img src={method.icon} alt={method.name} className="payment-icon" />
+                  <p>{method.name}</p>
                 </div>
-              </div>
+              ))}
+            </div>
 
-              {/* Payment Form */}
-              <div className="payment-form-content">
-                {selectedPayment === "card" && (
-                  <form className="card-form" onSubmit={handleSubmit}>
-                    <div className="form-group">
-                      <label htmlFor="nameOnCard">Name on Card</label>
+            <div className="main-content">
+              {selectedPayment === "card" && (
+                <form onSubmit={handleSubmit}>
+                  <label htmlFor="nameOnCard">Name on Card</label>
+                  <input
+                    type="text"
+                    id="nameOnCard"
+                    name="nameOnCard"
+                    value={formData.nameOnCard}
+                    onChange={handleInputChange}
+                    placeholder="Name"
+                  />
+                  {errors.nameOnCard && <p className="error">{errors.nameOnCard}</p>}
+
+                  <label htmlFor="cardNumber" className="mt-3">
+                    Card Number
+                  </label>
+                  <div className="card-input-container">
+                    <input
+                      type="text"
+                      id="cardNumber"
+                      name="cardNumber"
+                      value={formData.cardNumber}
+                      onChange={handleInputChange}
+                      placeholder="1234 1234 1234 1234"
+                      maxLength="19"
+                    />
+                    {cardBrand && (
+                      <img
+                        src={CARD_BRANDS.find((brand) => brand.name === cardBrand)?.src}
+                        alt={cardBrand}
+                        className="card-brand-icon"
+                      />
+                    )}
+                  </div>
+                  {errors.cardNumber && <p className="error">{errors.cardNumber}</p>}
+
+                  <div className="input-row">
+                    <div>
+                      <label htmlFor="expiry">Expiry</label>
                       <input
                         type="text"
-                        id="nameOnCard"
-                        name="nameOnCard"
-                        placeholder="Name"
-                        value={formData.nameOnCard}
+                        id="expiry"
+                        name="expiry"
+                        value={formData.expiry}
                         onChange={handleInputChange}
+                        placeholder="MM / YY"
+                        maxLength="7"
                       />
-                      {errors.nameOnCard && (
-                        <div className="error-message">{errors.nameOnCard}</div>
-                      )}
+                      {errors.expiry && <p className="error">{errors.expiry}</p>}
                     </div>
-
-                    <div className="form-group">
-                      <label htmlFor="cardNumber">Card number</label>
-                      <div className="card-input-container">
-                        <input
-                          type="text"
-                          id="cardNumber"
-                          name="cardNumber"
-                          placeholder="1234 1234 1234 1234"
-                          value={formData.cardNumber}
-                          onChange={handleInputChange}
-                          maxLength={19}
-                          autoComplete="cc-number"
-                        />
-                        <div className="card-icons">
-                          {CARD_BRANDS.map((brand) => (
-                            <img
-                              key={brand.name}
-                              src={brand.src}
-                              alt={brand.name}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      {errors.cardNumber && (
-                        <div className="error-message">{errors.cardNumber}</div>
-                      )}
+                    <div>
+                      <label htmlFor="cvc">CVC</label>
+                      <input
+                        type="text"
+                        id="cvc"
+                        name="cvc"
+                        value={formData.cvc}
+                        onChange={handleInputChange}
+                        placeholder="CVC"
+                        maxLength="4"
+                      />
+                      {errors.cvc && <p className="error">{errors.cvc}</p>}
                     </div>
+                  </div>
 
-                    <div className="form-row">
-                      <div className="form-group half">
-                        <label htmlFor="expiry">Expiry</label>
-                        <input
-                          type="text"
-                          id="expiry"
-                          name="expiry"
-                          placeholder="MM / YY"
-                          value={formData.expiry}
-                          onChange={handleInputChange}
-                        />
-                        {errors.expiry && (
-                          <div className="error-message">{errors.expiry}</div>
-                        )}
-                      </div>
-                      <div className="form-group half">
-                        <label htmlFor="cvc">CVC</label>
-                        <input
-                          type="text"
-                          id="cvc"
-                          name="cvc"
-                          placeholder="CVC"
-                          value={formData.cvc}
-                          onChange={handleInputChange}
-                        />
-                        {errors.cvc && (
-                          <div className="error-message">{errors.cvc}</div>
-                        )}
-                      </div>
-                    </div>
-
-                    <button className="make-payment-btn" type="submit">
-                      Make Payment
-                    </button>
-                  </form>
-                )}
-              </div>
+                  <button type="submit">Make Payment</button>
+                </form>
+              )}
+              {selectedPayment === "upi" && (
+                <div>
+                  <p>Please enter your UPI ID to proceed with payment.</p>
+                  {/* Add UPI payment form or logic here */}
+                </div>
+              )}
+              {selectedPayment === "netbanking" && (
+                <div>
+                  <p>Please select your bank to proceed with net banking.</p>
+                  {/* Add net banking payment form or logic here */}
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        </section>
       </div>
       <StudentFooter />
     </>

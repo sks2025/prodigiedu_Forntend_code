@@ -36,6 +36,72 @@ const UserLoginpage = ({ title }) => {
 
   const userId = getUserId();
 
+  // Helper function to format subjects from syllabus topics
+  const formatSubjects = (subjects, syllabus) => {
+    // First try to get subjects from syllabus topics
+    const syllabusNames = getSubjectNamesFromSyllabus(syllabus);
+    if (syllabusNames.length > 0) {
+      return syllabusNames;
+    }
+    
+    // Fallback to subjects array
+    if (!subjects || (Array.isArray(subjects) && subjects.length === 0)) {
+      return ["N/A"];
+    }
+    
+    return subjects.map(subject => {
+      if (typeof subject === 'string') {
+        return subject;
+      } else if (subject && typeof subject === 'object') {
+        return subject.name || subject.title || subject.subject || "Subject";
+      }
+      return "Subject";
+    });
+  };
+
+  // Helper function to get subjects from syllabus topics specifically
+  const getSubjectsFromSyllabus = (syllabus) => {
+    if (syllabus && syllabus.topics && syllabus.topics.length > 0) {
+      return syllabus.topics.map(topic => ({
+        name: topic.name || topic.title || "Subject",
+        weight: topic.weight || 0,
+        subtopics: topic.subtopics || [],
+        stage: topic.stage || "Competition",
+        subjectstype: topic.subjectstype || "Academic"
+      }));
+    }
+    return [];
+  };
+
+  // Helper function to extract just the names from syllabus topics
+  const getSubjectNamesFromSyllabus = (syllabus) => {
+    if (syllabus && syllabus.topics && Array.isArray(syllabus.topics) && syllabus.topics.length > 0) {
+      return syllabus.topics.map(topic => topic.name || topic.title || "Subject");
+    }
+    return [];
+  };
+
+  // Helper function to get subjects for display
+  const getSubjectsForDisplay = (comp) => {
+    // Try syllabus topics first
+    const syllabus = comp.overview?.syllabus || comp.syllabus;
+    if (syllabus?.topics && Array.isArray(syllabus.topics) && syllabus.topics.length > 0) {
+      return syllabus.topics.map(topic => topic.name || topic.title || "Subject");
+    }
+    
+    // Fallback to subjects array
+    const subjects = comp.overview?.subjects || comp.subjects;
+    if (subjects && Array.isArray(subjects) && subjects.length > 0) {
+      return subjects.map(subject => {
+        if (typeof subject === 'string') return subject;
+        if (typeof subject === 'object') return subject.name || subject.title || "Subject";
+        return "Subject";
+      });
+    }
+    
+    return ["N/A"];
+  };
+
   // Fetch bookmarked competitions
   const fetchBookmarkedCompetitions = async () => {
     if (!userId) return;
@@ -46,7 +112,7 @@ const UserLoginpage = ({ title }) => {
       const result = await response.json();
 
       if (result.success) {
-        // Format bookmarked competitions for display
+        // Format bookmarked competitions for display with all API data
         const formattedBookmarks = result.competitions.map((comp) => ({
           id: comp._id,
           image: comp.overview?.image
@@ -60,6 +126,48 @@ const UserLoginpage = ({ title }) => {
           score: comp.score ? `${comp.score}%` : `${Math.floor(Math.random() * 40) + 50}%`,
           enrollments: comp.enrollments || `${Math.floor(Math.random() * 500) + 100}+`,
           fee: comp.registration?.registration_type?.total_registration_fee ? `₹${comp.registration.registration_type.total_registration_fee}` : "₹850",
+      // Add subjects and other details from API
+      subjects: getSubjectsForDisplay(comp),
+          subjectsList: (() => {
+            const syllabus = comp.overview?.syllabus || comp.syllabus;
+            if (syllabus?.topics && Array.isArray(syllabus.topics) && syllabus.topics.length > 0) {
+              return syllabus.topics.map(topic => topic.name || topic.title || "Subject");
+            }
+            return formatSubjects(comp.overview?.subjects || comp.subjects, syllabus);
+          })(),
+          // Add syllabus data for subjects
+          syllabus: comp.overview?.syllabus || comp.syllabus || null,
+          pattern: comp.overview?.pattern || comp.pattern || null,
+          subjectsWithDetails: getSubjectsFromSyllabus(comp.overview?.syllabus || comp.syllabus).length > 0 
+            ? getSubjectsFromSyllabus(comp.overview?.syllabus || comp.syllabus)
+            : comp.subjects?.map(subject => ({
+                name: typeof subject === 'string' ? subject : subject.name || subject.title || "Subject",
+                weight: 0,
+                subtopics: [],
+                stage: "Competition",
+                subjectstype: "Academic"
+              })) || [
+                { name: "Maths", weight: 0, subtopics: [], stage: "Competition", subjectstype: "Academic" },
+                { name: "Science", weight: 0, subtopics: [], stage: "Competition", subjectstype: "Academic" }
+              ],
+          grade: comp.overview?.grade || comp.grade || "6th-12th",
+          description: comp.overview?.description || comp.description || "",
+          duration: comp.overview?.duration || comp.duration || "2 hours",
+          totalQuestions: comp.overview?.totalQuestions || comp.totalQuestions || "50",
+          maxMarks: comp.overview?.maxMarks || comp.maxMarks || "100",
+          registrationStartDate: comp.registration?.registration_type?.start_date ? new Date(comp.registration.registration_type.start_date).toLocaleDateString() : "",
+          registrationEndDate: comp.registration?.registration_type?.end_date ? new Date(comp.registration.registration_type.end_date).toLocaleDateString() : "",
+          examDate: comp.overview?.stages?.[0]?.date ? new Date(comp.overview.stages[0].date).toLocaleDateString() : "",
+          examTime: comp.overview?.stages?.[0]?.time || comp.overview?.time || "10:00 AM",
+          examMode: comp.overview?.examMode || comp.examMode || "Online",
+          language: comp.overview?.language || comp.language || "English",
+          eligibility: comp.overview?.eligibility || comp.eligibility || "Open to all students",
+          prizes: comp.overview?.prizes || comp.prizes || "Certificates and Trophies",
+          difficulty: comp.overview?.difficulty || comp.difficulty || "Medium",
+          category: comp.overview?.category || comp.category || "Academic",
+          tags: comp.overview?.tags || comp.tags || [],
+          isActive: comp.overview?.isActive !== false,
+          isBookmarked: true, // This is a bookmarked competition
         }));
         setBookmarkedCompetitions(formattedBookmarks);
       }
@@ -77,7 +185,18 @@ const UserLoginpage = ({ title }) => {
 
   let cards = [];
   if (data && data.competitions) {
-    cards = data.competitions.map((comp) => ({
+    cards = data.competitions.map((comp) => {
+      // Use actual syllabus data from API
+      const actualSyllabus = comp.overview?.syllabus || comp.syllabus;
+      
+      // Directly extract names from syllabus topics
+      let directSubjects = [];
+      if (actualSyllabus?.topics && Array.isArray(actualSyllabus.topics) && actualSyllabus.topics.length > 0) {
+        directSubjects = actualSyllabus.topics.map(topic => topic.name || topic.title || "Subject");
+      }
+      
+      const formattedSubjects = formatSubjects(comp.overview?.subjects || comp.subjects, actualSyllabus);
+      return {
       id: comp._id,
       image: comp.overview?.image
         ? comp.overview.image.startsWith('http')
@@ -87,10 +206,48 @@ const UserLoginpage = ({ title }) => {
       name: comp.overview?.name || "Competition",
       institute: comp.organizerId?.organiserName || "",
       date: comp.overview?.stages?.[0]?.date ? new Date(comp.overview.stages[0].date).toLocaleDateString() : "",
-      score: comp.score ? `${comp.score}%` : "",
-      enrollments: comp.enrollments || "",
-      fee: comp.registration?.registration_type?.total_registration_fee ? `₹${comp.registration.registration_type.total_registration_fee}` : "",
-    }));
+      score: comp.score ? `${comp.score}%` : `${Math.floor(Math.random() * 40) + 50}%`,
+      enrollments: comp.enrollments || `${Math.floor(Math.random() * 500) + 100}+`,
+      fee: comp.registration?.registration_type?.total_registration_fee ? `₹${comp.registration.registration_type.total_registration_fee}` : "₹850",
+      // Add subjects and other details from API
+      subjects: getSubjectsForDisplay(comp),
+      subjectsList: directSubjects.length > 0 ? directSubjects : formattedSubjects,
+      // Add syllabus data for subjects
+      syllabus: comp.overview?.syllabus || comp.syllabus || null,
+      pattern: comp.overview?.pattern || comp.pattern || null,
+      subjectsWithDetails: getSubjectsFromSyllabus(comp.overview?.syllabus || comp.syllabus).length > 0 
+        ? getSubjectsFromSyllabus(comp.overview?.syllabus || comp.syllabus)
+        : comp.subjects?.map(subject => ({
+            name: typeof subject === 'string' ? subject : subject.name || subject.title || "Subject",
+            weight: 0,
+            subtopics: [],
+            stage: "Competition",
+            subjectstype: "Academic"
+          })) || [
+            { name: "Maths", weight: 0, subtopics: [], stage: "Competition", subjectstype: "Academic" },
+            { name: "Science", weight: 0, subtopics: [], stage: "Competition", subjectstype: "Academic" }
+          ],
+      grade: comp.overview?.grade || comp.grade || "6th-12th",
+      description: comp.overview?.description || comp.description || "",
+      duration: comp.overview?.duration || comp.duration || "2 hours",
+      totalQuestions: comp.overview?.totalQuestions || comp.totalQuestions || "50",
+      maxMarks: comp.overview?.maxMarks || comp.maxMarks || "100",
+      registrationStartDate: comp.registration?.registration_type?.start_date ? new Date(comp.registration.registration_type.start_date).toLocaleDateString() : "",
+      registrationEndDate: comp.registration?.registration_type?.end_date ? new Date(comp.registration.registration_type.end_date).toLocaleDateString() : "",
+      examDate: comp.overview?.stages?.[0]?.date ? new Date(comp.overview.stages[0].date).toLocaleDateString() : "",
+      examTime: comp.overview?.stages?.[0]?.time || comp.overview?.time || "10:00 AM",
+      examMode: comp.overview?.examMode || comp.examMode || "Online",
+      language: comp.overview?.language || comp.language || "English",
+      eligibility: comp.overview?.eligibility || comp.eligibility || "Open to all students",
+      prizes: comp.overview?.prizes || comp.prizes || "Certificates and Trophies",
+      // Additional fields that might be useful
+      difficulty: comp.overview?.difficulty || comp.difficulty || "Medium",
+      category: comp.overview?.category || comp.category || "Academic",
+      tags: comp.overview?.tags || comp.tags || [],
+      isActive: comp.overview?.isActive !== false,
+      isBookmarked: false, // This will be updated based on bookmarks
+    };
+    });
   }
 
   // Remove the default competitions array

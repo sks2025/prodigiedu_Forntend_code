@@ -138,7 +138,7 @@ const Organisersheader = () => {
   return (
     <div>
       <header>
-        <nav className="navbar" style={{padding: '0px 5vw', position: 'relative'}}>
+        <nav className="navbar" style={{padding: '15px 5vw', position: 'relative'}}>
           <div className="logo">
             <NavLink style={{ textDecoration: "none" }} to="/">
               <div className='pt-2' style={{ display: 'flex', alignItems: 'center', minHeight: '70px' }}>

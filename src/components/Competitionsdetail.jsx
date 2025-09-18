@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
 import "./Competitionsdetail.css";
-import HeaderUser from "./HeaderUser";
 import FooterUsers from "./FooterUsers";
-import Organisersheader from "./Organisersheader";
-import { GoDotFill } from "react-icons/go";
-
 import Studentheaderhome from "./Studentheaderhome";
 
 function Ocompetitionsdetail() {
   const { competitionsid } = useParams();
-  const [activeTab, setActiveTab] = useState("overview");
 
   // Separate state for each section
   const [sectionData, setSectionData] = useState({
@@ -44,10 +39,6 @@ function Ocompetitionsdetail() {
 
   // Add studentInformation state
   const [studentInformation, setStudentInformation] = useState({ StudentDetails: [], SchoolDetails: [] });
-
-  const openTab = (tab) => {
-    setActiveTab(tab);
-  };
 
   // Helper function to update section loading state
   const updateSectionLoading = (section, isLoading) => {
@@ -210,792 +201,558 @@ function Ocompetitionsdetail() {
   // Get student information from eligibility data or separate call
   const getStudentInformation = () => studentInformation;
 
+  // Helper function to get registration URL based on plans availability
+  const getRegistrationUrl = () => {
+    const registrationData = getRegistrationData();
+    return registrationData.plans?.length > 0
+      ? `/compitions-plans/${competitionsid}`
+      : `/compitions-payment/${competitionsid}`;
+  };
+
+  // Function to scroll to section
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+  const getOrganizerName = () => {
+    try {
+      const userDataString = localStorage.getItem("user_Data");
+      if (userDataString) {
+        const userData = JSON.parse(userDataString);
+        return userData?.name || userData?.directorName || "Prodigi";
+      }
+    } catch (error) {
+      console.error("Error parsing user data from localStorage:", error);
+    }
+    return "Prodigi";
+  };
   return (
     <>
       <Studentheaderhome />
       <div className="Competitionsdetail">
-        <div className="exam-header">
-          <div className="exam-title">
-            <h1>
-              {sectionLoading.overview ? (
-                "Loading..."
-              ) : sectionErrors.overview ? (
-                "Error Loading Competition"
-              ) : (
-                getOverviewData().name || "Competition Name"
-              )}
+
+        <div className="header-main">
+          <div className="header-left">
+            <h1 className="competition-title">
+              {sectionLoading.overview ? "Loading..." : getOverviewData().name || "MINDSTORM 2025"}
             </h1>
-            <p>Verified by Prodigi</p>
+            <p className="verification-text">
+              {`Verified by ${getOrganizerName()}`}
+            </p>
           </div>
-          <div className="action-button">
-            <button className="btn-primary">
-              <NavLink to={`/compitions-plans/${competitionsid}`} style={{ textDecoration: "none", color: "white" }}>
-                Register
-              </NavLink>
+          <div className="header-right">
+            <div className="action-buttons-grid">
+              <button className="btn-primary">
+                <NavLink
+                  to={getRegistrationUrl()}
+                  style={{ textDecoration: "none", color: "white" }}
+                >
+                  Register
+                </NavLink>
+              </button>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Header Section */}
+        <div className="competition-header">
+
+
+          {/* Navigation Tabs */}
+          <div className="navigation-tabs">
+            <button
+              className="nav-tab active"
+              onClick={() => scrollToSection('overview')}
+            >
+              Overview
+            </button>
+            <button
+              className="nav-tab"
+              onClick={() => scrollToSection('exam-pattern')}
+            >
+              Exam Pattern
+            </button>
+            <button
+              className="nav-tab"
+              onClick={() => scrollToSection('syllabus')}
+            >
+              Syllabus
+            </button>
+            <button
+              className="nav-tab"
+              onClick={() => scrollToSection('eligibility')}
+            >
+              Eligibility
+            </button>
+            <button
+              className="nav-tab"
+              onClick={() => scrollToSection('registration')}
+            >
+              Registration
+            </button>
+            <button
+              className="nav-tab"
+              onClick={() => scrollToSection('awards')}
+            >
+              Awards
+            </button>
+            <button
+              className="nav-tab"
+              onClick={() => scrollToSection('rules')}
+            >
+              Rules
             </button>
           </div>
         </div>
 
-        <div className="tabs-container">
-          <div className="tabs">
-            {[
-              { key: "overview", label: "Overview" },
-              { key: "exam-pattern", label: "Exam Pattern" },
-              { key: "syllabus", label: "Syllabus" },
-              { key: "eligibility", label: "Eligibility" },
-              { key: "registration", label: "Registration" },
-              { key: "awards", label: "Awards" }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                className={`tab-btn ${activeTab === tab.key ? "active" : ""}`}
-                onClick={() => openTab(tab.key)}
-              >
-                {tab.label}
-                {/* Show loading indicator in tab */}
-                {sectionLoading[tab.key === 'exam-pattern' ? 'pattern' : tab.key] && (
-                  <span style={{ marginLeft: '5px', fontSize: '12px' }}>⏳</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+        <div className="main-container">
+          {/* Overview Section */}
+          <div id="overview" className="section">
+            <div className="section-header">
+              <h2 className="section-title">Overview</h2>
+              <span className="chevron-icon">›</span>
+            </div>
 
-        <div className="tab-content">
-          {/* Overview Tab */}
-          {activeTab === "overview" && (
-            <div id="overview" className="tab-pane active">
-
-              <h2 style={{ fontWeight: '900', fontFamily: ' Albert Sans' }}>Overview</h2>
-              {sectionLoading.overview ? (
-                <SectionLoader section="overview" />
-              ) : sectionErrors.overview ? (
-                <SectionError
-                  section="overview"
-                  error={sectionErrors.overview}
-                  onRetry={fetchOverviewData}
-                />
-              ) : (
-                <>
+            {sectionLoading.overview ? (
+              <SectionLoader section="overview" />
+            ) : sectionErrors.overview ? (
+              <SectionError
+                section="overview"
+                error={sectionErrors.overview}
+                onRetry={fetchOverviewData}
+              />
+            ) : (
+              <>
+              {getOverviewData().image && (
                   <div style={{ marginBottom: "20px" }}>
-                    {getOverviewData().image && (
-                      <img
-                        src={getOverviewData().image.startsWith('http')
-                          ? getOverviewData().image
-                          : `https://api.prodigiedu.com${getOverviewData().image}`
-                        }
-                        alt="Competition"
-                        style={{ maxWidth: "300px", height: "auto", marginBottom: "15px" }}
-                      />
-                    )}
+                    <img
+                      src={getOverviewData().image.startsWith('http')
+                        ? getOverviewData().image
+                        : `https://api.prodigiedu.com${getOverviewData().image}`
+                      }
+                      alt="Competition"
+                      style={{
+                        maxWidth: "50%",
+                        height: "auto",
+                        maxHeight: "400px",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
+                      }}
+                    />
                   </div>
-                  <p className="overview-text">
-                    {getOverviewData().description || "No description available"}
-                  </p>
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <h4>
-                        Total stages: {getOverviewData().stages?.length || 0}
-                      </h4>
-                      {getOverviewData().stages?.map((stage, index) => (
-                        <p key={index}>
-                          Stage {index + 1}: {stage.name} ({stage.date})
-                        </p>
+                )}
+
+                {/* Competition Description */}
+                <p className="overview-description">
+                  {getOverviewData().description || "Presented by Tia Brain Gandhinagar & Phoenix Academy. For the 1st time in Vellore! Brain & Beyond Fest - Recall Rally - Cognitive Challenge - Thrill & Chill - Eagle Eye Challenge - Palindrome Hunt - Lexi Bloom - Flick & Flow. Address No. 18, 8th East Main Road, Gandhinagar."}
+                </p>
+
+                <div className="competition-details">
+                  <div>
+                    <div className="detail-item">
+                      <div className="detail-label">
+                        Total Stages: {getOverviewData().stages?.length > 0 
+                          ? getOverviewData().stages.map(stage => stage.name).join(' And ') 
+                          : "Primary And Final"}
+                      </div>
+                    </div>
+                    <div className="detail-item">
+                      <div className="detail-label">Date Of 1st Level: {getOverviewData().stages?.[0]?.date || "9th Aug 2025"}</div>
+                    </div>
+                    <div className="detail-item">
+                      <div className="detail-label">Awards</div>
+                      {sectionLoading.awards ? (
+                        <div>Loading awards...</div>
+                      ) : getAwardsData().length > 0 ? (
+                        <ul className="awards-list">
+                          {getAwardsData().map((award, index) => (
+                            <li key={index}>
+                              {award.Award_Type}: {award.Quantity}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div>No awards information available</div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="detail-item">
+                      <div className="detail-label">
+                        Subjects: {getOverviewData().subject || 
+                          (getOverviewData().subjects ? getOverviewData().subjects.join(', ') : 
+                          (getSyllabusData().topics?.length > 0 
+                            ? [...new Set(getSyllabusData().topics.map(topic => topic.subjectstype || topic.name))].join(', ')
+                            : 'Maths'))}
+                      </div>
+                    </div>
+                    <div className="detail-item">
+                      <div className="detail-label">Registration Fees: ₹{getRegistrationData().registration_type?.total_registration_fee || "150"}</div>
+                    </div>
+                    <div className="detail-item">
+                      <div className="detail-label">Variance: 97%</div>
+                    </div>
+                    <div className="detail-item">
+                      <div className="detail-label">
+                        Location: {getOverviewData().stages?.[0]?.location?.length > 0 
+                          ? getOverviewData().stages[0].location.map(loc => 
+                              loc === 'IN' ? 'India' : loc
+                            ).join(', ') 
+                          : (getOverviewData().location || 
+                             getOverviewData().state || 
+                             getOverviewData().city || 
+                             "Rajasthan")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* <div className="why-apply">
+                  <h3 className="why-apply-title">Why Should You Apply?</h3>
+                  <div className="benefits-grid">
+                    <div>
+                      <div className="benefit-item">
+                        <span className="benefit-icon positive">✔</span>
+                        <span>Total enrollments: 1L+</span>
+                      </div>
+                      <div className="benefit-item">
+                        <span className="benefit-icon positive">✔</span>
+                        <span>Total schools Competing: 5K+</span>
+                      </div>
+                      <div className="benefit-item">
+                        <span className="benefit-icon positive">✔</span>
+                        <span>Total prize worth: INR 1L+</span>
+                      </div>
+                      <div className="benefit-item">
+                        <span className="benefit-icon positive">✔</span>
+                        <span>Upto 10+ prize winners</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="benefit-item">
+                        <span className="benefit-icon negative">×</span>
+                        <span>2 rounds of competition</span>
+                      </div>
+                      <div className="benefit-item">
+                        <span className="benefit-icon negative">×</span>
+                        <span>No certificate of participation</span>
+                      </div>
+                    </div>
+                  </div>
+                </div> */}
+              </>
+            )}
+          </div>
+
+          {/* Syllabus Section */}
+          <div id="syllabus" className="section">
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Syllabus</h2>
+                <span className="section-tag">
+                  {getOverviewData().stages?.[0]?.name || "Primary"}
+                </span>
+              </div>
+              <span className="chevron-icon">›</span>
+            </div>
+
+            {sectionLoading.syllabus ? (
+              <SectionLoader section="syllabus" />
+            ) : sectionErrors.syllabus ? (
+              <SectionError
+                section="syllabus"
+                error={sectionErrors.syllabus}
+                onRetry={fetchSyllabusData}
+              />
+            ) : (
+              <div className="syllabus-container">
+                {getOverviewData().stages?.length > 1 ? (
+                  // Multiple stages - show slider
+                  <div className="syllabus-slider-container">
+                    <div className="syllabus-slider">
+                      {getOverviewData().stages.map((stage, stageIndex) => (
+                        <div key={stageIndex} className="syllabus-stage-slide">
+                          <h4 className="stage-title">{stage.name}</h4>
+                          <div className="syllabus-grid">
+                            {getSyllabusData().topics?.length > 0 ? (
+                              getSyllabusData().topics.map((topic, index) => (
+                                <div className="syllabus-item" key={index}>
+                                  {typeof topic === 'string' ? topic : topic.name}
+                                </div>
+                              ))
+                            ) : (
+                              <>
+                                <div className="syllabus-item">Knowing Our Numbers</div>
+                                <div className="syllabus-item">Whole Number</div>
+                                <div className="syllabus-item">Playing with Numbers</div>
+                                <div className="syllabus-item">Basic Geometrical Ideas</div>
+                                <div className="syllabus-item">Understanding Elementary Shapes</div>
+                                <div className="syllabus-item">Integers</div>
+                                <div className="syllabus-item">Fractions</div>
+                                <div className="syllabus-item">Decimals</div>
+                                <div className="syllabus-item">Data Handling</div>
+                                <div className="syllabus-item">Mensuration</div>
+                                <div className="syllabus-item">Algebra</div>
+                                <div className="syllabus-item">Ratio & Proportion</div>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       ))}
                     </div>
-                    {/* <div className="info-item">
-                      <h4>Scale: National</h4>
-                    </div> */}
-                    {/* <div className="info-item">
-                      <h4>Grade: ...</h4>
-                    </div> */}
-                    <div className="info-item">
-                      <h4>
-                        Date of 1st level: {getOverviewData().stages?.[0]?.date || "N/A"}
-                      </h4>
-                    </div>
-                    <div className="info-item">
-                      <h4>Mode: {getOverviewData().stages?.[0]?.mode || "N/A"}</h4>
-                    </div>
-                    <div className="info-item">
-                      <h4>Participation: {getOverviewData().stages?.[0]?.participation || "N/A"}</h4>
-                    </div>
-                    <div className="info-item">
-                      <h4>Duration: {getOverviewData().stages?.[0]?.duration || "N/A"}</h4>
-                    </div>
-                    {/* Registration Fee */}
-                    <div className="info-item">
-                      <h4>Registration fee: ₹{getRegistrationData().registration_type?.total_registration_fee || "N/A"}</h4>
-                    </div>
-                    {/* Subject */}
-                    <div className="info-item">
-                      <h4>Subject: {getOverviewData().subject || (getOverviewData().subjects ? getOverviewData().subjects.join(', ') : 'N/A')}</h4>
-                    </div>
-                    {/* Awards Preview in Overview */}
-                    {!sectionLoading.awards && getAwardsData().length > 0 && (
-                      <div className="info-item">
-                        <h4>Awards</h4>
-                        {getAwardsData().map((award, index) => (
-                          <ul key={index}>
-                            <li> <GoDotFill style={{ fontSize: "14px", paddingRight: "1px" }} />
-                              {award.Award_Type}: {award.Quantity} (Given to: {award.Given_To})</li>
-                          </ul>
-                        ))}
-                      </div>
+                  </div>
+                ) : (
+                  // Single stage - show static grid
+                  <div className="syllabus-grid">
+                    {getSyllabusData().topics?.length > 0 ? (
+                      getSyllabusData().topics.map((topic, index) => (
+                        <div className="syllabus-item" key={index}>
+                          {typeof topic === 'string' ? topic : topic.name}
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <div className="syllabus-item">Knowing Our Numbers</div>
+                        <div className="syllabus-item">Whole Number</div>
+                        <div className="syllabus-item">Playing with Numbers</div>
+                        <div className="syllabus-item">Basic Geometrical Ideas</div>
+                        <div className="syllabus-item">Understanding Elementary Shapes</div>
+                        <div className="syllabus-item">Integers</div>
+                        <div className="syllabus-item">Fractions</div>
+                        <div className="syllabus-item">Decimals</div>
+                        <div className="syllabus-item">Data Handling</div>
+                        <div className="syllabus-item">Mensuration</div>
+                        <div className="syllabus-item">Algebra</div>
+                        <div className="syllabus-item">Ratio & Proportion</div>
+                      </>
                     )}
-
                   </div>
+                )}
+              </div>
+            )}
+          </div>
 
-                  <div className="why-choose">
-                    <h3>Why Should you Apply?</h3>
-                    <div className="benefits-grid">
-                      <div className=" SUPERFICIAL benefit-col">
-                        <ul className="benefit-list">
-                          <li>
-                            <span className="icon ">✔</span>Total enrollments: 1L+
-                          </li>
-                          <li>
-                            <span className="icon">✔</span>Total schools Competing: 5K+
-                          </li>
-                          <li>
-                            <span className="icon">✔</span>Total prizes worth: INR 1L+
-                          </li>
-                          <li>
-                            <span className="icon">✔</span>Upto 1K+ prize winners
-
-                          </li>
-                        </ul>
-                      </div>
-                      <div className="benefit-col right-line">
-                        <ul className="benefit-list">
-                          <li style={{ fontSize: 'larger' }}>
-                            <span style={{ color: 'red' }}>×</span>2 rounds of competition
-                          </li>
-                          <li style={{ fontSize: 'larger' }}>
-                            <span style={{ color: 'red' }}>×</span>No certificate of participation
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Replicated Sections */}
-                  <div className="section-summaries" style={{ marginTop: '40px' }}>
-
-
-                    {/* Syllabus Section */}
-                    <div className="summary-section" style={{ marginTop: '40px' }}>
-                      <h2 style={{ fontWeight: '900', fontFamily: ' Albert Sans' }}>Syllabus</h2>
-                      {sectionLoading.syllabus ? (
-                        <SectionLoader section="syllabus" />
-                      ) : sectionErrors.syllabus ? (
-                        <SectionError
-                          section="syllabus"
-                          error={sectionErrors.syllabus}
-                          onRetry={fetchSyllabusData}
-                        />
-                      ) : (
-                        <>
-                          {getSyllabusData().topics?.length > 0 ? (
-                            <div className="syllabus-flex-container">
-                              {getSyllabusData().topics.map((topic, index) => (
-                                <div className="syllabus-flex-item" key={index}>
-                                  <div className="topic-title">
-
-                                    {typeof topic === 'string' ? topic : topic.name}
-                                  </div>
-
-                                  {typeof topic === 'object' && (
-                                    <>
-                                      {topic.subtopics?.length > 0 && (
-                                        <ul className="subtopics-list">
-                                          {topic.subtopics.map((sub, i) => (
-                                            <li key={i}><GoDotFill style={{ fontSize: "14px", paddingRight: "1px" }} />                 {sub}</li>
-                                          ))}
-                                        </ul>
-                                      )}
-                                      {topic.weight && (
-                                        <p><strong>Weight:</strong> {topic.weight}%</p>
-                                      )}
-                                      {topic.stage && (
-                                        <p><strong>Stage:</strong> {topic.stage}</p>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div>No syllabus data available</div>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-
-                    {/* Exam Pattern Section */}
-                    <div className="summary-section">
-                      <h2 style={{ fontWeight: '900', fontFamily: ' Albert Sans' }}>Exam Pattern</h2>
-                      {sectionLoading.pattern ? (
-                        <SectionLoader section="pattern" />
-                      ) : sectionErrors.pattern ? (
-                        <SectionError
-                          section="pattern"
-                          error={sectionErrors.pattern}
-                          onRetry={fetchPatternData}
-                        />
-                      ) : (
-                        <>
-                          {/* Show Rules if present */}
-                          {getPatternData().rules && (
-                            <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', border: '1px solid #e0e0e0' }}>
-                              <strong>Rules:</strong>
-                              <div style={{ marginTop: '0.5rem', color: '#333' }}>{getPatternData().rules}</div>
-                            </div>
-                          )}
-                          <div className="table-container">
-                            <table className="exam-table">
-                              <thead className="thhead">
-                                <tr>
-                                  <th>Section</th>
-                                  <th>Pattern</th>
-                                  <th>No. of Questions</th>
-                                  <th>Marks per Question</th>
-                                  <th>Rules</th>
-                                </tr>
-                              </thead>
-                              <tbody className="table-boby">
-                                {getPatternData().sections?.length > 0 ? (
-                                  getPatternData().sections.map((section, index) => (
-                                    <tr key={index}>
-                                      <td>{section.name || section.sectionName || "N/A"}</td>
-                                      <td>{section.type || section.format || "MCQ"}</td>
-                                      <td>{section.questions || section.numberOfQuestions || "N/A"}</td>
-                                      <td>{section.marks || section.marksPerQuestion || "N/A"}</td>
-                                      <td>{section.rules || "-"}</td>
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan="5">No exam pattern data available</td>
-                                  </tr>
-                                )}
-                                {getPatternData().sections?.length > 0 && (
-                                  <tr>
-                                    <td>
-                                      <strong>Grand Total</strong>
-                                    </td>
-                                    <td></td>
-                                    <td>
-                                      <strong>
-                                        {getPatternData().sections.reduce(
-                                          (total, section) => total + (parseInt(section.questions) || parseInt(section.numberOfQuestions) || 0),
-                                          0
-                                        )}
-                                      </strong>
-                                    </td>
-                                    <td></td>
-                                    <td></td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-
-                    {/* Eligibility Section */}
-                    <div className="summary-section" style={{ marginTop: '40px' }}>
-                      <h2 style={{ fontWeight: '900', fontFamily: ' Albert Sans' }}>Eligibility</h2>
-                      {sectionLoading.eligibility ? (
-                        <SectionLoader section="eligibility" />
-                      ) : sectionErrors.eligibility ? (
-                        <SectionError
-                          section="eligibility"
-                          error={sectionErrors.eligibility}
-                          onRetry={fetchEligibilityData}
-                        />
-                      ) : (
-                        <>
-                          {/* Eligibility Criteria */}
-                          {getEligibilityData().length > 0 && (
-                            <div>
-                              <p>Eligibility Criteria</p>
-                              <ul>
-                                {getEligibilityData().map((criteria, index) => (
-                                  <li key={`criteria-${index}`}>
-                                    <span className="icon ">✔</span>
-                                    <strong>{criteria.title}:</strong>  <span className="icon ">✔</span>{criteria.requirement}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          <h6>Student Details Required</h6>
-                          <ul>
-                            {getStudentInformation().StudentDetails?.length > 0 ? (
-                              getStudentInformation().StudentDetails.map((item, index) => (
-                                <li key={`student-${index}`}>
-                                  <span className="icon">✔</span>
-                                  {item}
-                                </li>
-                              ))
-                            ) : (
-                              <li>No student details specified</li>
-                            )}
-                          </ul>
-
-                          <h6>School Details Required</h6>
-                          <ul>
-                            {getStudentInformation().SchoolDetails?.length > 0 ? (
-                              getStudentInformation().SchoolDetails.map((item, index) => (
-                                <li key={`school-${index}`}>
-                                  <span className="icon">✔</span>
-                                  {item}
-                                </li>
-                              ))
-                            ) : (
-                              <li>No school details specified</li>
-                            )}
-                          </ul>
-                        </>
-                      )}
-                    </div>
-
-
-                    {/* Registration Section */}
-                    <div className="summary-section" style={{ marginTop: '40px' }}>
-                      <h2 style={{ fontWeight: '900', fontFamily: ' Albert Sans' }}>Registration</h2>
-                      {sectionLoading.registration ? (
-                        <SectionLoader section="registration" />
-                      ) : sectionErrors.registration ? (
-                        <SectionError
-                          section="registration"
-                          error={sectionErrors.registration}
-                          onRetry={fetchRegistrationData}
-                        />
-                      ) : (
-                        <>
-
-
-
-                          <div className="registration-info mt-4">
-                            <p>
-                              <strong>
-                                Registration for this competitive exam is now open from{" "}
-                                {getRegistrationData().registration_type?.registration_start_date || "N/A"}{" "}
-                                to{" "} <br />
-                                {getRegistrationData().registration_type?.registration_end_date || "N/A"}
-                                . Total registration fee: ₹{getRegistrationData().registration_type?.total_registration_fee || "N/A"}
-                                . Click the button below to register.
-                              </strong>
-                            </p>
-                            <div className="action-button">
-                              <button className="btn-primary">
-                                <NavLink to={`/compitions-plans/${competitionsid}`} style={{ textDecoration: "none", color: "white" }}>
-                                  Register
-                                </NavLink>
-                              </button>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
+          {/* Exam Pattern Section */}
+          <div id="exam-pattern" className="section">
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Exam Pattern</h2>
+                <span className="section-tag">
+                  {getOverviewData().stages?.[0]?.name || "Primary"}
+                </span>
+              </div>
+              <span className="chevron-icon">›</span>
             </div>
-          )}
 
-          {/* Exam Pattern Tab */}
-          {activeTab === "exam-pattern" && (
-            <div id="exam-pattern" className="tab-pane active">
-              <h2>Exam Pattern</h2>
-              {sectionLoading.pattern ? (
-                <SectionLoader section="pattern" />
-              ) : sectionErrors.pattern ? (
-                <SectionError
-                  section="pattern"
-                  error={sectionErrors.pattern}
-                  onRetry={fetchPatternData}
-                />
-              ) : (
-                <>
-                  {/* Show Rules if present */}
-                  {getPatternData().rules && (
-                    <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '16px', marginBottom: '16px', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                      <h4 style={{ margin: 0, color: '#2c3e50' }}>Rules</h4>
-                      <div style={{ marginTop: '8px', color: '#333', whiteSpace: 'pre-wrap' }}>{getPatternData().rules}</div>
-                    </div>
+            {sectionLoading.pattern ? (
+              <SectionLoader section="pattern" />
+            ) : sectionErrors.pattern ? (
+              <SectionError
+                section="pattern"
+                error={sectionErrors.pattern}
+                onRetry={fetchPatternData}
+              />
+            ) : (
+              <table className="exam-pattern-table">
+                <thead>
+                  <tr>
+                    <th>Section</th>
+                    <th>Pattern</th>
+                    <th>No. of Question</th>
+                    <th>Marks per Question</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {getPatternData().sections?.length > 0 ? (
+                    getPatternData().sections.map((section, index) => (
+                      <tr key={index}>
+                        <td>{section.name || section.sectionName || "N/A"}</td>
+                        <td>{section.type || section.format || "MCQ"}</td>
+                        <td>{section.questions || section.numberOfQuestions || "N/A"}</td>
+                        <td>{section.marks || section.marksPerQuestion || "N/A"}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <>
+                      <tr>
+                        <td>Logical Reasoning</td>
+                        <td>MCQ</td>
+                        <td>15</td>
+                        <td>1</td>
+                      </tr>
+                      <tr>
+                        <td>Mathematical Reasoning</td>
+                        <td>MCQ</td>
+                        <td>20</td>
+                        <td>1</td>
+                      </tr>
+                      <tr>
+                        <td>Everyday Mathematics</td>
+                        <td>MCQ</td>
+                        <td>10</td>
+                        <td>1</td>
+                      </tr>
+                      <tr>
+                        <td>Achievers Section</td>
+                        <td>MCQ</td>
+                        <td>5</td>
+                        <td>3</td>
+                      </tr>
+                    </>
                   )}
-                  <div className="table-container">
-                    <table className="exam-table">
-                      <thead className="thhead">
-                        <tr>
-                          <th>Section</th>
-                          <th>Pattern</th>
-                          <th>No. of Questions</th>
-                          <th>Marks per Question</th>
-                        </tr>
-                      </thead>
-                      <tbody className="table-boby">
-                        {getPatternData().sections?.length > 0 ? (
-                          getPatternData().sections.map((section, index) => (
-                            <tr key={index}>
-                              <td>{section.name || section.sectionName || "N/A"}</td>
-                              <td>{section.type || section.format || "MCQ"}</td>
-                              <td>{section.questions || section.numberOfQuestions || "N/A"}</td>
-                              <td>{section.marks || section.marksPerQuestion || "N/A"}</td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="4">No exam pattern data available</td>
-                          </tr>
-                        )}
-                        {getPatternData().sections?.length > 0 && (
-                          <tr>
-                            <td>
-                              <strong>Grand Total</strong>
-                            </td>
-                            <td></td>
-                            <td>
-                              <strong>
-                                {getPatternData().sections.reduce(
-                                  (total, section) => total + (parseInt(section.questions) || parseInt(section.numberOfQuestions) || 0),
-                                  0
-                                )}
-                              </strong>
-                            </td>
-                            <td></td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Eligibility Section */}
+          <div id="eligibility" className="section">
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Eligibility</h2>
+                <span className="section-tag">
+                  {getOverviewData().stages?.[0]?.name || "Primary"}
+                </span>
+              </div>
+              <span className="chevron-icon">›</span>
             </div>
-          )}
 
-          {/* Syllabus Tab */}
-          {activeTab === "syllabus" && (
-             <div className="summary-section" style={{ marginTop: '40px' }}>
-             <h2 style={{ fontWeight: '900', fontFamily: ' Albert Sans' }}>Syllabus</h2>
-             {sectionLoading.syllabus ? (
-               <SectionLoader section="syllabus" />
-             ) : sectionErrors.syllabus ? (
-               <SectionError
-                 section="syllabus"
-                 error={sectionErrors.syllabus}
-                 onRetry={fetchSyllabusData}
-               />
-             ) : (
-               <>
-                 {getSyllabusData().topics?.length > 0 ? (
-                   <div className="syllabus-flex-container">
-                     {getSyllabusData().topics.map((topic, index) => (
-                       <div className="syllabus-flex-item" key={index}>
-                         <div className="topic-title">
-
-                           {typeof topic === 'string' ? topic : topic.name}
-                         </div>
-
-                         {typeof topic === 'object' && (
-                           <>
-                             {topic.subtopics?.length > 0 && (
-                               <ul className="subtopics-list">
-                                 {topic.subtopics.map((sub, i) => (
-                                   <li key={i}><GoDotFill style={{ fontSize: "14px", paddingRight: "1px" }} />                 {sub}</li>
-                                 ))}
-                               </ul>
-                             )}
-                             {topic.weight && (
-                               <p><strong>Weight:</strong> {topic.weight}%</p>
-                             )}
-                             {topic.stage && (
-                               <p><strong>Stage:</strong> {topic.stage}</p>
-                             )}
-                           </>
-                         )}
-                       </div>
-                     ))}
-                   </div>
-                 ) : (
-                   <div>No syllabus data available</div>
-                 )}
-               </>
-             )}
-           </div>
-          )}
-
-          {/* Eligibility Tab */}
-          {activeTab === "eligibility" && (
-            <div id="eligibility" className="tab-pane active">
-              <h2>Eligibility</h2>
-              {sectionLoading.eligibility ? (
-                <SectionLoader section="eligibility" />
-              ) : sectionErrors.eligibility ? (
-                <SectionError
-                  section="eligibility"
-                  error={sectionErrors.eligibility}
-                  onRetry={fetchEligibilityData}
-                />
-              ) : (
-                <>
-                  {/* Eligibility Criteria */}
-                  {getEligibilityData().length > 0 && (
-                    <div>
-                      <h3>Eligibility Criteria</h3>
-                      <ul>
-                        {getEligibilityData().map((criteriaObj, index) => (
-                          <li key={`criteria-${index}`}>
-                            {criteriaObj.criteria && criteriaObj.criteria.map((c, i) => (
-                              <div key={i}>
-                                <span className="icon">✔</span>
-                                <strong>{c.title}:</strong> {c.requirement}
-                              </div>
+            {sectionLoading.eligibility ? (
+              <SectionLoader section="eligibility" />
+            ) : sectionErrors.eligibility ? (
+              <SectionError
+                section="eligibility"
+                error={sectionErrors.eligibility}
+                onRetry={fetchEligibilityData}
+              />
+            ) : (
+              <div className="eligibility-content">
+                {getEligibilityData().length > 0 && getEligibilityData().some(item => item.criteria && item.criteria.length > 0) ? (
+                  getEligibilityData().map((eligibilityItem, index) => (
+                    eligibilityItem.criteria && eligibilityItem.criteria.length > 0 ? (
+                      <div key={`eligibility-${index}`} className="eligibility-container">
+                        <div className="eligibility-criteria">
+                          <h4 className="eligibility-category">Eligibility Criteria</h4>
+                          <ul className="eligibility-list">
+                            {eligibilityItem.criteria.map((criteria, criteriaIndex) => (
+                              <li key={`criteria-${criteriaIndex}`}>
+                                <span className="eligibility-icon">✔</span>
+                                <span>
+                                  {criteria.title ? `${criteria.title}: ${criteria.requirement}` : 
+                                   (criteria.requirement || criteria)}
+                                </span>
+                              </li>
                             ))}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {/* Additional Details */}
-                  {getEligibilityData().some(e => e.additionalDetails && e.additionalDetails.length > 0) && (
-                    <div style={{ marginTop: '30px' }}>
-                      <h3>Additional Details Required</h3>
-                      <div style={{ display: 'grid', gap: '15px' }}>
-                        {getEligibilityData().map((e, idx) => (
-                          e.additionalDetails && e.additionalDetails.length > 0 && (
-                            e.additionalDetails.map((detail, index) => (
-                              <div key={`${idx}-${detail.id || index}`} style={{
-                                border: '1px solid #ddd',
-                                padding: '20px',
-                                borderRadius: '8px',
-                                backgroundColor: '#f8f9fa',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                              }}>
-                                <h4 style={{ color: '#2c3e50', marginBottom: '10px' }}>
-                                  {detail.name || `Question ${index + 1}`}
-                                </h4>
-                                <p><strong>Type:</strong> {detail.type}</p>
-
-                                {detail.type === 'Multiple Choice' && detail.options && (
-                                  <div>
-                                    <p><strong>Options:</strong></p>
-                                    <ul style={{ marginLeft: '20px' }}>
-                                      {detail.options.map((option, optIndex) => (
-                                        <li key={optIndex}>{option}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {detail.type === 'Checkbox' && detail.options && (
-                                  <div>
-                                    <p><strong>Options:</strong></p>
-                                    <ul style={{ marginLeft: '20px' }}>
-                                      {detail.options.map((option, optIndex) => (
-                                        <li key={optIndex}>{option}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {detail.type === 'Drop Down' && detail.options && (
-                                  <div>
-                                    <p><strong>Options:</strong></p>
-                                    <ul style={{ marginLeft: '20px' }}>
-                                      {detail.options.map((option, optIndex) => (
-                                        <li key={optIndex}>{option}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {detail.type === 'Short Answer' && (
-                                  <p><strong>Word Limit:</strong> {detail.settings?.wordLimit || 50} words</p>
-                                )}
-
-                                {detail.type === 'Date' && (
-                                  <p><strong>Date Input Required</strong></p>
-                                )}
-
-                                {detail.type === 'Photo Upload' && (
-                                  <p><strong>Photo Upload Required</strong></p>
-                                )}
-
-                                {detail.settings && Object.keys(detail.settings).length > 0 && (
-                                  <div style={{ marginTop: '10px' }}>
-                                    <p><strong>Settings:</strong></p>
-                                    <ul style={{ marginLeft: '20px', fontSize: '14px' }}>
-                                      {Object.entries(detail.settings).map(([key, value]) => (
-                                        <li key={key}>
-                                          <strong>{key}:</strong> {String(value)}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            ))
-                          )
-                        ))}
+                          </ul>
+                        </div>
+                      </div>
+                    ) : null
+                  ))
+                ) : (
+                  <div className="eligibility-container">
+                    <div className="eligibility-criteria">
+                      <h4 className="eligibility-category">Eligibility Criteria</h4>
+                      <div className="no-eligibility">
+                        <p>No age range information available</p>
                       </div>
                     </div>
-                  )}
-                  {/* Student Details Required */}
-                  <h3>Student Details Required</h3>
-                  <ul>
-                    {getStudentInformation().StudentDetails?.length > 0 ? (
-                      getStudentInformation().StudentDetails.map((item, index) => (
-                        <li key={`student-${index}`}>
-                          <span className="icon">✔</span>
-                          {item}
-                        </li>
-                      ))
-                    ) : (
-                      <li>No student details specified</li>
-                    )}
-                  </ul>
-                  {/* School Details Required */}
-                  <h3>School Details Required</h3>
-                  <ul>
-                    {getStudentInformation().SchoolDetails?.length > 0 ? (
-                      getStudentInformation().SchoolDetails.map((item, index) => (
-                        <li key={`school-${index}`}>
-                          <span className="icon">✔</span>
-                          {item}
-                        </li>
-                      ))
-                    ) : (
-                      <li>No school details specified</li>
-                    )}
-                  </ul>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Registration Tab */}
-          {activeTab === "registration" && (
-            <div id="registration" className="tab-pane active">
-              <h2>Registration</h2>
-              {sectionLoading.registration ? (
-                <SectionLoader section="registration" />
-              ) : sectionErrors.registration ? (
-                <SectionError
-                  section="registration"
-                  error={sectionErrors.registration}
-                  onRetry={fetchRegistrationData}
-                />
-              ) : (
-                <>
-                  <div className="registration-info">
-                    <p>
-                      <strong>
-                        Registration for this competitive exam is now open from{" "}
-                        {getRegistrationData().registration_type?.registration_start_date || "N/A"}{" "}
-                        to{" "}
-                        {getRegistrationData().registration_type?.registration_end_date || "N/A"}
-                        . Total registration fee: ₹{getRegistrationData().registration_type?.total_registration_fee || "N/A"}
-                        . Click the button below to register.
-                      </strong>
-                    </p>
-                    <button className="btn-primary">  <NavLink to={`/compitions-plans/${competitionsid}`} style={{ textDecoration: "none", color: "white" }}>
-                      Register
-                    </NavLink></button>
                   </div>
+                )}
+              </div>
+            )}
+          </div>
 
-                  {getRegistrationData().plans?.length > 0 && (
-                    <div>
-                      <h3>Available Plans</h3>
-                      <div style={{ display: 'grid', gap: '20px' }}>
-                        {getRegistrationData().plans.map((plan, index) => (
-                          <div key={index} style={{
-                            border: '1px solid #ddd',
-                            padding: '20px',
-                            borderRadius: '8px',
-                            backgroundColor: '#f9f9f9'
-                          }}>
-                            <h4>{plan.name || "Plan " + (index + 1)}</h4>
-                            <p><strong>Fee:</strong> ₹{plan.plan_fee || "N/A"}</p>
-                            {plan.student_limit && (
-                              <p><strong>Student Limit:</strong> {plan.student_limit}</p>
-                            )}
-                            {plan.description && (
-                              <p><strong>Description:</strong> {plan.description}</p>
-                            )}
-                            {plan.included && (
-                              <div>
-                                <p><strong>What's Included:</strong></p>
-                                <p>{plan.included}</p>
-                              </div>
-                            )}
-                            {plan.not_included && (
-                              <div>
-                                <p><strong>What's Not Included:</strong></p>
-                                <p>{plan.not_included}</p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+          {/* Rules Section */}
+          <div id="rules" className="section">
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Rules</h2>
+                <span className="section-tag">
+                  {getOverviewData().stages?.[0]?.name || "Primary"}
+                </span>
+              </div>
+              <span className="chevron-icon">›</span>
             </div>
-          )}
+            {sectionLoading.pattern ? (
+              <SectionLoader section="rules" />
+            ) : sectionErrors.pattern ? (
+              <SectionError
+                section="rules"
+                error={sectionErrors.pattern}
+                onRetry={fetchPatternData}
+              />
+            ) : (
+              <div className="rules-content">
+                <div className="rules-box">
+                  <p className="rules-text">
+                    {getPatternData().sections?.[0]?.rules || getPatternData().rules || "No rules available for this competition."}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* Awards Tab */}
-          {activeTab === "awards" && (
-            <div id="awards" className="tab-pane active">
-              <h2>Awards</h2>
-              {sectionLoading.awards ? (
-                <SectionLoader section="awards" />
-              ) : sectionErrors.awards ? (
-                <SectionError
-                  section="awards"
-                  error={sectionErrors.awards}
-                  onRetry={fetchAwardsData}
-                />
-              ) : getAwardsData().length > 0 ? (
-                <div>
-                  <h3>Competition Awards</h3>
-                  <div style={{ display: 'grid', gap: '15px' }}>
-                    {getAwardsData().map((award, index) => (
-                      <div key={index} style={{
-                        border: '1px solid #ddd',
-                        padding: '20px',
-                        borderRadius: '8px',
-                        backgroundColor: '#f8f9fa',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}>
-                        <h4 style={{ color: '#2c3e50', marginBottom: '10px' }}>
-                          {award.Award_Type}
-                        </h4>
-                        <p><strong>Quantity:</strong> {award.Quantity}</p>
-                        <p><strong>Given To:</strong> {award.Given_To}</p>
-                      </div>
-                    ))}
+          {/* Registration Section */}
+          <div id="registration" className="section">
+            <div className="section-header">
+              <h2 className="section-title">Registration</h2>
+            </div>
+            <div className="registration-content">
+              {/*               <div className="registration-info">
+                <ul className="registration-points">
+                  <li>
+                    <span className="point-label">Registration Period:</span>{" "}
+                    {getRegistrationData().registration_type?.registration_start_date || "N/A"} to{" "}
+                    {getRegistrationData().registration_type?.registration_end_date || "N/A"}
+                  </li>
+                  <li>
+                    <span className="point-label">Registration Fee:</span>{" "}
+                    ₹{getRegistrationData().registration_type?.total_registration_fee || "N/A"}
+                  </li>
+                </ul>
+              </div> */}
+              <button className="register-button">
+                <NavLink
+                  to={getRegistrationUrl()}
+                  style={{ textDecoration: "none", color: "white" }}
+                >
+                  Register Now
+                </NavLink>
+              </button>
+            </div>
+          </div>
+
+          {/* Awards Section */}
+          {/* <div id="awards" className="section">
+            <div className="section-header">
+              <h2 className="section-title">Awards</h2>
+            </div>
+            {sectionLoading.awards ? (
+              <SectionLoader section="awards" />
+            ) : sectionErrors.awards ? (
+              <SectionError
+                section="awards"
+                error={sectionErrors.awards}
+                onRetry={fetchAwardsData}
+              />
+            ) : getAwardsData().length > 0 ? (
+              <div className="awards-content">
+                {getAwardsData().map((award, index) => (
+                  <div key={index} className="award-item">
+                    <h4 className="award-type">{award.Award_Type}: {award.Quantity}</h4>
+                    <p className="award-details">Given to: {award.Given_To}</p>
                   </div>
-                </div>
-              ) : (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '40px',
-                  color: '#666'
-                }}>
-                  No awards information available
-                </div>
-              )}
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="no-awards">
+                <p>No awards information available</p>
+              </div>
+            )}
+          </div> */}
         </div>
       </div>
       <FooterUsers />

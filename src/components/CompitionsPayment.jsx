@@ -43,6 +43,7 @@ const CompetitionsPayment = () => {
   const dobInputRef = useRef(null);
 
   const [plans, setPlans] = useState(fallbackPlans);
+  const [selectedPlan, setSelectedPlan] = useState(null);
   const [competitionData, setCompetitionData] = useState({
     name: "Competition Name",
     instituteName: "Institute Name",
@@ -64,6 +65,33 @@ const CompetitionsPayment = () => {
     address2: "",
     city: "",
     country: "",
+    // Additional school details
+    schoolAddress: "",
+    schoolPhone: "",
+    schoolEmail: "",
+    principalName: "",
+    schoolBoard: "",
+    schoolType: "",
+    // Additional student details
+    fatherName: "",
+    fatherOccupation: "",
+    fatherPhone: "",
+    motherName: "",
+    motherOccupation: "",
+    motherPhone: "",
+    emergencyContact: "",
+    emergencyPhone: "",
+    // Academic details
+    previousSchool: "",
+    academicYear: "",
+    rollNumber: "",
+    // Additional information
+    bloodGroup: "",
+    medicalConditions: "",
+    specialNeeds: "",
+    transportMode: "",
+    // Checkbox state
+    isChecked: false,
   });
   const [errors, setErrors] = useState({});
 
@@ -121,14 +149,20 @@ const CompetitionsPayment = () => {
         stageDate: stageDate,
       });
 
-      // Process plans data
-      if (registrationResult.success && registrationResult.data?.plans) {
-        const apiPlans = registrationResult.data.plans.map((plan, index) => ({
+      // Process plans data - check both plans array and registration_type
+      let apiPlans = [];
+
+      // First check if plans array exists and has data
+      if (
+        registrationResult.success &&
+        registrationResult.data?.plans &&
+        registrationResult.data.plans.length > 0
+      ) {
+        apiPlans = registrationResult.data.plans.map((plan, index) => ({
           price: plan.plan_fee || 0,
           title: plan.name || `Plan ${index + 1}`,
           subtitle: plan.description || plan.name || `Plan ${index + 1}`,
-          recommended:
-            index === Math.floor(registrationResult.data.plans.length / 2),
+          recommended: index === Math.floor(registrationResult.data.plans.length / 2),
           features: [
             { text: "Registration included", included: true },
             {
@@ -150,13 +184,53 @@ const CompetitionsPayment = () => {
           ],
           originalPlan: plan,
         }));
+      }
+      // If no plans array, check registration_type for single plan data
+      else if (
+        registrationResult.success &&
+        registrationResult.data?.registration_type
+      ) {
+        const regType = registrationResult.data.registration_type;
+        apiPlans = [
+          {
+            price: regType.total_registration_fee || 0,
+            title: "Registration Plan",
+            subtitle: `Registration for ${competitionName}`,
+            recommended: true,
+            features: [
+              { text: "Registration included", included: true },
+              { text: "Competition participation", included: true },
+              { text: "Certificate of participation", included: true },
+              { text: "Individual participation", included: true },
+            ],
+            originalPlan: regType,
+          },
+        ];
+      }
+
+      if (apiPlans.length > 0) {
+        console.log("✅ Using API plans data:", apiPlans);
         setPlans(apiPlans);
+        // Auto-select first plan if no plan is passed via state
+        if (!plan) {
+          setSelectedPlan(apiPlans[0]);
+        }
       } else {
         console.log("⚠️ No plans found in API response, using fallback plans");
+        setPlans(fallbackPlans);
+        // Auto-select first fallback plan if no plan is passed via state
+        if (!plan) {
+          setSelectedPlan(fallbackPlans[0]);
+        }
       }
     } catch (error) {
       console.error("❌ Error fetching registration data:", error);
       setError(error.message);
+      // Set fallback plans on error
+      setPlans(fallbackPlans);
+      if (!plan) {
+        setSelectedPlan(fallbackPlans[0]);
+      }
     } finally {
       setLoading(false);
     }
@@ -172,25 +246,23 @@ const CompetitionsPayment = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.studentName.trim())
-      newErrors.studentName = "Student Name";
-    if (!form.parentName.trim())
-      newErrors.parentName = "Parent/Guardian Name";
-    if (!form.dob) newErrors.dob = "Date of Birth";
+    if (!form.studentName.trim()) newErrors.studentName = "Student Name is required";
+    if (!form.parentName.trim()) newErrors.parentName = "Parent/Guardian Name is required";
+    if (!form.dob) newErrors.dob = "Date of Birth is required";
     else if (new Date(form.dob) > new Date())
       newErrors.dob = "DOB cannot be in the future";
-    if (!form.school.trim()) newErrors.school = "School";
-    if (!form.grade.trim()) newErrors.grade = "Grade";
-    if (!form.address1.trim())
-      newErrors.address1 = "Address Line 1";
-    if (!form.city.trim()) newErrors.city = "City";
-    if (!form.country.trim()) newErrors.country = "Country";
-    if (!form.email.trim()) newErrors.email = "Email";
+
+    if (!form.school.trim()) newErrors.school = "School is required";
+    if (!form.grade.trim()) newErrors.grade = "Grade is required";
+    if (!form.address1.trim()) newErrors.address1 = "Address Line 1 is required";
+    if (!form.city.trim()) newErrors.city = "City is required";
+    if (!form.country.trim()) newErrors.country = "Country is required";
+    if (!form.email.trim()) newErrors.email = "Email is required";
     else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(form.email))
-        newErrors.email = "Invalid email format";
+      if (!emailRegex.test(form.email)) newErrors.email = "Invalid email format";
     }
+    if (!form.isChecked) newErrors.isChecked = "You must agree to the terms";
     return newErrors;
   };
 
@@ -233,17 +305,21 @@ const CompetitionsPayment = () => {
     }
     // Show toast/alert on success
     window.alert("Form submitted successfully!");
-    navigate("/Competitionpaymentsummary", {
-      state: { plan, form, competitionData },
+    navigate(`/Competitionpaymentsummary/${competitionsid}`, {
+      state: { plan: currentPlan, form, competitionData },
     });
   };
 
-  if (!plan) {
+  // Get the current plan (either from state or selected plan)
+  const currentPlan = plan || selectedPlan;
+
+  // Show loading state if no plan is available yet
+  if (!currentPlan) {
     return (
       <div className="paymentC-container">
         <Studentheaderhome />
-        <div className="error-message">
-          No plan selected. Please select a plan to continue.
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <div>Loading competition data...</div>
         </div>
         <StudentFooter />
       </div>
@@ -257,25 +333,28 @@ const CompetitionsPayment = () => {
         <div className="paymentC-plan-info">
           <div className="d-flex">
             <div>
-              <h2>{competitionData.name}</h2>
+              <h3 style={{ color: "#fff", fontWeight: "400" }}>{competitionData.name}</h3>
               <p>{competitionData.instituteName}</p>
             </div>
           </div>
-          <p>
+          <h5 className="mt-2">
             <b>Grade:</b> {competitionData.grade}
-          </p>
+          </h5>
           <p>
             <b>Date of 1st Level:</b>{" "}
             {competitionData.stageDate || "9th Aug 2025"}
           </p>
           <div className="paymentC-plan-summary">
-            <h3>{plan.title || "Advance Prep"}</h3>
+            <h3>{currentPlan.title || "Advance Prep"}</h3>
             <p>
-              {plan.subtitle ||
+              {currentPlan.subtitle ||
                 "Registration + Prep + Past year question papers"}
             </p>
+            <div style={{ marginBottom: "20px" }}>
+              <strong>Price: ₹{currentPlan.price || 0}</strong>
+            </div>
             <ul>
-              {(plan.features || []).map((f, i) => (
+              {(currentPlan.features || []).map((f, i) => (
                 <li key={i}>
                   {f.included ? (
                     <FaCheck style={{ color: "green", marginRight: "5px" }} />
@@ -288,134 +367,185 @@ const CompetitionsPayment = () => {
             </ul>
           </div>
         </div>
-        <form className="paymentC-form ms-5" onSubmit={handleSubmit}>
-          <h3 style={{ marginTop: "2rem", fontWeight: "900" }}>
-            We Need Some More Information To Process The Application
-          </h3>
+        <div>
+          <form className="paymentC-form me-2" onSubmit={handleSubmit}>
+            <h3 style={{ marginTop: "2rem", fontWeight: "900" }}>
+              We Need Some More Information To Process The Application
+            </h3>
 
-          <div style={{ display: "flex", gap: "20px", marginTop: "2rem" }}>
-            <Input
-              label="Student Name"
-              name="studentName"
-              placeholder="Student Name"
-              value={form.studentName}
-              onChange={handleChange}
-              error={errors.studentName}
-              required
-            />
-            <Input
-              label="Parent / Guardian Name"
-              name="parentName"
-              placeholder="Parent / Guardian Name"
-              value={form.parentName}
-              onChange={handleChange}
-              error={errors.parentName}
-              required
-            />
-          </div>
-
-          <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-            <Input
-              label="Date of Birth"
-              name="dob"
-              type="date"
-              placeholder="Date of Birth"
-              value={form.dob}
-              onChange={handleChange}
-              error={errors.dob}
-              required
-              ref={dobInputRef}
-              icon={
-                <FaCalendarAlt
-                  onClick={() =>
-                    dobInputRef.current &&
-                    dobInputRef.current.showPicker &&
-                    dobInputRef.current.showPicker()
-                  }
-                  size={18}
-                  title="Open calendar"
+            <div style={{ display: "flex", gap: "20px", marginTop: "2rem", width: "100%" }}>
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="Student Name"
+                  name="studentName"
+                  placeholder="Student Name"
+                  value={form.studentName}
+                  onChange={handleChange}
+                  // error={errors.studentName}
+                  required
                 />
-              }
-            />
-            <Input
-              label="Address Line 1"
-              name="address1"
-              placeholder="Address Line 1"
-              value={form.address1}
-              onChange={handleChange}
-              error={errors.address1}
-              required
-            />
-          </div>
+                <p style={{ color: "red" }}>{errors.studentName}</p>
+              </div>
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="Parent / Guardian Name"
+                  name="parentName"
+                  placeholder="Parent / Guardian Name"
+                  value={form.parentName}
+                  onChange={handleChange}
 
-          <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-            <Input
-              label="School"
-              name="school"
-              placeholder="School"
-              value={form.school}
-              onChange={handleChange}
-              error={errors.school}
-              required
-            />
-            <Input
-              label="Address Line 2"
-              name="address2"
-              placeholder="Address Line 2"
-              value={form.address2}
-              onChange={handleChange}
-            />
-          </div>
+                  required
+                />
+                <p style={{ color: "red" }}>{errors.parentName}</p>
 
-          <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-            <Input
-              label="Grade"
-              name="grade"
-              placeholder="Grade"
-              value={form.grade}
-              onChange={handleChange}
-              error={errors.grade}
-              required
-            />
-            <Input
-              label="City"
-              name="city"
-              placeholder="City"
-              value={form.city}
-              onChange={handleChange}
-              error={errors.city}
-              required
-            />
-          </div>
+              </div>
+            </div>
 
-          <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-            <Input
-              label="School email ID"
-              name="email"
-              type="email"
-              placeholder="School email ID"
-              value={form.email}
-              onChange={handleChange}
-              error={errors.email}
-              required
-            />
-            <Input
-              label="Country"
-              name="country"
-              placeholder="Country"
-              value={form.country}
-              onChange={handleChange}
-              error={errors.country}
-              required
-            />
-          </div>
+            <div style={{ display: "flex", gap: "20px", marginTop: "20px", width: "100%" }}>
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="Date of Birth"
+                  name="dob"
+                  type="date"
+                  placeholder="Date of Birth"
+                  value={form.dob}
+                  onChange={handleChange}
+                  required
+                  ref={dobInputRef}
+                  icon={
+                    <FaCalendarAlt
+                      onClick={() =>
+                        dobInputRef.current &&
+                        dobInputRef.current.showPicker &&
+                        dobInputRef.current.showPicker()
+                      }
+                      size={18}
+                      title="Open calendar"
+                    />
+                  }
+                />
+                <p style={{ color: "red" }}>{errors.dob}</p>
+              </div>
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="Address Line 1"
+                  name="address1"
+                  placeholder="Address Line 1"
+                  value={form.address1}
+                  onChange={handleChange}
+                  required
+                />
+                <p style={{ color: "red" }}>{errors.address1}</p>
+              </div>
+            </div>
 
-          <div className="paymentC-btn-container">
-            <button type="submit" className="paymentC-save-btn">
-              Save and Continue
-            </button>
-          </div>
-        </form>
+            <div style={{ display: "flex", gap: "20px", marginTop: "20px", width: "100%" }}>
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="School"
+                  name="school"
+                  placeholder="School"
+                  value={form.school}
+                  onChange={handleChange}
+
+                  required
+                />
+                <p style={{ color: "red" }}>{errors.school}</p>
+              </div>
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="Address Line 2"
+                  name="address2"
+                  placeholder="Address Line 2"
+                  value={form.address2}
+                  onChange={handleChange}
+                />
+                <p style={{ color: "red" }}>{errors.address2}</p>
+              </div>
+
+
+            </div>
+
+            <div style={{ display: "flex", gap: "20px", marginTop: "20px", width: "100%" }}>
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="Grade"
+                  name="grade"
+                  placeholder="Grade"
+                  value={form.grade}
+                  onChange={handleChange}
+                  required
+                />
+                <p style={{ color: "red" }}>{errors.grade}</p>
+              </div>
+
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="City"
+                  name="city"
+                  placeholder="City"
+                  value={form.city}
+                  onChange={handleChange}
+                  required
+                />
+                <p style={{ color: "red" }}>{errors.city}</p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "20px", marginTop: "20px", width: "100%" }}>
+              <div className="d-flex flex-column gap-2 w-50">
+                <Input
+                  label="School email ID"
+                  name="email"
+                  type="email"
+                  placeholder="School email ID"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
+                <p style={{ color: "red" }}>{errors.email}</p>
+
+              </div>
+              <div className="d-flex flex-column gap-2 w-50">
+
+                <Input
+                  label="Country"
+                  name="country"
+                  placeholder="Country"
+                  value={form.country}
+                  onChange={handleChange}
+                  required
+                />
+
+                <p style={{ color: "red" }}>{errors.country}</p>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="d-flex align-items-start gap-2">
+                <input
+                  className="mt-1"
+                  type="checkbox"
+                  checked={form.isChecked}
+                  onChange={(e) => setForm({ ...form, isChecked: e.target.checked })}
+                />
+                <p>
+                  I hereby confirm that the details provided for my child are true and correct to the best of my knowledge. I understand that any false or misleading information may lead to cancellation of the registration. I also give my consent for my child to participate in this competition and for the organisers to use the provided details for necessary communication.
+                </p>
+              </div>
+            </div>
+
+            <div className="paymentC-btn-container">
+              <button
+                type="submit"
+                className="paymentC-save-btn"
+                disabled={!form.isChecked}
+              >
+                Save and Continue
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
       <StudentFooter />
     </>

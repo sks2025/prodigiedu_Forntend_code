@@ -20,6 +20,8 @@ import Drawer from "@mui/material/Drawer";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import AppsIcon from "@mui/icons-material/Apps";
+import { FaRegUser } from "react-icons/fa";
+
 
 const Studentheaderhome = () => {
   // Example: Assume token in localStorage means user is logged in
@@ -60,7 +62,7 @@ const Studentheaderhome = () => {
     }
     localStorage.removeItem('student_token');
     handleClose();
-            // toast.success('Logout successful!');
+    // toast.success('Logout successful!');
     navigate('/');
   };
 
@@ -107,86 +109,97 @@ const Studentheaderhome = () => {
                 <Link to="/organiser" onClick={handleDrawerClose}>Organiser</Link>
                 <Link to="/compition" onClick={handleDrawerClose}>Competitions</Link>
                 {isLoggedIn ? (
-                <>
-                  <Link to="/student/persnol-setting" className="profile mt-4">Profile</Link>
-                  <div
-                    className="avatar"
-                    style={{ cursor: "pointer" }}
-                    onClick={handleClick}
-                  >
-                    <FaUserCircle />
-                  </div>
-                  <Menu
-                    anchorEl={anchorEl}
-                    id="account-menu"
-                    open={open}
-                    onClose={handleClose}
-                    onClick={handleClose}
-                    slotProps={{
-                      paper: {
-                        elevation: 0,
-                        sx: {
-                          overflow: "visible",
-                          filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-                          mt: 1.5,
-                          "& .MuiAvatar-root": {
-                            width: 32,
-                            height: 32,
-                            ml: -0.5,
-                            mr: 1,
-                          },
-                          "&::before": {
-                            content: '""',
-                            display: "block",
-                            position: "absolute",
-                            top: 0,
-                            right: 14,
-                            width: 10,
-                            height: 10,
-                            bgcolor: "background.paper",
-                            transform: "translateY(-50%) rotate(45deg)",
-                            zIndex: 0,
+                  <>
+
+                    <div
+                      className="avatar"
+                      style={{ cursor: "pointer" }}
+                      onClick={handleClick}
+                    >
+                      <FaUserCircle />
+                    </div>
+                    <Menu
+                      anchorEl={anchorEl}
+                      id="account-menu"
+                      open={open}
+                      onClose={handleClose}
+                      onClick={handleClose}
+                      slotProps={{
+                        paper: {
+                          elevation: 0,
+                          sx: {
+                            overflow: "visible",
+                            filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+                            mt: 1.5,
+                            "& .MuiAvatar-root": {
+                              width: 32,
+                              height: 32,
+                              ml: -0.5,
+                              mr: 1,
+                            },
+                            "&::before": {
+                              content: '""',
+                              display: "block",
+                              position: "absolute",
+                              top: 0,
+                              right: 14,
+                              width: 10,
+                              height: 10,
+                              bgcolor: "background.paper",
+                              transform: "translateY(-50%) rotate(45deg)",
+                              zIndex: 0,
+                            },
                           },
                         },
-                      },
-                    }}
-                    transformOrigin={{ horizontal: "right", vertical: "top" }}
-                    anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-                  >
-                    <MenuItem
-                      onClick={handleClose}
-                      className="flex flex-column justify-content-start align-items-start"
+                      }}
+                      transformOrigin={{ horizontal: "right", vertical: "top" }}
+                      anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
                     >
-                      Admin Name
-                      <p className="text-themcolor">Oberoi International School</p>
-                    </MenuItem>
-                    <MenuItem onClick={handleClose}>
-                      <img src={settings} alt="" /> &nbsp;&nbsp; <Link to="/student/persnol-setting" style={{ textDecoration: 'none', color: 'inherit' }}>Account Settings</Link>
-                    </MenuItem>
-                    <Divider />
-                    <MenuItem onClick={handleClose}>
-                      <ListItemIcon>
-                        <img src={AccountHistory} alt="help" />
-                      </ListItemIcon>
-                      Account History
-                    </MenuItem>
-                    <Divider />
-                    <MenuItem onClick={handleClose}>
-                      <ListItemIcon>
-                        <img src={Help} alt="help" />
-                      </ListItemIcon>
-                      <Link to="/student/dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>Student Dashboard</Link>
-                    </MenuItem>
-                    <Divider />
-                    <MenuItem onClick={handleLogout}>
-                      <ListItemIcon>
-                        <img src={LogOut} alt="logout" />
-                      </ListItemIcon>
-                      Logout
-                    </MenuItem>
-                  </Menu>
-                </>
-              ) : (
+                      <MenuItem
+                        onClick={handleClose}
+                        className="flex flex-column justify-content-start align-items-start"
+                      >
+                        Admin Name
+                        <p className="text-themcolor">Oberoi International School</p>
+                      </MenuItem>
+
+                      <MenuItem onClick={handleClose}>
+                        <img src={settings} alt="" /> &nbsp;&nbsp; <Link to="/student/persnol-setting" style={{ textDecoration: 'none', color: 'inherit' }}>Account Settings</Link>
+                      </MenuItem>
+                      <Divider />
+                      <MenuItem onClick={handleClose}>
+                        <ListItemIcon>
+                          <FaRegUser />
+                        </ListItemIcon>
+                        <Link to="/student/persnol-setting" className="" style={{ display: "flex", alignItems: "center", }}>
+
+                          <span>Profile</span>
+                        </Link>
+                      </MenuItem>
+                      <Divider />
+                      <MenuItem onClick={handleClose}>
+                        <ListItemIcon>
+                          <img src={AccountHistory} alt="help" />
+                        </ListItemIcon>
+                        Account History
+                      </MenuItem>
+                      <Divider />
+                      <MenuItem onClick={handleClose}>
+                        <ListItemIcon>
+                          <img src={Help} alt="help" />
+                        </ListItemIcon>
+                        <Link to="/student/dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>Student Dashboard</Link>
+                      </MenuItem>
+                      <Divider />
+                      <MenuItem onClick={handleLogout}>
+                        <ListItemIcon>
+                          <img src={LogOut} alt="logout" />
+                        </ListItemIcon>
+                        Logout
+                      </MenuItem>
+                    </Menu>
+                  </>
+                ) : (
                   <>
                     <Link to="/student/login" className="login" onClick={handleDrawerClose}>Login</Link>
                     <Link to="/student/register/mobile" className="signup drawer-signup-btn" onClick={handleDrawerClose}>Sign up</Link>
@@ -202,7 +215,7 @@ const Studentheaderhome = () => {
               <Link to="/compition">Competitions</Link>
               {isLoggedIn ? (
                 <>
-                  <Link to="/student/persnol-setting" className="profile mt-4">Profile</Link>
+
                   <div
                     className="avatar"
                     style={{ cursor: "pointer" }}
@@ -256,6 +269,16 @@ const Studentheaderhome = () => {
                     </MenuItem>
                     <MenuItem onClick={handleClose}>
                       <img src={settings} alt="" /> &nbsp;&nbsp; <Link to="/student/persnol-setting" style={{ textDecoration: 'none', color: 'inherit' }}>Account Settings</Link>
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={handleClose}>
+                      <ListItemIcon>
+                      <FaRegUser />
+                      </ListItemIcon>
+                      <Link to="/student/persnol-setting" className="" style={{ display: "flex", alignItems: "center", }}>
+
+                        <span>Profile</span>
+                      </Link>
                     </MenuItem>
                     <Divider />
                     <MenuItem onClick={handleClose}>

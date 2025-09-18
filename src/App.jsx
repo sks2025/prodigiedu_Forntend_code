@@ -24,7 +24,7 @@ import SchoolHome from "./components/schoolHome";
 import Schoolmobile from "./components/Schoolmobile";
 // import Competitionpayment from './components/Competitionpayment';
 import Schoolverifyotp from "./components/Schoolverifyotp";
-import Cardpayw from "./components/cardpay";
+// import Cardpayw from "./components/cardpay";
 import SchoolDetails from "./components/SchoolDetails";
 import Schoollogin from "./components/Schoollogin";
 import Schoolforgatpassword from "./components/Schoolforgatpassword";
@@ -188,7 +188,7 @@ function App() {
           <Route path="/compitions-plans/:competitionsid" element={<CompitionsPlans />} />
           <Route path="/compitions-payment/:competitionsid" element={<CompitionsPayment />} />
           
-          <Route path="/Competitionpaymentsummary" element={<CompetitionsPlanSummary />} />
+          <Route path="/Competitionpaymentsummary/:competitionsid" element={<CompetitionsPlanSummary />} />
           <Route path="/termcondition" element={<TermsCondition />} />
           <Route path="/privacypolicy" element={<PrivacyPolicy />} />
           <Route path="/RefyndCancel" element={<RefyndCancel />} />

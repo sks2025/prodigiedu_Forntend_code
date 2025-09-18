@@ -23,6 +23,13 @@ const OrganiserHomepage = ({ title }) => {
   // Add corner shape image - using the existing right image
   const cornerShape = right;
 
+  // Utility function to get proper image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `https://api.prodigiedu.com${imagePath}`;
+  };
+
   // Function to calculate progress percentage for a competition
   const calculateProgress = (comp) => {
     const requiredFields = [
@@ -87,6 +94,12 @@ const OrganiserHomepage = ({ title }) => {
         .then((response) => response.json())
         .then((result) => {
           console.log("Active competitions data:", result);
+          // Log image URLs for debugging
+          if (Array.isArray(result)) {
+            result.forEach((comp, index) => {
+              console.log(`Competition ${index + 1} image:`, comp.overview?.image);
+            });
+          }
           setCompitions(result);
         })
         .catch((error) => console.error(error));
@@ -111,6 +124,12 @@ const OrganiserHomepage = ({ title }) => {
           if (result.status === false) {
             setDraftCompitions([]);
           } else {
+            // Log image URLs for debugging
+            if (Array.isArray(result)) {
+              result.forEach((comp, index) => {
+                console.log(`Draft Competition ${index + 1} image:`, comp.overview?.image);
+              });
+            }
             // Map through results to add progress percentage
             const updatedDrafts = result.map((comp) => ({
               ...comp,
@@ -155,12 +174,33 @@ const OrganiserHomepage = ({ title }) => {
                   <div className="active-competitions-info-container">
                     <div className="active-competitions-info">
                       <div className="active-competitions-image">
-                        {comp.overview?.image && (
+                        {comp.overview?.image ? (
                           <img
-                            src={comp.overview.image}
+                            src={getImageUrl(comp.overview.image)}
                             alt={comp.overview?.name || "Competition"}
                             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                            onError={(e) => {
+                              console.log('Image load error for:', comp.overview?.image);
+                              e.target.style.display = 'none';
+                            }}
+                            onLoad={() => {
+                              console.log('Image loaded successfully:', comp.overview?.image);
+                            }}
                           />
+                        ) : (
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#f0f0f0',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#666',
+                            fontSize: '12px'
+                          }}>
+                            No Image
+                          </div>
                         )}
                       </div>
                       <div>
@@ -239,12 +279,49 @@ const OrganiserHomepage = ({ title }) => {
                   <div
                     className="card-image"
                     style={{
-                      width: "20px",
-                      height: "20px",
+                      width: "40px",
+                      height: "40px",
                       background: "#e0e0e0",
                       marginRight: "10px",
+                      borderRadius: "4px",
+                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
                     }}
-                  />
+                  >
+                    {comp.overview?.image ? (
+                      <img
+                        src={getImageUrl(comp.overview.image)}
+                        alt={comp.overview?.name || "Competition"}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover' 
+                        }}
+                        onError={(e) => {
+                          console.log('Draft image load error for:', comp.overview?.image);
+                          e.target.style.display = 'none';
+                        }}
+                        onLoad={() => {
+                          console.log('Draft image loaded successfully:', comp.overview?.image);
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#f0f0f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#666',
+                        fontSize: '10px'
+                      }}>
+                        No Img
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <div className="card-title" style={{ fontWeight: "bold" }}>
                       {comp.overview?.name || "Untitled"}

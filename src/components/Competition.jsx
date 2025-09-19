@@ -68,7 +68,7 @@ const CompetitionCard = React.memo(({ card }) => {
       if (!userId) return;
 
       try {
-        const response = await fetch(`https://api.prodigiedu.com/api/competitions/bookmark/check?userId=${userId}&competitionId=${card._id}`);
+        const response = await fetch(`http://localhost:3001/api/competitions/bookmark/check?userId=${userId}&competitionId=${card._id}`);
         const result = await response.json();
         if (result.success) {
           setIsBookmarked(result.isBookmarked);
@@ -93,7 +93,7 @@ const CompetitionCard = React.memo(({ card }) => {
     setIsBookmarkLoading(true);
 
     try {
-      const url = 'https://api.prodigiedu.com/api/competitions/bookmark';
+      const url = 'http://localhost:3001/api/competitions/bookmark';
       const method = isBookmarked ? 'DELETE' : 'POST';
 
       const response = await fetch(url, {
@@ -186,7 +186,7 @@ const CompetitionCard = React.memo(({ card }) => {
 
       <div className="user-card-image-container">
         <img
-          src={card.overview?.image ? `https://api.prodigiedu.com${card.overview.image}` : "https://via.placeholder.com/300x200"}
+          src={card.overview?.image ? `http://localhost:3001${card.overview.image}` : "https://via.placeholder.com/300x200"}
           alt={card.overview?.name || "Competition"}
           className="user-card-image"
           style={{objectFit:"cover"}}
@@ -315,7 +315,7 @@ const Competition = () => {
           searchParams.append("sort", sort);
         }
 
-        response = await fetch(`https://api.prodigiedu.com/api/competitions/search?${searchParams.toString()}`, {
+        response = await fetch(`http://localhost:3001/api/competitions/search?${searchParams.toString()}`, {
           method: "GET",
           redirect: "follow",
         });
@@ -326,7 +326,7 @@ const Competition = () => {
       } else {
         // Use existing getAllCompetitions API for normal browsing
         const queryString = buildQueryString(filtersObj, sort, page);
-        response = await fetch(`https://api.prodigiedu.com/api/competitions/all${queryString}`, {
+        response = await fetch(`http://localhost:3001/api/competitions/all${queryString}`, {
           method: "GET",
           redirect: "follow",
         });
@@ -607,7 +607,7 @@ const Competition = () => {
               image: comp.overview?.image
                 ? comp.overview.image.startsWith('http')
                   ? comp.overview.image
-                  : `https://api.prodigiedu.com${comp.overview.image}`
+                  : `http://localhost:3001${comp.overview.image}`
                 : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-eE9u3e8kMX7dXfOHkTaaEHLZmZj7muf-fg&s',
               name: comp.overview?.name || 'Competition',
               institute: comp.organizerId?.organiserName || '',

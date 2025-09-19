@@ -27,7 +27,7 @@ const OrganiserHomepage = ({ title }) => {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `https://api.prodigiedu.com${imagePath}`;
+    return `http://localhost:3001${imagePath}`;
   };
 
   // Function to calculate progress percentage for a competition
@@ -88,7 +88,7 @@ const OrganiserHomepage = ({ title }) => {
       };
 
       fetch(
-        `https://api.prodigiedu.com/api/competitions/getCompetitionsByOrganizerComplete?organizerId=${organizerId}`,
+        `http://localhost:3001/api/competitions/getCompetitionsByOrganizerComplete?organizerId=${organizerId}`,
         requestOptions
       )
         .then((response) => response.json())
@@ -116,7 +116,7 @@ const OrganiserHomepage = ({ title }) => {
       };
 
       fetch(
-        `https://api.prodigiedu.com/api/competitions/getCompetitionsByOrganizerNotComplete?organizerId=${organizerId}`,
+        `http://localhost:3001/api/competitions/getCompetitionsByOrganizerNotComplete?organizerId=${organizerId}`,
         requestOptions
       )
         .then((response) => response.json())
@@ -424,7 +424,7 @@ const OrganiserHomepage = ({ title }) => {
                           };
 
                           fetch(
-                            `https://api.prodigiedu.com/api/competitions/deleteCompetition/${comp._id}`,
+                            `http://localhost:3001/api/competitions/deleteCompetition/${comp._id}`,
                             requestOptions
                           )
                             .then((response) => response.json())

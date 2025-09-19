@@ -50,7 +50,7 @@ const Studentheaderhome = () => {
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem('student_token');
-      await fetch('https://api.prodigiedu.com/api/users/logout', {
+      await fetch('http://localhost:3001/api/users/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

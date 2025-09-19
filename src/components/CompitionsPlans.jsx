@@ -130,7 +130,7 @@ const CompitionsPlans = () => {
       setError(null);
       // Fetch registration data
       const registrationResponse = await fetch(
-        `https://api.prodigiedu.com/api/competitions/registration/${competitionsid}`,
+        `http://localhost:3001/api/competitions/registration/${competitionsid}`,
         {
           method: "GET",
           redirect: "follow",
@@ -146,7 +146,7 @@ const CompitionsPlans = () => {
 
       // Fetch overview data for competition name
       const overviewResponse = await fetch(
-        `https://api.prodigiedu.com/api/competitions/getoverview/${competitionsid}`,
+        `http://localhost:3001/api/competitions/getoverview/${competitionsid}`,
         {
           method: "GET",
           redirect: "follow",

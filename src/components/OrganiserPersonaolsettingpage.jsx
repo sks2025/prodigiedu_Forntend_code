@@ -61,7 +61,7 @@ const OrganiserPersonaolsettingpage = () => {
   useEffect(() => {
     if (!organizerId) return;
     // Example API call, adjust endpoint/fields as needed
-    fetch(`https://api.prodigiedu.com/api/organisations/profile/${organizerId}`, {
+    fetch(`http://localhost:3001/api/organisations/profile/${organizerId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mobileNumber: userData?.mobileNumber || '' })
@@ -120,7 +120,7 @@ const OrganiserPersonaolsettingpage = () => {
       // Example: send updated data to backend
       const updatedSection = { ...editedData };
       // You may need to adjust the API endpoint and payload structure
-      const response = await fetch(`https://api.prodigiedu.com/api/organisations/Updateprofile/${organizerId}`, {
+      const response = await fetch(`http://localhost:3001/api/organisations/Updateprofile/${organizerId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedSection)
@@ -174,7 +174,7 @@ const OrganiserPersonaolsettingpage = () => {
       };
 
       fetch(
-        `https://api.prodigiedu.com/api/competitions/getCompetitionsByOrganizerComplete?organizerId=${organizerId}`,
+        `http://localhost:3001/api/competitions/getCompetitionsByOrganizerComplete?organizerId=${organizerId}`,
         requestOptions
       )
         .then((response) => response.json())

@@ -8,7 +8,7 @@ import Organisersheader from "./Organisersheader";
 import debounce from "lodash/debounce"; // Ensure lodash is installed: npm install lodash
 import OrganiserFooter from "./OrganiserFooter";
 
-const API_BASE_URL = "https://api.prodigiedu.com";
+const API_BASE_URL = "http://localhost:3001";
 
 const DUMMY_AVATAR = "https://ui-avatars.com/api/?name=Organiser&background=cccccc&color=555555&size=128";
 

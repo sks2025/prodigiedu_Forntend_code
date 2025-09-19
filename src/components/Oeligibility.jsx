@@ -38,6 +38,8 @@ const { Title, Text } = Typography;
   // Debug: Log component props and state
   useEffect(() => {
     console.log('OEligibility component mounted with:', { fun, ID, id, competitionId: ID || id });
+    console.log('Window object available:', typeof window !== 'undefined');
+    console.log('Current URL:', window.location.href);
   }, [fun, ID, id]);
 
   // Debug: Log additionalForms state changes
@@ -94,7 +96,13 @@ const { Title, Text } = Typography;
   // Fetch competition data and stages when component mounts
   useEffect(() => {
     const getCompetitionData = async () => {
-      if (!competitionId) return;
+      if (!competitionId) {
+        console.error('No competition ID provided');
+        return;
+      }
+
+      console.log('Fetching competition data for ID:', competitionId);
+      setLoading(true);
 
       try {
         // Check localStorage first for saved eligibility data
@@ -106,11 +114,13 @@ const { Title, Text } = Typography;
           redirect: "follow",
         };
 
+        console.log('Making API call to:', `https://api.prodigiedu.com/api/competitions/getsyllabus/${competitionId}`);
         const response = await fetch(
           `https://api.prodigiedu.com/api/competitions/getsyllabus/${competitionId}`,
           requestOptions
         );
 
+        console.log('API Response status:', response.status);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -173,11 +183,19 @@ const { Title, Text } = Typography;
           }
         } else {
           console.warn("No stages found in overviewdata");
-          message.error("No stages found for this competition");
+          console.log("Full API response:", result);
+          message.error("No stages found for this competition. Please check if the competition has stages configured.");
         }
       } catch (error) {
         console.error("Error fetching competition data:", error);
-        message.error("Failed to fetch competition data.");
+        console.error("Error details:", {
+          message: error.message,
+          stack: error.stack,
+          competitionId
+        });
+        message.error(`Failed to fetch competition data: ${error.message}`);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -199,9 +217,20 @@ const { Title, Text } = Typography;
     getCompetitionData();
   }, [competitionId]);
 
+  // Fallback: If no stages after 5 seconds, show error
+  useEffect(() => {
+    if (competitionId && stages.length === 0) {
+      const timer = setTimeout(() => {
+        console.warn('No stages loaded after 5 seconds, showing fallback UI');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [competitionId, stages.length]);
+
   // Update active tab when stages change and ensure localStorage is up to date
   useEffect(() => {
     if (stages.length > 0 && !activeTab) {
+      console.log('Setting activeTab to first stage:', stages[0].id.toString());
       setActiveTab(stages[0].id.toString());
     }
     
@@ -267,11 +296,13 @@ const { Title, Text } = Typography;
   useEffect(() => {
     console.log('AdditionalForms state changed:', additionalForms);
     console.log('ActiveTab changed to:', activeTab);
+    console.log('Stages available:', stages);
+    console.log('DataByTab keys:', Object.keys(dataByTab));
     if (activeTab) {
       const currentStageForms = additionalForms.filter(form => form.stage === activeTab);
       console.log('Current stage forms for activeTab:', activeTab, currentStageForms);
     }
-  }, [additionalForms, activeTab]);
+  }, [additionalForms, activeTab, stages, dataByTab]);
 
   const allStagesHaveData = useMemo(() =>
     stages.length > 0 && stages.every(stage => {
@@ -1019,6 +1050,15 @@ const { Title, Text } = Typography;
   ), [activeTab, dataByTab, handleCriteriaDataChange]);
 
   const renderTabContent = useCallback(() => {
+    if (!activeTab) {
+      return (
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <Title level={4}>Please select a stage to configure eligibility</Title>
+          <Text type="secondary">Choose a stage from the tabs above to get started.</Text>
+        </div>
+      );
+    }
+
     const currentTabData = dataByTab[activeTab] || {
       selectedCriteria: [],
       criteriaData: {},
@@ -1747,7 +1787,35 @@ const { Title, Text } = Typography;
       }}>
         {stages.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px" }}>
-            <Title level={4}>No stages found for this competition. Please add stages first.</Title>
+            <Spin size="large" />
+            <Title level={4} style={{ marginTop: '20px' }}>
+              Loading competition data...
+            </Title>
+            <Text type="secondary">
+              Please wait while we fetch the competition stages.
+            </Text>
+            <div style={{ marginTop: '20px' }}>
+              <Button 
+                type="primary" 
+                onClick={() => window.location.reload()}
+                style={{ marginRight: '10px' }}
+              >
+                Retry
+              </Button>
+              <Button 
+                onClick={() => {
+                  console.log('Debug info:', {
+                    competitionId,
+                    stages,
+                    activeTab,
+                    dataByTab,
+                    additionalForms
+                  });
+                }}
+              >
+                Debug Info
+              </Button>
+            </div>
           </div>
         ) : (
           <Tabs

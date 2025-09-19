@@ -29,7 +29,7 @@ const UserCard = ({ card, onClick, onBookmarkChange }) => {
       if (!userId || !card.id) return;
 
       try {
-        const response = await fetch(`https://api.prodigiedu.com/api/competitions/bookmark/check?userId=${userId}&competitionId=${card.id}`);
+        const response = await fetch(`http://localhost:3001/api/competitions/bookmark/check?userId=${userId}&competitionId=${card.id}`);
         const result = await response.json();
         if (result.success) {
           setIsBookmarked(result.isBookmarked);
@@ -54,7 +54,7 @@ const UserCard = ({ card, onClick, onBookmarkChange }) => {
     setIsBookmarkLoading(true);
 
     try {
-      const url = 'https://api.prodigiedu.com/api/competitions/bookmark';
+      const url = 'http://localhost:3001/api/competitions/bookmark';
       const method = isBookmarked ? 'DELETE' : 'POST';
 
       const response = await fetch(url, {

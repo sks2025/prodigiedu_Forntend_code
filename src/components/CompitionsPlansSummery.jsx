@@ -6,7 +6,7 @@ import Studentheaderhome from "./Studentheaderhome";
 import credit from "../images/credit.svg";
 import bank from "../images/bank.svg";
 import upi from "../images/UPI.svg";
-
+import "./CompitionspaymentSummery.css";
 // Payment method options data
 const PAYMENT_METHODS = [
   { id: "card", name: "Credit / Debit Card", icon: credit, selected: true },
@@ -48,10 +48,11 @@ const CompitionsPlansSummery = () => {
   const [cardBrand, setCardBrand] = useState("");
   const [competitionOverview, setCompetitionOverview] = useState(null);
   const [competitionRegistration, setCompetitionRegistration] = useState(null);
+  const [organiseridCompition, setOrganiseridCompition] = useState(null);
 
   // Calculate prices
   const planPrice = Number(plan?.price) || 1200;
-  const convenienceFee = 60;
+  const convenienceFee = 0;
   const total = planPrice + convenienceFee;
 
   // Card number formatting and brand detection
@@ -122,7 +123,7 @@ const CompitionsPlansSummery = () => {
   const fetchCompetitionData = async () => {
     try {
       const response = await fetch(
-        `https://api.prodigiedu.com/api/competitions/getoverview/${competitionsid}`
+        `http://localhost:3001/api/competitions/getoverview/${competitionsid}`
       );
       const result = await response.json();
       setCompetitionOverview(result.data);
@@ -133,7 +134,7 @@ const CompitionsPlansSummery = () => {
   const fetchRegisterCompetitionData = async () => {
     try {
       const response = await fetch(
-        `https://api.prodigiedu.com/api/competitions/registration/${competitionsid}`
+        `http://localhost:3001/api/competitions/registration/${competitionsid}`
       );
       const result = await response.json();
       setCompetitionRegistration(result.data);
@@ -141,6 +142,54 @@ const CompitionsPlansSummery = () => {
       console.error("Error fetching competition registration:", error);
     }
   };
+
+
+
+  const getcompitionbyid = ()=>{
+    try {
+      const requestOptions = {
+        method: "GET",
+        redirect: "follow"
+      };
+      
+      fetch(`http://localhost:3001/api/competitions/getAllCompetitionsId?competitionsid=${competitionsid}`, requestOptions)
+        .then((response) => response.json())
+        .then((result) => {
+          setOrganiseridCompition(result.data.organizerId);
+        })
+        .catch((error) => console.error(error));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+const [orgniseridname, setOrgniseridname] = useState(null);
+
+  const fetchOrganizerName = async () => {
+    console.log(organiseridCompition, "organiseridCompitionfetchOrganizerName");
+    try {
+      const response = await fetch(`http://localhost:3001/api/competitions/getorganizer/${organiseridCompition}/${competitionsid}`, {
+        method: "GET",
+        redirect: "follow"
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Organizer API Response:", result);
+        setOrgniseridname(result.data.name);
+        
+      }
+    } catch (error) {
+      console.error("Error fetching organizer name:", error);
+    } finally {
+      setOrganizerLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getcompitionbyid();
+    fetchOrganizerName();
+  }, [organiseridCompition]);
 
   useEffect(() => {
     fetchCompetitionData();
@@ -152,40 +201,40 @@ const CompitionsPlansSummery = () => {
     <>
       <Studentheaderhome />
       <div>
-        <section className="section-container">
-          <div className="left-half">
-            <div className="heading-container">
-              <div className="placeholder-div"></div>
-              <div className="heading-text">
+        <section className="payment-section-container">
+          <div className="payment-left-half">
+            <div className="payment-heading-container">
+              <div className="payment-placeholder-div"></div>
+              <div className="payment-heading-text">
                 <h1>{competitionOverview?.name || "Competition Name"}</h1>
-                <h2>{competitionOverview?.institute || "Institute Name"}</h2>
+                <h2>{orgniseridname || "N/A"}</h2>
               </div>
             </div>
 
-            <div className="plan-summary">
+            <div className="payment-plan-summary">
               <h2>Plan Summary</h2>
-              <div className="plan-details">
-                <div className="detail-row">
+              <div className="payment-plan-details">
+                <div className="payment-detail-row">
                   <p>{plan?.name || "Advanced Prep"}</p>
                   <p>INR {planPrice.toFixed(2)}</p>
                 </div>
-                <p className="description">
+                <p className="payment-description">
                   {plan?.description || "Registration + Prep + Past Year Question Papers"}
                 </p>
-                <div className="detail-row">
+                <div className="payment-detail-row">
                   <p>Convenience Fee</p>
                   <p>INR {convenienceFee.toFixed(2)}</p>
                 </div>
               </div>
-              <div className="total-row detail-row">
+              <div className="payment-total-row payment-detail-row">
                 <p>Overall Total</p>
                 <p>INR {total.toFixed(2)}</p>
               </div>
             </div>
           </div>
 
-          <div className="right-half">
-            <div className="sidebar">
+          <div className="payment-right-half">
+            <div className="payment-sidebar">
               <h3>Pay with</h3>
               {PAYMENT_METHODS.map((method) => (
                 <div
@@ -199,7 +248,7 @@ const CompitionsPlansSummery = () => {
               ))}
             </div>
 
-            <div className="main-content">
+            <div className="payment-main-content">
               {selectedPayment === "card" && (
                 <form onSubmit={handleSubmit}>
                   <label htmlFor="nameOnCard">Name on Card</label>
@@ -211,12 +260,12 @@ const CompitionsPlansSummery = () => {
                     onChange={handleInputChange}
                     placeholder="Name"
                   />
-                  {errors.nameOnCard && <p className="error">{errors.nameOnCard}</p>}
+                  {errors.nameOnCard && <p className="payment-error">{errors.nameOnCard}</p>}
 
-                  <label htmlFor="cardNumber" className="mt-3">
+                  <label htmlFor="cardNumber" className="payment-mt-3">
                     Card Number
                   </label>
-                  <div className="card-input-container">
+                  <div className="payment-card-input-container">
                     <input
                       type="text"
                       id="cardNumber"
@@ -230,13 +279,13 @@ const CompitionsPlansSummery = () => {
                       <img
                         src={CARD_BRANDS.find((brand) => brand.name === cardBrand)?.src}
                         alt={cardBrand}
-                        className="card-brand-icon"
+                        className="payment-card-brand-icon"
                       />
                     )}
                   </div>
-                  {errors.cardNumber && <p className="error">{errors.cardNumber}</p>}
+                  {errors.cardNumber && <p className="payment-error">{errors.cardNumber}</p>}
 
-                  <div className="input-row">
+                  <div className="payment-input-row">
                     <div>
                       <label htmlFor="expiry">Expiry</label>
                       <input
@@ -248,7 +297,7 @@ const CompitionsPlansSummery = () => {
                         placeholder="MM / YY"
                         maxLength="7"
                       />
-                      {errors.expiry && <p className="error">{errors.expiry}</p>}
+                      {errors.expiry && <p className="payment-error">{errors.expiry}</p>}
                     </div>
                     <div>
                       <label htmlFor="cvc">CVC</label>
@@ -261,7 +310,7 @@ const CompitionsPlansSummery = () => {
                         placeholder="CVC"
                         maxLength="4"
                       />
-                      {errors.cvc && <p className="error">{errors.cvc}</p>}
+                      {errors.cvc && <p className="payment-error">{errors.cvc}</p>}
                     </div>
                   </div>
 

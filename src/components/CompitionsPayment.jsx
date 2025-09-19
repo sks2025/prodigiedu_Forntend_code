@@ -53,25 +53,41 @@ const CompetitionsPayment = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [eligibilityData, setEligibilityData] = useState({
+    studentInformation: {
+      StudentDetails: [],
+      SchoolDetails: []
+    },
+    additionalDetails: []
+  });
 
   const [form, setForm] = useState({
+    // Student Details
     studentName: "",
+    studentAge: "",
     dob: "",
-    school: "",
     grade: "",
-    email: "",
+    section: "",
+    rollNumber: "",
+    ageGroup: "",
     parentName: "",
+    contactNumber: "",
+    email: "",
+    city: "",
     address1: "",
     address2: "",
-    city: "",
     country: "",
-    // Additional school details
+    
+    // School Details
+    school: "",
     schoolAddress: "",
-    schoolPhone: "",
-    schoolEmail: "",
-    principalName: "",
-    schoolBoard: "",
+    schoolContactNumber: "",
+    schoolCity: "",
     schoolType: "",
+    pocName: "",
+    schoolEmail: "",
+    additionalInfo: "",
+    
     // Additional student details
     fatherName: "",
     fatherOccupation: "",
@@ -84,7 +100,6 @@ const CompetitionsPayment = () => {
     // Academic details
     previousSchool: "",
     academicYear: "",
-    rollNumber: "",
     // Additional information
     bloodGroup: "",
     medicalConditions: "",
@@ -94,6 +109,170 @@ const CompetitionsPayment = () => {
     isChecked: false,
   });
   const [errors, setErrors] = useState({});
+
+  // Helper function to render student/school fields based on API
+  const renderStudentField = (fieldName, label) => {
+    const fieldValue = form[fieldName] || "";
+    
+    return (
+      <div className="d-flex flex-column gap-2 w-50">
+        <Input
+          label={label}
+          name={fieldName}
+          placeholder={label}
+          value={fieldValue}
+          onChange={handleChange}
+          required
+        />
+        <p style={{ color: "red" }}>{errors[fieldName]}</p>
+      </div>
+    );
+  };
+
+  // Helper function to render different field types
+  const renderDynamicField = (field, index) => {
+    const fieldName = `dynamic_${field.id}`;
+    const fieldValue = form[fieldName] || "";
+
+    switch (field.type) {
+      case "Multiple Choice":
+        return (
+          <div key={index} className="d-flex flex-column gap-2 w-50">
+            <label style={{ fontWeight: "600", marginBottom: "5px" }}>
+              {field.name} {field.settings?.allowMultiple ? "(Multiple Selection)" : ""}
+            </label>
+            {field.options?.map((option, optionIndex) => (
+              <div key={optionIndex} className="d-flex align-items-center gap-2">
+                <input
+                  type={field.settings?.allowMultiple ? "checkbox" : "radio"}
+                  name={fieldName}
+                  value={option}
+                  checked={fieldValue.includes(option)}
+                  onChange={(e) => {
+                    if (field.settings?.allowMultiple) {
+                      const newValue = e.target.checked
+                        ? [...(fieldValue || []), option]
+                        : (fieldValue || []).filter(v => v !== option);
+                      setForm({ ...form, [fieldName]: newValue });
+                    } else {
+                      setForm({ ...form, [fieldName]: option });
+                    }
+                  }}
+                />
+                <span>{option}</span>
+              </div>
+            ))}
+            <p style={{ color: "red" }}>{errors[fieldName]}</p>
+          </div>
+        );
+
+      case "Checkbox":
+        return (
+          <div key={index} className="d-flex flex-column gap-2 w-50">
+            <label style={{ fontWeight: "600", marginBottom: "5px" }}>
+              {field.name}
+            </label>
+            {field.options?.map((option, optionIndex) => (
+              <div key={optionIndex} className="d-flex align-items-center gap-2">
+                <input
+                  type="checkbox"
+                  name={`${fieldName}_${optionIndex}`}
+                  checked={fieldValue.includes(option)}
+                  onChange={(e) => {
+                    const newValue = e.target.checked
+                      ? [...(fieldValue || []), option]
+                      : (fieldValue || []).filter(v => v !== option);
+                    setForm({ ...form, [fieldName]: newValue });
+                  }}
+                />
+                <span>{option}</span>
+              </div>
+            ))}
+            <p style={{ color: "red" }}>{errors[fieldName]}</p>
+          </div>
+        );
+
+      case "Dropdown":
+        return (
+          <div key={index} className="d-flex flex-column gap-2 w-50">
+            <label style={{ fontWeight: "600", marginBottom: "5px" }}>
+              {field.name}
+            </label>
+            <select
+              name={fieldName}
+              value={fieldValue}
+              onChange={(e) => setForm({ ...form, [fieldName]: e.target.value })}
+              style={{
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "5px",
+                fontSize: "14px"
+              }}
+            >
+              <option value="">Select {field.name}</option>
+              {field.options?.map((option, optionIndex) => (
+                <option key={optionIndex} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <p style={{ color: "red" }}>{errors[fieldName]}</p>
+          </div>
+        );
+
+      case "Date":
+        return (
+          <div key={index} className="d-flex flex-column gap-2 w-50">
+            <Input
+              label={field.name}
+              name={fieldName}
+              type="date"
+              placeholder={field.name}
+              value={fieldValue}
+              onChange={(e) => setForm({ ...form, [fieldName]: e.target.value })}
+              required
+            />
+            <p style={{ color: "red" }}>{errors[fieldName]}</p>
+          </div>
+        );
+
+      case "Short Answer":
+      default:
+        return (
+          <div key={index} className="d-flex flex-column gap-2 w-50">
+            <Input
+              label={field.name}
+              name={fieldName}
+              placeholder={field.name}
+              value={fieldValue}
+              onChange={(e) => setForm({ ...form, [fieldName]: e.target.value })}
+              required
+            />
+            <p style={{ color: "red" }}>{errors[fieldName]}</p>
+          </div>
+        );
+    }
+  };
+
+  const fetcheligibilityData = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/competitions/eligibility/${competitionsid}`, { method: "GET", redirect: "follow" });
+      const result = await response.json();
+      console.log("Eligibility API Response:", result);
+      
+      if (result.success && result.data) {
+        setEligibilityData({
+          studentInformation: result.data.studentInformation || {
+            StudentDetails: [],
+            SchoolDetails: []
+          },
+          additionalDetails: result.data.eligibility?.[0]?.additionalDetails || []
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching eligibility data:", error);
+    }
+  }
 
   const fetchRegistrationData = async () => {
     if (!competitionsid) {
@@ -107,7 +286,7 @@ const CompetitionsPayment = () => {
 
       // Fetch registration data
       const registrationResponse = await fetch(
-        `https://api.prodigiedu.com/api/competitions/registration/${competitionsid}`,
+        `http://localhost:3001/api/competitions/registration/${competitionsid}`,
         { method: "GET", redirect: "follow" }
       );
 
@@ -120,7 +299,7 @@ const CompetitionsPayment = () => {
 
       // Fetch overview data for competition details
       const overviewResponse = await fetch(
-        `https://api.prodigiedu.com/api/competitions/getoverview/${competitionsid}`,
+        `http://localhost:3001/api/competitions/getoverview/${competitionsid}`,
         { method: "GET", redirect: "follow" }
       );
 
@@ -238,6 +417,7 @@ const CompetitionsPayment = () => {
 
   useEffect(() => {
     fetchRegistrationData();
+    fetcheligibilityData();
   }, [competitionsid]);
 
   const handleChange = (e) => {
@@ -246,22 +426,142 @@ const CompetitionsPayment = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.studentName.trim()) newErrors.studentName = "Student Name is required";
-    if (!form.parentName.trim()) newErrors.parentName = "Parent/Guardian Name is required";
-    if (!form.dob) newErrors.dob = "Date of Birth is required";
-    else if (new Date(form.dob) > new Date())
-      newErrors.dob = "DOB cannot be in the future";
+    
+    // Validate only API fields from studentInformation
+    eligibilityData.studentInformation?.StudentDetails?.forEach(field => {
+      let fieldName = "";
+      
+      switch (field) {
+        case "Student's Name":
+          fieldName = "studentName";
+          break;
+        case "Student's Age":
+          fieldName = "studentAge";
+          break;
+        case "Parent's / Guardian's Name":
+          fieldName = "parentName";
+          break;
+        case "Contact number":
+          fieldName = "contactNumber";
+          break;
+        case "Email ID":
+          fieldName = "email";
+          break;
+        case "City":
+          fieldName = "city";
+          break;
+        case "Address":
+          fieldName = "address1";
+          break;
+        case "Roll number":
+          fieldName = "rollNumber";
+          break;
+        case "Grade":
+          fieldName = "grade";
+          break;
+        case "Section":
+          fieldName = "section";
+          break;
+        case "Birth Date":
+          fieldName = "dob";
+          break;
+        case "Age Group":
+          fieldName = "ageGroup";
+          break;
+        default:
+          fieldName = field.toLowerCase().replace(/\s+/g, '');
+      }
+      
+      if (fieldName === "dob") {
+        if (!form[fieldName]) {
+          newErrors[fieldName] = `${field} is required`;
+        } else if (new Date(form[fieldName]) > new Date()) {
+          newErrors[fieldName] = "Date cannot be in the future";
+        }
+      } else if (fieldName === "email" || fieldName === "schoolEmail") {
+        if (!form[fieldName]?.trim()) {
+          newErrors[fieldName] = `${field} is required`;
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(form[fieldName])) {
+            newErrors[fieldName] = "Invalid email format";
+          }
+        }
+      } else {
+        if (!form[fieldName]?.trim()) {
+          newErrors[fieldName] = `${field} is required`;
+        }
+      }
+    });
 
-    if (!form.school.trim()) newErrors.school = "School is required";
-    if (!form.grade.trim()) newErrors.grade = "Grade is required";
-    if (!form.address1.trim()) newErrors.address1 = "Address Line 1 is required";
-    if (!form.city.trim()) newErrors.city = "City is required";
-    if (!form.country.trim()) newErrors.country = "Country is required";
-    if (!form.email.trim()) newErrors.email = "Email is required";
-    else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(form.email)) newErrors.email = "Invalid email format";
-    }
+    // Validate only API fields from schoolDetails
+    eligibilityData.studentInformation?.SchoolDetails?.forEach(field => {
+      let fieldName = "";
+      
+      switch (field) {
+        case "School Name":
+          fieldName = "school";
+          break;
+        case "Address":
+          fieldName = "schoolAddress";
+          break;
+        case "Contact Number":
+          fieldName = "schoolContactNumber";
+          break;
+        case "City":
+          fieldName = "schoolCity";
+          break;
+        case "Type of School":
+          fieldName = "schoolType";
+          break;
+        case "POC Name":
+          fieldName = "pocName";
+          break;
+        case "Email ID":
+          fieldName = "schoolEmail";
+          break;
+        case "Student":
+          fieldName = "studentCount";
+          break;
+        case "Additional":
+          fieldName = "additionalInfo";
+          break;
+        default:
+          fieldName = field.toLowerCase().replace(/\s+/g, '');
+      }
+      
+      if (fieldName === "schoolEmail") {
+        if (!form[fieldName]?.trim()) {
+          newErrors[fieldName] = `${field} is required`;
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(form[fieldName])) {
+            newErrors[fieldName] = "Invalid email format";
+          }
+        }
+      } else if (fieldName !== "additionalInfo") { // Additional info is optional
+        if (!form[fieldName]?.trim()) {
+          newErrors[fieldName] = `${field} is required`;
+        }
+      }
+    });
+
+    // Dynamic fields validation
+    eligibilityData.additionalDetails?.forEach(field => {
+      const fieldName = `dynamic_${field.id}`;
+      const fieldValue = form[fieldName];
+      
+      if (field.type === "Multiple Choice" || field.type === "Checkbox") {
+        if (!fieldValue || (Array.isArray(fieldValue) && fieldValue.length === 0)) {
+          newErrors[fieldName] = `${field.name} is required`;
+        }
+      } else if (field.type === "Dropdown" || field.type === "Date" || field.type === "Short Answer") {
+        if (!fieldValue || fieldValue.toString().trim() === "") {
+          newErrors[fieldName] = `${field.name} is required`;
+        }
+      }
+    });
+
     if (!form.isChecked) newErrors.isChecked = "You must agree to the terms";
     return newErrors;
   };
@@ -274,7 +574,7 @@ const CompetitionsPayment = () => {
     // Save registration data
     try {
       const regResponse = await fetch(
-        `https://api.prodigiedu.com/api/competitions/add-registration/${competitionsid}`,
+        `http://localhost:3001/api/competitions/add-registration/${competitionsid}`,
         {
           method: "POST",
           headers: {
@@ -288,7 +588,7 @@ const CompetitionsPayment = () => {
 
       // (Optional) Save 'for' field as before
       await fetch(
-        `https://api.prodigiedu.com/api/competitions/for/${competitionsid}`,
+        `http://localhost:3001/api/competitions/for/${competitionsid}`,
         {
           method: "PUT",
           headers: {
@@ -373,153 +673,180 @@ const CompetitionsPayment = () => {
               We Need Some More Information To Process The Application
             </h3>
 
-            <div style={{ display: "flex", gap: "20px", marginTop: "2rem", width: "100%" }}>
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="Student Name"
-                  name="studentName"
-                  placeholder="Student Name"
-                  value={form.studentName}
-                  onChange={handleChange}
-                  // error={errors.studentName}
-                  required
-                />
-                <p style={{ color: "red" }}>{errors.studentName}</p>
-              </div>
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="Parent / Guardian Name"
-                  name="parentName"
-                  placeholder="Parent / Guardian Name"
-                  value={form.parentName}
-                  onChange={handleChange}
+            {/* Dynamic Student Details based on API */}
+            {eligibilityData.studentInformation?.StudentDetails && eligibilityData.studentInformation.StudentDetails.length > 0 && (
+              <>
+                <h4 style={{ marginTop: "2rem", fontWeight: "700", color: "#333" }}>
+                  Student Details
+                </h4>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginTop: "1rem", width: "100%" }}>
+                  {eligibilityData.studentInformation.StudentDetails.map((field, index) => {
+                    // Map API field names to form field names
+                    let fieldName = "";
+                    let label = field;
+                    
+                    switch (field) {
+                      case "Student's Name":
+                        fieldName = "studentName";
+                        break;
+                      case "Student's Age":
+                        fieldName = "studentAge";
+                        break;
+                      case "Parent's / Guardian's Name":
+                        fieldName = "parentName";
+                        break;
+                      case "Contact number":
+                        fieldName = "contactNumber";
+                        break;
+                      case "Email ID":
+                        fieldName = "email";
+                        break;
+                      case "City":
+                        fieldName = "city";
+                        break;
+                      case "Address":
+                        fieldName = "address1";
+                        break;
+                      case "Roll number":
+                        fieldName = "rollNumber";
+                        break;
+                      case "Grade":
+                        fieldName = "grade";
+                        break;
+                      case "Section":
+                        fieldName = "section";
+                        break;
+                      case "Birth Date":
+                        fieldName = "dob";
+                        break;
+                      case "Age Group":
+                        fieldName = "ageGroup";
+                        break;
+                      default:
+                        fieldName = field.toLowerCase().replace(/\s+/g, '');
+                    }
+                    
+                    return (
+                      <div key={index} style={{ width: "48%" }}>
+                        {fieldName === "dob" ? (
+                          <div className="d-flex flex-column gap-2 w-50">
+                            <Input
+                              label={label}
+                              name={fieldName}
+                              type="date"
+                              placeholder={label}
+                              value={form[fieldName] || ""}
+                              onChange={handleChange}
+                              required
+                              ref={dobInputRef}
+                              icon={
+                                <FaCalendarAlt
+                                  onClick={() =>
+                                    dobInputRef.current &&
+                                    dobInputRef.current.showPicker &&
+                                    dobInputRef.current.showPicker()
+                                  }
+                                  size={18}
+                                  title="Open calendar"
+                                />
+                              }
+                            />
+                            <p style={{ color: "red" }}>{errors[fieldName]}</p>
+                          </div>
+                        ) : (
+                          renderStudentField(fieldName, label)
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
-                  required
-                />
-                <p style={{ color: "red" }}>{errors.parentName}</p>
+            {/* Dynamic School Details based on API */}
+            {eligibilityData.studentInformation?.SchoolDetails && eligibilityData.studentInformation.SchoolDetails.length > 0 && (
+              <>
+                <h4 style={{ marginTop: "3rem", fontWeight: "700", color: "#333" }}>
+                  School Details
+                </h4>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginTop: "1rem", width: "100%" }}>
+                  {eligibilityData.studentInformation.SchoolDetails.map((field, index) => {
+                    // Map API field names to form field names
+                    let fieldName = "";
+                    let label = field;
+                    
+                    switch (field) {
+                      case "School Name":
+                        fieldName = "school";
+                        break;
+                      case "Address":
+                        fieldName = "schoolAddress";
+                        break;
+                      case "Contact Number":
+                        fieldName = "schoolContactNumber";
+                        break;
+                      case "City":
+                        fieldName = "schoolCity";
+                        break;
+                      case "Type of School":
+                        fieldName = "schoolType";
+                        break;
+                      case "POC Name":
+                        fieldName = "pocName";
+                        break;
+                      case "Email ID":
+                        fieldName = "schoolEmail";
+                        break;
+                      case "Student":
+                        fieldName = "studentCount";
+                        break;
+                      case "Additional":
+                        fieldName = "additionalInfo";
+                        break;
+                      default:
+                        fieldName = field.toLowerCase().replace(/\s+/g, '');
+                    }
+                    
+                    return (
+                      <div key={index} style={{ width: "48%" }}>
+                        {fieldName === "schoolEmail" ? (
+                          <div className="d-flex flex-column gap-2 w-50">
+                            <Input
+                              label={label}
+                              name={fieldName}
+                              type="email"
+                              placeholder={label}
+                              value={form[fieldName] || ""}
+                              onChange={handleChange}
+                              required
+                            />
+                            <p style={{ color: "red" }}>{errors[fieldName]}</p>
+                          </div>
+                        ) : (
+                          renderStudentField(fieldName, label)
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "20px", marginTop: "20px", width: "100%" }}>
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="Date of Birth"
-                  name="dob"
-                  type="date"
-                  placeholder="Date of Birth"
-                  value={form.dob}
-                  onChange={handleChange}
-                  required
-                  ref={dobInputRef}
-                  icon={
-                    <FaCalendarAlt
-                      onClick={() =>
-                        dobInputRef.current &&
-                        dobInputRef.current.showPicker &&
-                        dobInputRef.current.showPicker()
-                      }
-                      size={18}
-                      title="Open calendar"
-                    />
-                  }
-                />
-                <p style={{ color: "red" }}>{errors.dob}</p>
-              </div>
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="Address Line 1"
-                  name="address1"
-                  placeholder="Address Line 1"
-                  value={form.address1}
-                  onChange={handleChange}
-                  required
-                />
-                <p style={{ color: "red" }}>{errors.address1}</p>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "20px", marginTop: "20px", width: "100%" }}>
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="School"
-                  name="school"
-                  placeholder="School"
-                  value={form.school}
-                  onChange={handleChange}
-
-                  required
-                />
-                <p style={{ color: "red" }}>{errors.school}</p>
-              </div>
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="Address Line 2"
-                  name="address2"
-                  placeholder="Address Line 2"
-                  value={form.address2}
-                  onChange={handleChange}
-                />
-                <p style={{ color: "red" }}>{errors.address2}</p>
-              </div>
-
-
-            </div>
-
-            <div style={{ display: "flex", gap: "20px", marginTop: "20px", width: "100%" }}>
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="Grade"
-                  name="grade"
-                  placeholder="Grade"
-                  value={form.grade}
-                  onChange={handleChange}
-                  required
-                />
-                <p style={{ color: "red" }}>{errors.grade}</p>
-              </div>
-
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="City"
-                  name="city"
-                  placeholder="City"
-                  value={form.city}
-                  onChange={handleChange}
-                  required
-                />
-                <p style={{ color: "red" }}>{errors.city}</p>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "20px", marginTop: "20px", width: "100%" }}>
-              <div className="d-flex flex-column gap-2 w-50">
-                <Input
-                  label="School email ID"
-                  name="email"
-                  type="email"
-                  placeholder="School email ID"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                />
-                <p style={{ color: "red" }}>{errors.email}</p>
-
-              </div>
-              <div className="d-flex flex-column gap-2 w-50">
-
-                <Input
-                  label="Country"
-                  name="country"
-                  placeholder="Country"
-                  value={form.country}
-                  onChange={handleChange}
-                  required
-                />
-
-                <p style={{ color: "red" }}>{errors.country}</p>
-              </div>
-            </div>
+            {/* Dynamic Fields from API */}
+            {eligibilityData.additionalDetails && eligibilityData.additionalDetails.length > 0 && (
+              <>
+                <h4 style={{ marginTop: "3rem", fontWeight: "700", color: "#333" }}>
+                  Additional Information
+                </h4>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginTop: "1rem", width: "100%" }}>
+                  {eligibilityData.additionalDetails.map((field, index) => (
+                    <div key={field.id} style={{ width: "48%" }}>
+                      {renderDynamicField(field, index)}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
 
             <div className="mt-3">
               <div className="d-flex align-items-start gap-2">
@@ -552,4 +879,4 @@ const CompetitionsPayment = () => {
   );
 };
 
-export default CompetitionsPayment;
+export default CompetitionsPayment;                                                                                                                                                         

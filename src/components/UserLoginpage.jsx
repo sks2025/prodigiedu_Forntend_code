@@ -108,7 +108,7 @@ const UserLoginpage = ({ title }) => {
 
     setBookmarksLoading(true);
     try {
-      const response = await fetch(`https://api.prodigiedu.com/api/competitions/user-bookmarks/${userId}`);
+      const response = await fetch(`http://localhost:3001/api/competitions/user-bookmarks/${userId}`);
       const result = await response.json();
 
       if (result.success) {
@@ -118,7 +118,7 @@ const UserLoginpage = ({ title }) => {
           image: comp.overview?.image
             ? comp.overview.image.startsWith('http')
               ? comp.overview.image
-              : `https://api.prodigiedu.com${comp.overview.image}`
+              : `http://localhost:3001${comp.overview.image}`
             : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-eE9u3e8kMX7dXfOHkTaaEHLZmZj7muf-fg&s",
           name: comp.overview?.name || "Competition",
           institute: comp.organizerId?.organiserName || "",
@@ -201,7 +201,7 @@ const UserLoginpage = ({ title }) => {
       image: comp.overview?.image
         ? comp.overview.image.startsWith('http')
           ? comp.overview.image
-          : `https://api.prodigiedu.com${comp.overview.image}`
+          : `http://localhost:3001${comp.overview.image}`
         : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-eE9u3e8kMX7dXfOHkTaaEHLZmZj7muf-fg&s",
       name: comp.overview?.name || "Competition",
       institute: comp.organizerId?.organiserName || "",

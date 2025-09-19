@@ -315,7 +315,7 @@
                     <span>src/config/apiConfig.js</span>
                     <button class="copy-button">Copy</button>
                 </div>
-                <pre><code>export const API_BASE_URL = 'https://api.prodigiedu.com;
+                <pre><code>export const API_BASE_URL = 'http://localhost:3001;
 
 export const API_ENDPOINTS = {
     SEND_OTP: '/api/otp/send',
@@ -335,7 +335,7 @@ export const API_ENDPOINTS = {
                 <pre><code>import { fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const baseQuery = fetchBaseQuery({
-    baseUrl: 'https://api.prodigiedu.com',
+    baseUrl: 'http://localhost:3001',
     prepareHeaders: (headers, { getState }) => {
         const token = localStorage.getItem('token');
         if (token) {

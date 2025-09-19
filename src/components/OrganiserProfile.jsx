@@ -33,7 +33,7 @@ const OrganiserProfile = () => {
       };
 
       fetch(
-        `https://api.prodigiedu.com/api/competitions/getCompetitionsByOrganizerComplete?organizerId=${organizerId}`,
+        `http://localhost:3001/api/competitions/getCompetitionsByOrganizerComplete?organizerId=${organizerId}`,
         requestOptions
       )
         .then((response) => response.json())
@@ -80,7 +80,7 @@ const OrganiserProfile = () => {
       };
 
       fetch(
-        `https://api.prodigiedu.com/api/organisations/profile/${organizerId}`,
+        `http://localhost:3001/api/organisations/profile/${organizerId}`,
         requestOptions
       )
         .then((response) => response.json())
@@ -121,7 +121,7 @@ const OrganiserProfile = () => {
     if (profile?.image) {
       return (
         <img
-          src={`https://api.prodigiedu.com${profile.image}`}
+          src={`http://localhost:3001${profile.image}`}
           alt="Organisation"
           style={{
             width: "100%",
@@ -270,7 +270,7 @@ const OrganiserProfile = () => {
                 <div key={card._id || index} className="organise-user-card">
                   <div className="organise-user-card-image-container">
                     <img
-                      src={card.overview?.image ? `https://api.prodigiedu.com${card.overview?.image}` : "https://via.placeholder.com/300x200"}
+                      src={card.overview?.image ? `http://localhost:3001${card.overview?.image}` : "https://via.placeholder.com/300x200"}
                       alt={card.overview?.name || "Competition"}
                       className="organise-user-card-image"
                       style={{ objectFit: 'contain', width: '100%', height: '180px', borderRadius: '10px 10px 0 0' }}

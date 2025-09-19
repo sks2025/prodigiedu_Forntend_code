@@ -64,6 +64,67 @@ function Ocompetitionsdetail() {
     }));
   };
 
+const [organiseridCompition, setOrganiseridCompition] = useState(null);
+
+  // State for organizer name
+  const [organizerName, setOrganizerName] = useState(null);
+  const [organizerLoading, setOrganizerLoading] = useState(false);
+
+  // Function to get organizer ID from competition data
+  const getOrganizerId = () => {
+    const overviewData = getOverviewData();
+    return overviewData?.organizerId || overviewData?.organizer_id || null;
+  };
+
+  // Function to fetch organizer name
+ 
+
+
+
+
+  const getcompitionbyid = ()=>{
+    try {
+      const requestOptions = {
+        method: "GET",
+        redirect: "follow"
+      };
+      
+      fetch(`http://localhost:3001/api/competitions/getAllCompetitionsId?competitionsid=${competitionsid}`, requestOptions)
+        .then((response) => response.json())
+        .then((result) => {
+          setOrganiseridCompition(result.data.organizerId);
+        })
+        .catch((error) => console.error(error));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+const [orgniseridname, setOrgniseridname] = useState(null);
+
+  const fetchOrganizerName = async () => {
+    console.log(organiseridCompition, "organiseridCompitionfetchOrganizerName");
+    try {
+      setOrganizerLoading(true);
+      const response = await fetch(`http://localhost:3001/api/competitions/getorganizer/${organiseridCompition}/${competitionsid}`, {
+        method: "GET",
+        redirect: "follow"
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Organizer API Response:", result);
+        setOrgniseridname(result.data.name);
+        
+      }
+    } catch (error) {
+      console.error("Error fetching organizer name:", error);
+    } finally {
+      setOrganizerLoading(false);
+    }
+  };
+
+
   // Generic API call function
   const fetchSectionData = async (section, endpoint) => {
     try {
@@ -104,29 +165,31 @@ function Ocompetitionsdetail() {
     }
   };
 
+
+
   // Individual API calls for each section
   const fetchOverviewData = () => {
-    fetchSectionData('overview', `https://api.prodigiedu.com/api/competitions/getoverview/${competitionsid}`);
+    fetchSectionData('overview', `http://localhost:3001/api/competitions/getoverview/${competitionsid}`);
   };
 
   const fetchSyllabusData = () => {
-    fetchSectionData('syllabus', `https://api.prodigiedu.com/api/competitions/getsyllabus/${competitionsid}`);
+    fetchSectionData('syllabus', `http://localhost:3001/api/competitions/getsyllabus/${competitionsid}`);
   };
 
   const fetchPatternData = () => {
-    fetchSectionData('pattern', `https://api.prodigiedu.com/api/competitions/getpattern/${competitionsid}`);
+    fetchSectionData('pattern', `http://localhost:3001/api/competitions/getpattern/${competitionsid}`);
   };
 
   const fetchEligibilityData = () => {
-    fetchSectionData('eligibility', `https://api.prodigiedu.com/api/competitions/eligibility/${competitionsid}`);
+    fetchSectionData('eligibility', `http://localhost:3001/api/competitions/eligibility/${competitionsid}`);
   };
 
   const fetchRegistrationData = () => {
-    fetchSectionData('registration', `https://api.prodigiedu.com/api/competitions/registration/${competitionsid}`);
+    fetchSectionData('registration', `http://localhost:3001/api/competitions/registration/${competitionsid}`);
   };
 
   const fetchAwardsData = () => {
-    fetchSectionData('awards', `https://api.prodigiedu.com/api/competitions/awards/${competitionsid}`);
+    fetchSectionData('awards', `http://localhost:3001/api/competitions/awards/${competitionsid}`);
   };
 
   // Fetch all data when component mounts
@@ -145,6 +208,14 @@ function Ocompetitionsdetail() {
       console.error("❌ No competition ID provided");
     }
   }, [competitionsid]);
+
+  // Fetch organizer name when overview data is loaded
+  // useEffect(() => {
+  //   if (sectionData.overview && !organizerName) {
+  //     fetchOrganizerName();
+  //   }
+  // }, [sectionData.overview, organizerName]);
+
 
   // Loading component for individual sections
   const SectionLoader = ({ section }) => (
@@ -216,18 +287,39 @@ function Ocompetitionsdetail() {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-  const getOrganizerName = () => {
-    try {
-      const userDataString = localStorage.getItem("user_Data");
-      if (userDataString) {
-        const userData = JSON.parse(userDataString);
-        return userData?.name || userData?.directorName || "Prodigi";
-      }
-    } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
-    }
-    return "Prodigi";
-  };
+
+
+
+
+  // const getOrganizerName = () => {
+  //   // Return the organizer name from state if available
+  //   if (organizerName) {
+  //     return organizerName;
+  //   }
+    
+  //   // Fallback to localStorage if organizer name not fetched yet
+  //   try {
+  //     const userDataString = localStorage.getItem("user_Data");
+  //     if (userDataString) {
+  //       const userData = JSON.parse(userDataString);
+  //       return userData?.name || userData?.directorName || null;
+  //     }
+  //   } catch (error) {
+  //     console.error("Error parsing user data from localStorage:", error);
+  //   }
+  //   return null;
+  // };
+
+
+  
+  useEffect(()=>{
+    getcompitionbyid();
+    fetchOrganizerName();
+
+  },[ organiseridCompition])
+
+
+
   return (
     <>
       <Studentheaderhome />
@@ -238,9 +330,11 @@ function Ocompetitionsdetail() {
             <h1 className="competition-title">
               {sectionLoading.overview ? "Loading..." : getOverviewData().name || "MINDSTORM 2025"}
             </h1>
-            <p className="verification-text">
-              {`Verified by ${getOrganizerName()}`}
-            </p>
+           
+              <p className="verification-text">
+                {organizerLoading ? "Loading organizer..." : `Verified by ${orgniseridname}`}
+              </p>
+            
           </div>
           <div className="header-right">
             <div className="action-buttons-grid">
@@ -293,12 +387,12 @@ function Ocompetitionsdetail() {
             >
               Registration
             </button>
-            <button
+            {/* <button
               className="nav-tab"
               onClick={() => scrollToSection('awards')}
             >
               Awards
-            </button>
+            </button> */}
             <button
               className="nav-tab"
               onClick={() => scrollToSection('rules')}
@@ -326,12 +420,12 @@ function Ocompetitionsdetail() {
               />
             ) : (
               <>
-              {getOverviewData().image && (
+                {getOverviewData().image && (
                   <div style={{ marginBottom: "20px" }}>
                     <img
                       src={getOverviewData().image.startsWith('http')
                         ? getOverviewData().image
-                        : `https://api.prodigiedu.com${getOverviewData().image}`
+                        : `http://localhost:3001${getOverviewData().image}`
                       }
                       alt="Competition"
                       style={{
@@ -354,8 +448,8 @@ function Ocompetitionsdetail() {
                   <div>
                     <div className="detail-item">
                       <div className="detail-label">
-                        Total Stages: {getOverviewData().stages?.length > 0 
-                          ? getOverviewData().stages.map(stage => stage.name).join(' And ') 
+                        Total Stages: {getOverviewData().stages?.length > 0
+                          ? getOverviewData().stages.map(stage => stage.name).join(' And ')
                           : "Primary And Final"}
                       </div>
                     </div>
@@ -371,6 +465,11 @@ function Ocompetitionsdetail() {
                           {getAwardsData().map((award, index) => (
                             <li key={index}>
                               {award.Award_Type}: {award.Quantity}
+                              {award.Given_To && (
+                                <span style={{ display: 'block', fontSize: '0.9em', color: '#666', marginTop: '2px' }}>
+                                  Given to: {award.Given_To}
+                                </span>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -382,11 +481,11 @@ function Ocompetitionsdetail() {
                   <div>
                     <div className="detail-item">
                       <div className="detail-label">
-                        Subjects: {getOverviewData().subject || 
-                          (getOverviewData().subjects ? getOverviewData().subjects.join(', ') : 
-                          (getSyllabusData().topics?.length > 0 
-                            ? [...new Set(getSyllabusData().topics.map(topic => topic.subjectstype || topic.name))].join(', ')
-                            : 'Maths'))}
+                        Subjects: {getOverviewData().subject ||
+                          (getOverviewData().subjects ? getOverviewData().subjects.join(', ') :
+                            (getSyllabusData().topics?.length > 0
+                              ? [...new Set(getSyllabusData().topics.map(topic =>  topic.name))].join(', ')
+                              : 'Maths'))}
                       </div>
                     </div>
                     <div className="detail-item">
@@ -397,14 +496,14 @@ function Ocompetitionsdetail() {
                     </div>
                     <div className="detail-item">
                       <div className="detail-label">
-                        Location: {getOverviewData().stages?.[0]?.location?.length > 0 
-                          ? getOverviewData().stages[0].location.map(loc => 
-                              loc === 'IN' ? 'India' : loc
-                            ).join(', ') 
-                          : (getOverviewData().location || 
-                             getOverviewData().state || 
-                             getOverviewData().city || 
-                             "Rajasthan")}
+                        Location: {getOverviewData().stages?.[0]?.location?.length > 0
+                          ? getOverviewData().stages[0].location.map(loc =>
+                            loc === 'IN' ? 'India' : loc
+                          ).join(', ')
+                          : (getOverviewData().location ||
+                            getOverviewData().state ||
+                            getOverviewData().city ||
+                            "Rajasthan")}
                       </div>
                     </div>
                   </div>
@@ -641,8 +740,8 @@ function Ocompetitionsdetail() {
                               <li key={`criteria-${criteriaIndex}`}>
                                 <span className="eligibility-icon">✔</span>
                                 <span>
-                                  {criteria.title ? `${criteria.title}: ${criteria.requirement}` : 
-                                   (criteria.requirement || criteria)}
+                                  {criteria.title ? `${criteria.title}: ${criteria.requirement}` :
+                                    (criteria.requirement || criteria)}
                                 </span>
                               </li>
                             ))}

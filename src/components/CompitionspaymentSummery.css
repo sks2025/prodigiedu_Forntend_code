@@ -1,45 +1,46 @@
+
 /* Section container */
-.section-container {
+.payment-section-container {
     display: flex;
     justify-content: space-between;
     padding: 3rem 6rem;
 }
 
 /* Left half */
-.left-half {
+.payment-left-half {
     width: 42%;
 }
 
 /* Heading container */
-.heading-container {
+.payment-heading-container {
     display: flex;
     gap: 1.5rem;
     margin-left: -1.25rem;
 }
 
 /* Placeholder div (for the square) */
-.placeholder-div {
+.payment-placeholder-div {
     width: 5rem;
     height: 5rem;
     background-color: #d1d5db;
 }
 
 /* Heading text */
-.heading-text h1 {
+.payment-heading-text h1 {
     font-size: 2.4rem;
     font-weight: 600;
     margin-top: 0;
     margin-bottom: 4px;
 }
 
-.heading-text h2 {
+.payment-heading-text h2 {
     font-size: 1.2rem;
     margin-top: 0;
     font-weight: 600;
 }
 
 /* Plan summary container */
-.plan-summary {
+.payment-plan-summary {
     padding: 1rem;
     margin-top: 0.75rem;
     background-color: #f9fafb;
@@ -48,34 +49,34 @@
 }
 
 /* Plan summary heading */
-.plan-summary h2 {
+.payment-plan-summary h2 {
     font-size: 1.5rem;
     margin-bottom: 0;
     font-weight: 600;
 }
 
 /* Plan details */
-.plan-details {
+.payment-plan-details {
     width: 100%;
     border-bottom: 2px solid #e5e7eb;
     margin-top: 10px;
     padding-bottom: 10px;
 }
 
-.plan-details .detail-row {
+.payment-plan-details .payment-detail-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.plan-details .detail-row p:first-child {
+.payment-plan-details .payment-detail-row p:first-child {
     font-size: 1rem;
     margin-bottom: 0;
     margin-top: 10px;
     font-weight: 600;
 }
 
-.plan-details .detail-row p:last-child {
+.payment-plan-details .payment-detail-row p:last-child {
     font-size: 1.25rem;
     margin-bottom: 0;
     margin-top: 10px;
@@ -83,13 +84,13 @@
     padding-right: 1.5rem;
 }
 
-.plan-details .description {
+.payment-plan-details .payment-description {
     font-size: 1rem;
     font-weight: 400;
     width: 50%;
 }
 
-.total-row {
+.payment-total-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -97,7 +98,7 @@
     padding-right: 1.5rem;
 }
 
-.total-row p {
+.payment-total-row p {
     font-size: 1.5rem;
     font-weight: 600;
     margin-top: 5px;
@@ -105,7 +106,7 @@
 }
 
 /* Right half */
-.right-half {
+.payment-right-half {
     display: flex;
     width: 50%;
     height: 80vh;
@@ -116,14 +117,14 @@
 }
 
 /* Sidebar */
-.sidebar {
+.payment-sidebar {
     padding-left: 1rem;
     background-color: #e5e7eb;
     border-radius: 0.75rem 0 0 0.75rem;
     width: 40%;
 }
 
-.sidebar h3 {
+.payment-sidebar h3 {
     font-size: 1.4rem;
     font-weight: 600;
     padding-top: 3rem;
@@ -132,7 +133,7 @@
     margin-bottom: 0;
 }
 
-.sidebar .payment-option {
+.payment-sidebar .payment-option {
     display: flex;
     align-items: center;
     padding: 0.5rem 0;
@@ -143,17 +144,17 @@
     transition: color 0.5s;
 }
 
-.sidebar .payment-option:hover {
+.payment-sidebar .payment-option:hover {
     color: #16a34a;
 }
 
-.sidebar .payment-option span {
+.payment-sidebar .payment-option span {
     margin-right: 0.5rem;
     font-size: 1.5rem;
 }
 
 /* Main content */
-.main-content {
+.payment-main-content {
     display: flex;
     /* align-items: center;  */
     flex-direction: column;
@@ -162,7 +163,7 @@
     margin: 0 1.5rem;
 }
 
-.main-content label {
+.payment-main-content label {
     font-size: 1.2rem;
     color: #71717a;
     margin: 10px 0;
@@ -170,7 +171,7 @@
     text-align: start;
 }
 
-.main-content input {
+.payment-main-content input {
     margin: 10px 0;
     width: 100%;
     padding: 0.5rem;
@@ -180,16 +181,16 @@
     box-sizing: border-box;
 }
 
-.main-content .input-row {
+.payment-main-content .payment-input-row {
     display: flex;
     justify-content: space-between;
 }
 
-.main-content .input-row div {
+.payment-main-content .payment-input-row div {
     width: 46%;
 }
 
-.main-content button {
+.payment-main-content button {
     padding: 0.75rem;
     margin-top: 1rem;
     background-color: #16a34a;
@@ -202,187 +203,216 @@
     width: 100%;
 }
 
+.payment-mt-3 {
+    margin-top: 0.75rem;
+}
+
+.payment-card-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.payment-card-brand-icon {
+    position: absolute;
+    right: 10px;
+    width: 40px;
+    height: 24px;
+}
+
+.payment-error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.payment-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.5rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
-    .section-container {
+    .payment-section-container {
         padding: 2rem 4rem;
     }
 
-    .heading-text h1 {
+    .payment-heading-text h1 {
         font-size: 2rem;
     }
 
-    .heading-text h2 {
+    .payment-heading-text h2 {
         font-size: 1.2rem;
     }
 
-    .plan-summary h2 {
+    .payment-plan-summary h2 {
         font-size: 1.8rem;
     }
 
-    .plan-details .detail-row p:first-child {
+    .payment-plan-details .payment-detail-row p:first-child {
         font-size: 1.3rem;
     }
 
-    .plan-details .detail-row p:last-child {
+    .payment-plan-details .payment-detail-row p:last-child {
         font-size: 1.1rem;
     }
 
-    .total-row p {
+    .payment-total-row p {
         font-size: 1.3rem;
     }
 
-    .sidebar h3 {
+    .payment-sidebar h3 {
         font-size: 1.3rem;
     }
 
-    .sidebar .payment-option {
+    .payment-sidebar .payment-option {
         font-size: 1.1rem;
     }
 
-    .main-content label {
+    .payment-main-content label {
         font-size: 1.1rem;
     }
 
-    .main-content button {
+    .payment-main-content button {
         font-size: 1rem;
     }
 }
 
 @media (max-width: 768px) {
-    .section-container {
+    .payment-section-container {
         flex-direction: column;
         padding: 1rem 2rem;
     }
 
-    .left-half {
+    .payment-left-half {
         width: 100%;
         margin-bottom: 2rem;
     }
 
-    .right-half {
+    .payment-right-half {
         width: 100%;
         height: auto;
         flex-direction: column;
         border-radius: 0.75rem;
     }
 
-    .sidebar {
+    .payment-sidebar {
         width: auto;
         border-radius: 0.75rem 0.75rem 0 0;
         padding: 1rem;
     }
 
-    .sidebar h3 {
+    .payment-sidebar h3 {
         padding-top: 1rem;
     }
 
-    .main-content {
+    .payment-main-content {
         width: 100%;
         margin: 0;
         padding: 1rem;
         padding-top: 2rem;
     }
 
-    .heading-container {
+    .payment-heading-container {
         margin-left: 0;
         gap: 1rem;
     }
 
-    .placeholder-div {
+    .payment-placeholder-div {
         width: 4rem;
         height: 4rem;
     }
 
-    .heading-text h1 {
+    .payment-heading-text h1 {
         font-size: 2rem;
     }
 
-    .heading-text h2 {
+    .payment-heading-text h2 {
         font-size: 1.1rem;
     }
 
-    .plan-summary {
+    .payment-plan-summary {
         margin-top: 1rem;
     }
 
-    .plan-details .description {
+    .payment-plan-details .payment-description {
         width: 100%;
     }
 
-    .main-content {
+    .payment-main-content {
         width: 94%;
     }
 
-    .main-content .input-row {
+    .payment-main-content .payment-input-row {
         flex-direction: column;
     }
 
-    .main-content .input-row div {
+    .payment-main-content .payment-input-row div {
         width: 100%;
     }
 
-    .main-content button {
+    .payment-main-content button {
         float: none;
         width: 100%;
     }
 }
 
 @media (max-width: 480px) {
-    .section-container {
+    .payment-section-container {
         padding: 1rem;
     }
 
-    .heading-text h1 {
+    .payment-heading-text h1 {
         font-size: 1.8rem;
     }
 
-    .heading-text h2 {
+    .payment-heading-text h2 {
         font-size: 1rem;
     }
 
-    .plan-summary h2 {
+    .payment-plan-summary h2 {
         font-size: 1.5rem;
     }
 
-    .plan-details .detail-row p:first-child {
+    .payment-plan-details .payment-detail-row p:first-child {
         font-size: 1.2rem;
     }
 
-    .plan-details .detail-row p:last-child {
+    .payment-plan-details .payment-detail-row p:last-child {
         font-size: 1rem;
         padding-right: 0;
     }
 
-    .total-row {
+    .payment-total-row {
         padding-right: 0;
     }
 
-    .total-row p {
+    .payment-total-row p {
         font-size: 1.2rem;
     }
 
-    .sidebar h3 {
+    .payment-sidebar h3 {
         font-size: 1.4rem;
     }
 
-    .sidebar .payment-option {
+    .payment-sidebar .payment-option {
         font-size: 1rem;
     }
 
-    .main-content {
+    .payment-main-content {
         width: 92%;
     }
 
-    .main-content label {
+    .payment-main-content label {
         font-size: 1rem;
     }
 
-    .main-content input {
+    .payment-main-content input {
         padding: 0.4rem;
     }
 
-    .main-content button {
+    .payment-main-content button {
         padding: 0.6rem;
         font-size: 0.9rem;
     }

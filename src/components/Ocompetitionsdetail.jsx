@@ -120,27 +120,27 @@ function Ocompetitionsdetail() {
 
   // Individual API calls for each section
   const fetchOverviewData = () => {
-    fetchSectionData('overview', `https://api.prodigiedu.com/api/competitions/getoverview/${competitionsid}`);
+    fetchSectionData('overview', `http://localhost:3001/api/competitions/getoverview/${competitionsid}`);
   };
 
   const fetchSyllabusData = () => {
-    fetchSectionData('syllabus', `https://api.prodigiedu.com/api/competitions/getsyllabus/${competitionsid}`);
+    fetchSectionData('syllabus', `http://localhost:3001/api/competitions/getsyllabus/${competitionsid}`);
   };
 
   const fetchPatternData = () => {
-    fetchSectionData('pattern', `https://api.prodigiedu.com/api/competitions/getpattern/${competitionsid}`);
+    fetchSectionData('pattern', `http://localhost:3001/api/competitions/getpattern/${competitionsid}`);
   };
 
   const fetchEligibilityData = () => {
-    fetchSectionData('eligibility', `https://api.prodigiedu.com/api/competitions/eligibility/${competitionsid}`);
+    fetchSectionData('eligibility', `http://localhost:3001/api/competitions/eligibility/${competitionsid}`);
   };
 
   const fetchRegistrationData = () => {
-    fetchSectionData('registration', `https://api.prodigiedu.com/api/competitions/registration/${competitionsid}`);
+    fetchSectionData('registration', `http://localhost:3001/api/competitions/registration/${competitionsid}`);
   };
 
   const fetchAwardsData = () => {
-    fetchSectionData('awards', `https://api.prodigiedu.com/api/competitions/awards/${competitionsid}`);
+    fetchSectionData('awards', `http://localhost:3001/api/competitions/awards/${competitionsid}`);
   };
 
   // Fetch all data when component mounts
@@ -350,7 +350,7 @@ function Ocompetitionsdetail() {
                     <img
                       src={getOverviewData().image.startsWith('http')
                         ? getOverviewData().image
-                        : `https://api.prodigiedu.com${getOverviewData().image}`
+                        : `http://localhost:3001${getOverviewData().image}`
                       }
                       alt="Competition"
                       style={{
@@ -409,7 +409,7 @@ function Ocompetitionsdetail() {
                         Subjects: {getOverviewData().subject || 
                           (getOverviewData().subjects ? getOverviewData().subjects.join(', ') : 
                           (getSyllabusData().topics?.length > 0 
-                            ? [...new Set(getSyllabusData().topics.map(topic => topic.subjectstype || topic.name))].join(', ')
+                            ? [...new Set(getSyllabusData().topics.map(topic => topic.name))].join(', ')
                             : 'Maths'))}
                       </div>
                     </div>

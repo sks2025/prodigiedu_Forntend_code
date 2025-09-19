@@ -97,7 +97,7 @@ const Organiserlogin = () => {
     };
 
     try {
-      const response = await fetch('https://api.prodigiedu.com/api/organisations/login', requestOptions);
+      const response = await fetch('http://localhost:3001/api/organisations/login', requestOptions);
       const result = await response.json();
 
       if (response.ok) {

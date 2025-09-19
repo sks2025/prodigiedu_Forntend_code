@@ -88,7 +88,7 @@ const Navigate = useNavigate();
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await fetch(`https://api.prodigiedu.com/api/competitions/bankaccount/${organizerId}`, {
+      const response = await fetch(`http://localhost:3001/api/competitions/bankaccount/${organizerId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
